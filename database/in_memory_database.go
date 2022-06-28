@@ -1,0 +1,334 @@
+// Copyright 2022. Motty Cohen
+//
+// In-memory database table (used for mock)
+
+package database
+
+import (
+	"fmt"
+	"strings"
+
+	. "github.com/mottyc/yaaf-common/entity"
+	"github.com/mottyc/yaaf-common/logger"
+	"github.com/mottyc/yaaf-common/utils"
+)
+
+const (
+	NOT_IMPLEMENTED  = "not implemented"
+	NOT_SUPPORTED    = "not supported"
+	TABLE_NOT_EXISTS = "table does not exist"
+)
+
+// region Database store definitions -----------------------------------------------------------------------------------
+
+// Represent a db with tables
+type InMemoryDatabase struct {
+	db map[string]ITable
+}
+
+// Resolve table name from entity class name
+func tableName(table, tenant string) (tblName string) {
+
+	if strings.Contains(table, "-{{") {
+		prefix := table[:strings.Index(table, "-{{")]
+		tblName = fmt.Sprintf("%s_%s", prefix, tenant)
+	}
+	return
+}
+
+// endregion
+
+// region Factory method for Database store ----------------------------------------------------------------------------
+
+/**
+ * Factory method for DB store
+ */
+func NewInMemoryDatabase() (dbs IDatabase, err error) {
+	return &InMemoryDatabase{db: make(map[string]ITable)}, nil
+}
+
+/**
+ * Close DB and free resources
+ */
+func (dbs *InMemoryDatabase) Close() {
+	logger.Debug("In memory database closed")
+}
+
+//endregion
+
+// region Database store Basic CRUD methods ----------------------------------------------------------------------------
+
+/**
+ * Test database connectivity
+ * @param retries - how many retries are required (max 10)
+ * @param interval - time interval (in seconds) between retries (max 60)
+ */
+func (dbs *InMemoryDatabase) Ping(retries uint, interval uint) error {
+	return nil
+}
+
+/**
+ * Get single entity by ID
+ */
+func (dbs *InMemoryDatabase) Get(factory EntityFactory, entityID string) (result Entity, err error) {
+
+	entity := factory()
+	table := tableName(entity.TABLE(), entity.KEY())
+	if tbl, ok := dbs.db[table]; ok {
+		return tbl.Get(entityID)
+	} else {
+		return nil, fmt.Errorf(TABLE_NOT_EXISTS)
+	}
+}
+
+/**
+ * Get list of entities by IDs
+ */
+func (dbs *InMemoryDatabase) List(factory EntityFactory, entityIDs []string) (list []Entity, err error) {
+
+	entity := factory()
+	table := tableName(entity.TABLE(), entity.KEY())
+
+	list = make([]Entity, 0)
+
+	if tbl, ok := dbs.db[table]; ok {
+		for _, id := range entityIDs {
+			if ent, err := tbl.Get(id); err == nil {
+				list = append(list, ent)
+			}
+		}
+	} else {
+		return list, fmt.Errorf(TABLE_NOT_EXISTS)
+	}
+	return
+}
+
+/**
+ * Check if entity exists by ID
+ */
+func (dbs *InMemoryDatabase) Exists(factory EntityFactory, entityID string) (result bool, err error) {
+
+	entity := factory()
+	table := tableName(entity.TABLE(), entity.KEY())
+
+	if tbl, ok := dbs.db[table]; ok {
+		return tbl.Exists(entityID)
+	} else {
+		return false, fmt.Errorf(TABLE_NOT_EXISTS)
+	}
+}
+
+/**
+ * Add new entity
+ */
+func (dbs *InMemoryDatabase) Insert(entity Entity) (added Entity, err error) {
+
+	table := tableName(entity.TABLE(), entity.KEY())
+
+	if _, ok := dbs.db[table]; !ok {
+		dbs.db[table] = NewInMemTable()
+	}
+
+	return dbs.db[table].Insert(entity)
+}
+
+/**
+ * Update existing entity in the data store
+ */
+func (dbs *InMemoryDatabase) Update(entity Entity) (updated Entity, err error) {
+	table := tableName(entity.TABLE(), entity.KEY())
+
+	if _, ok := dbs.db[table]; !ok {
+		dbs.db[table] = NewInMemTable()
+	}
+
+	return dbs.db[table].Update(entity)
+}
+
+/**
+ * Update existing entity in the data store or add it if it does not exist
+ */
+func (dbs *InMemoryDatabase) Upsert(entity Entity) (updated Entity, err error) {
+	table := tableName(entity.TABLE(), entity.KEY())
+	if tbl, ok := dbs.db[table]; ok {
+		return tbl.Upsert(entity)
+	} else {
+		return nil, fmt.Errorf(TABLE_NOT_EXISTS)
+	}
+}
+
+/**
+ * Delete entity by id
+ */
+func (dbs *InMemoryDatabase) Delete(factory EntityFactory, entityID string) (err error) {
+
+	entity := factory()
+
+	table := tableName(entity.TABLE(), entity.KEY())
+	if tbl, ok := dbs.db[table]; ok {
+		return tbl.Delete(entityID)
+	} else {
+		return fmt.Errorf(TABLE_NOT_EXISTS)
+	}
+}
+
+/**
+ * Add multiple entities to data store (all must be of the same type)
+ */
+func (dbs *InMemoryDatabase) BulkInsert(entities []Entity) (affected int64, err error) {
+	if len(entities) == 0 {
+		return 0, nil
+	}
+	for _, ent := range entities {
+		if _, err := dbs.Insert(ent); err == nil {
+			affected += 1
+		}
+	}
+	return affected, nil
+}
+
+/**
+ * Update multiple entities in the data store (all must be of the same type)
+ */
+func (dbs *InMemoryDatabase) BulkUpdate(entities []Entity) (affected int64, err error) {
+	if len(entities) == 0 {
+		return 0, nil
+	}
+	for _, ent := range entities {
+		if _, err := dbs.Update(ent); err == nil {
+			affected += 1
+		}
+	}
+	return affected, nil
+}
+
+/**
+ * Update or insert multiple entities in the data store (all must be of the same type)
+ */
+func (dbs *InMemoryDatabase) BulkUpsert(entities []Entity) (affected int64, err error) {
+	if len(entities) == 0 {
+		return 0, nil
+	}
+	for _, ent := range entities {
+		if _, err := dbs.Upsert(ent); err == nil {
+			affected += 1
+		}
+	}
+	return affected, nil
+}
+
+/**
+ * Delete multiple entities by id list
+ */
+func (dbs *InMemoryDatabase) BulkDelete(factory EntityFactory, entityIDs []string) (affected int64, err error) {
+	if len(entityIDs) == 0 {
+		return 0, nil
+	}
+	for _, entityID := range entityIDs {
+		if err := dbs.Delete(factory, entityID); err == nil {
+			affected += 1
+		}
+	}
+	return affected, nil
+}
+
+/**
+ * Update single field of the document in a single transaction (eliminates the need to fetch - change - update)
+ */
+func (dbs *InMemoryDatabase) SetField(factory EntityFactory, entityID string, field string, value any) (err error) {
+	fields := make(map[string]any)
+	fields[field] = value
+	return dbs.SetFields(factory, entityID, fields)
+}
+
+/**
+ * Update some numeric fields of the document in a single transaction (eliminates the need to fetch - change - update)
+ */
+func (dbs *InMemoryDatabase) SetFields(factory EntityFactory, entityID string, fields map[string]any) (err error) {
+
+	entity, fe := dbs.Get(factory, entityID)
+	if fe != nil {
+		return fe
+	}
+
+	// convert entity to Json
+	js, fe := utils.JsonUtils().ToJson(entity)
+	if fe != nil {
+		return fe
+	}
+
+	// set fields
+	for k, v := range fields {
+		js[k] = v
+	}
+
+	toSet, fe := utils.JsonUtils().FromJson(factory, js)
+	if fe != nil {
+		return fe
+	}
+
+	_, fe = dbs.Update(toSet)
+	return fe
+}
+
+/**
+ * Helper method to construct query
+ */
+func (dbs *InMemoryDatabase) Query(factory EntityFactory) IQuery {
+	return &inMemoryDatabaseQuery{
+		db:         dbs,
+		factory:    factory,
+		allFilters: make([][]QueryFilter, 0),
+		anyFilters: make([][]QueryFilter, 0),
+		ascOrders:  make([]any, 0),
+		descOrders: make([]any, 0),
+		callbacks:  make([]func(in Entity) Entity, 0),
+		limit:      100,
+		page:       0,
+	}
+}
+
+// endregion
+
+// region Database DDL and DML -----------------------------------------------------------------------------------------
+
+/**
+ * Execute DDL - create table and indexes
+ * The ddl parameter is a map of strings (table names) to array of strings (list of fields to index)
+ */
+func (dbs *InMemoryDatabase) ExecuteDDL(ddl map[string][]string) (err error) {
+
+	for table, fields := range ddl {
+		logger.Debug("Creating table: %s with fields indexes: %s", table, strings.Join(fields, ","))
+
+		if _, ok := dbs.db[table]; !ok {
+			dbs.db[table] = &InMemoryTable{table: make(map[string]Entity)}
+		}
+	}
+	return nil
+}
+
+/**
+ * Execute SQL command
+ */
+func (dbs *InMemoryDatabase) ExecuteSQL(sql string, args ...interface{}) (affected int64, err error) {
+	return 0, fmt.Errorf(NOT_SUPPORTED)
+}
+
+/**
+ * Drop table and indexes
+ */
+func (dbs *InMemoryDatabase) DropTable(table string) (err error) {
+	delete(dbs.db, table)
+	return nil
+}
+
+/**
+ * Fast delete table content (truncate)
+ */
+func (dbs *InMemoryDatabase) PurgeTable(table string) (err error) {
+	delete(dbs.db, table)
+	return nil
+}
+
+// endregion
