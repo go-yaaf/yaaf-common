@@ -4,6 +4,8 @@
 //
 package database
 
+import "fmt"
+
 // region QueryFilter Interface ----------------------------------------------------------------------------------------
 
 // Query filter interface
@@ -45,9 +47,17 @@ type QueryFilter interface {
 	// Include this filter only if condition is true
 	IsActive() bool
 
-	Field() string
+	// Get the field name
+	GetField() string
 
-	Values() []any
+	// Get the criteria operator
+	GetOperator() queryOperator
+
+	// Get the criteria values
+	GetValues() []any
+
+	// Get string representation of the value
+	GetStringValue(index int) string
 }
 
 // endregion
@@ -56,10 +66,10 @@ type QueryFilter interface {
 
 // Query filter
 type queryFilter struct {
-	field     string
-	operator  queryOperator
-	values    []any
-	condition bool
+	field    string
+	operator queryOperator
+	values   []any
+	active   bool
 }
 
 // Filter by field
@@ -67,6 +77,7 @@ func F(field string) QueryFilter {
 	return &queryFilter{
 		field:    field,
 		operator: Eq,
+		active:   true,
 	}
 }
 
@@ -142,23 +153,37 @@ func (q *queryFilter) Between(value1, value2 any) QueryFilter {
 
 // Include this filter only if condition is true
 func (q *queryFilter) If(value bool) QueryFilter {
-	q.condition = value
+	q.active = value
 	return q
 }
 
 // Is the filter active?
 func (q *queryFilter) IsActive() bool {
-	return q.condition
+	return q.active
 }
 
 // Get filtered field name
-func (q *queryFilter) Field() string {
+func (q *queryFilter) GetField() string {
 	return q.field
 }
 
+// Get the criteria operator
+func (q *queryFilter) GetOperator() queryOperator {
+	return q.operator
+}
+
 // Get values
-func (q *queryFilter) Values() []any {
+func (q *queryFilter) GetValues() []any {
 	return q.values
+}
+
+// Get string representation of the value
+func (q *queryFilter) GetStringValue(index int) string {
+	if len(q.values) > index {
+		return fmt.Sprintf("%v", q.values[index])
+	} else {
+		return ""
+	}
 }
 
 // endregion

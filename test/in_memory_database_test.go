@@ -95,11 +95,13 @@ func TestInMemoryDatabase_Like(t *testing.T) {
 	db, fe := getInitializedDb()
 	assert.Nil(t, fe, "error initializing DB")
 
-	birds, count, fe := db.Query(NewBird).Filter(F("name").Like("finch")).Find()
+	filter := F("name")
+	filter = filter.Like("finch")
+	birds, count, fe := db.Query(NewBird).Filter(filter).Find()
 
 	assert.Nil(t, fe, "error")
 	assert.NotNilf(t, birds, "birds is nil")
-	assert.Equal(t, count, uint64(2), "count should be 2")
+	assert.Equal(t, count, int64(2), "count should be 2")
 
 	return
 }

@@ -6,6 +6,7 @@ package database
 
 import (
 	"fmt"
+	"github.com/mottyc/yaaf-common/utils/collections"
 	"strconv"
 	"strings"
 )
@@ -34,17 +35,18 @@ type FilterFunction func(raw map[string]any, filter QueryFilter) bool
 
 // Get filter function implementing an operator and a value
 func testField(raw map[string]any, filter QueryFilter) bool {
-	if filter.condition == false {
+	if filter.IsActive() {
+		return operators[filter.GetOperator()](raw, filter)
+	} else {
 		return true
 	}
-	return operators[filter.operator](raw, filter)
 }
 
 // equal
 func eq(raw map[string]any, filter QueryFilter) bool {
-	if entityVal, ok := raw[filter.field]; ok {
+	if entityVal, ok := raw[filter.GetField()]; ok {
 		v1 := fmt.Sprintf("%v", entityVal)
-		v2 := fmt.Sprintf("%v", filter.values[0])
+		v2 := filter.GetStringValue(0)
 		return v1 == v2
 	} else {
 		return false
@@ -53,9 +55,9 @@ func eq(raw map[string]any, filter QueryFilter) bool {
 
 // not equal
 func neq(raw map[string]any, filter QueryFilter) bool {
-	if entityVal, ok := raw[filter.field]; ok {
+	if entityVal, ok := raw[filter.GetField()]; ok {
 		v1 := fmt.Sprintf("%v", entityVal)
-		v2 := fmt.Sprintf("%v", filter.values[0])
+		v2 := filter.GetStringValue(0)
 		return v1 != v2
 	} else {
 		return false
@@ -64,23 +66,23 @@ func neq(raw map[string]any, filter QueryFilter) bool {
 
 // like
 func like(raw map[string]any, filter QueryFilter) bool {
-	entityVal, ok := raw[filter.field]
+	entityVal, ok := raw[filter.GetField()]
 	if !ok {
 		return false
 	}
 	v1 := fmt.Sprintf("%v", entityVal)
-	v2 := fmt.Sprintf("%v", filter.values[0])
+	v2 := filter.GetStringValue(0)
 	return strings.Contains(v1, v2)
 }
 
 // Greater than
 func gt(raw map[string]any, filter QueryFilter) bool {
-	entityVal, ok := raw[filter.field]
+	entityVal, ok := raw[filter.GetField()]
 	if !ok {
 		return false
 	}
 	v1 := fmt.Sprintf("%v", entityVal)
-	v2 := fmt.Sprintf("%v", filter.values[0])
+	v2 := filter.GetStringValue(0)
 
 	n1, e1 := strconv.ParseFloat(v1, 64)
 	n2, e2 := strconv.ParseFloat(v2, 64)
@@ -94,12 +96,12 @@ func gt(raw map[string]any, filter QueryFilter) bool {
 
 // less than
 func lt(raw map[string]any, filter QueryFilter) bool {
-	entityVal, ok := raw[filter.field]
+	entityVal, ok := raw[filter.GetField()]
 	if !ok {
 		return false
 	}
 	v1 := fmt.Sprintf("%v", entityVal)
-	v2 := fmt.Sprintf("%v", filter.values[0])
+	v2 := filter.GetStringValue(0)
 
 	n1, e1 := strconv.ParseFloat(v1, 64)
 	n2, e2 := strconv.ParseFloat(v2, 64)
@@ -113,12 +115,12 @@ func lt(raw map[string]any, filter QueryFilter) bool {
 
 // Greater than or equal
 func gte(raw map[string]any, filter QueryFilter) bool {
-	entityVal, ok := raw[filter.field]
+	entityVal, ok := raw[filter.GetField()]
 	if !ok {
 		return false
 	}
 	v1 := fmt.Sprintf("%v", entityVal)
-	v2 := fmt.Sprintf("%v", filter.values[0])
+	v2 := filter.GetStringValue(0)
 
 	n1, e1 := strconv.ParseFloat(v1, 64)
 	n2, e2 := strconv.ParseFloat(v2, 64)
@@ -132,12 +134,12 @@ func gte(raw map[string]any, filter QueryFilter) bool {
 
 // less than or equal
 func lte(raw map[string]any, filter QueryFilter) bool {
-	entityVal, ok := raw[filter.field]
+	entityVal, ok := raw[filter.GetField()]
 	if !ok {
 		return false
 	}
 	v1 := fmt.Sprintf("%v", entityVal)
-	v2 := fmt.Sprintf("%v", filter.values[0])
+	v2 := filter.GetStringValue(0)
 
 	n1, e1 := strconv.ParseFloat(v1, 64)
 	n2, e2 := strconv.ParseFloat(v2, 64)
@@ -151,105 +153,49 @@ func lte(raw map[string]any, filter QueryFilter) bool {
 
 // in (value should be an array)
 func in(raw map[string]any, filter QueryFilter) bool {
-	entityVal, ok := raw[filter.field]
+	entityVal, ok := raw[filter.GetField()]
 	if !ok {
 		return false
 	}
 
 	v1 := fmt.Sprintf("%v", entityVal)
 
-	// Test for int array
-	if arr, ok := filter.values[0].([]int); ok {
-		if n, e := strconv.Atoi(v1); e != nil {
-			return false
-		} else {
-			for _, t := range arr {
-				if n == t {
-					return true
-				}
-			}
-			return false
+	for _, val := range filter.GetValues() {
+		v2 := fmt.Sprintf("%v", val)
+		if v1 == v2 {
+			return true
 		}
 	}
 
-	// Test for string array
-	if arr, ok := filter.values[0].([]string); ok {
-		for _, t := range arr {
-			if v1 == t {
-				return true
-			}
-		}
-		return false
-	}
 	return false
 }
 
 // not in (value should be an array)
 func nin(raw map[string]any, filter QueryFilter) bool {
-	entityVal, ok := raw[filter.field]
-	if !ok {
-		return false
-	}
-
-	v1 := fmt.Sprintf("%v", entityVal)
-
-	// Test for int array
-	if arr, ok := filter.values[0].([]int); ok {
-		if n, e := strconv.Atoi(v1); e != nil {
-			return false
-		} else {
-			for _, t := range arr {
-				if n == t {
-					return false
-				}
-			}
-			return true
-		}
-	}
-
-	// Test for string array
-	if arr, ok := filter.values[0].([]string); ok {
-		for _, t := range arr {
-			if v1 == t {
-				return false
-			}
-		}
-		return true
-	}
-	return false
+	return !in(raw, filter)
 }
 
 // array field contains the tested value
 func contains(raw map[string]any, filter QueryFilter) bool {
-	entityVal, ok := raw[filter.field]
+	entityVal, ok := raw[filter.GetField()]
 	if !ok {
 		return false
 	}
 
-	v1 := fmt.Sprintf("%v", filter.values[0])
+	v1 := filter.GetStringValue(0)
 
 	// Test for int array field
 	if arr, ok := entityVal.([]int); ok {
-		if n, e := strconv.Atoi(v1); e != nil {
+		if val, e := strconv.Atoi(v1); e != nil {
 			return false
 		} else {
-			for _, t := range arr {
-				if n == t {
-					return true
-				}
-			}
-			return false
+			return collections.IncludeN(arr, val)
 		}
 	}
 
 	// Test for string array field
-	if arr, ok := filter.values[0].([]string); ok {
-		for _, t := range arr {
-			if v1 == t {
-				return true
-			}
-		}
-		return false
+	if arr, ok := entityVal.([]string); ok {
+		return collections.Include(arr, v1)
 	}
 	return false
 }
@@ -257,14 +203,14 @@ func contains(raw map[string]any, filter QueryFilter) bool {
 // between (the expected value is comma-separated list of 2 values
 func between(raw map[string]any, filter QueryFilter) bool {
 
-	entityVal, ok := raw[filter.field]
+	entityVal, ok := raw[filter.GetField()]
 	if !ok {
 		return false
 	}
 	v1 := fmt.Sprintf("%v", entityVal)
 
-	val1 := fmt.Sprintf("%v", filter.values[0])
-	val2 := fmt.Sprintf("%v", filter.values[1])
+	val1 := filter.GetStringValue(0)
+	val2 := filter.GetStringValue(1)
 
 	n1, e1 := strconv.Atoi(strings.TrimSpace(val1))
 	n2, e2 := strconv.Atoi(strings.TrimSpace(val2))
