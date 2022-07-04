@@ -1,6 +1,6 @@
 // Copyright 2022. Motty Cohen
 //
-// Test in memory database implementation
+// Test in memory datastore implementation tests
 //
 package test
 
@@ -12,36 +12,36 @@ import (
 
 // region Init DB ------------------------------------------------------------------------------------------------------
 
-func getInitializedDb() (dbs IDatabase, err error) {
-	dbs, err = NewInMemoryDatabase()
+func getInitializedDs() (ds IDatastore, err error) {
+	ds, err = NewInMemoryDatastore()
 	if err != nil {
 		return nil, err
 	}
 
-	dbs.BulkInsert(list_of_heroes)
-	return dbs, nil
+	ds.BulkInsert(list_of_heroes)
+	return ds, nil
 }
 
 // endregion
 
-func TestInMemoryDatabase_Get(t *testing.T) {
+func TestInMemoryDatastore_Get(t *testing.T) {
 
-	db, fe := getInitializedDb()
-	assert.Nil(t, fe, "error initializing DB")
+	ds, fe := getInitializedDs()
+	assert.Nil(t, fe, "error initializing Datastore")
 
-	hero, fe := db.Get(NewHero, "2")
+	hero, fe := ds.Get(NewHero, "2")
 
 	assert.Nil(t, fe, "error")
 	assert.NotNilf(t, hero, "hero is nil")
 	return
 }
 
-func TestInMemoryDatabase_List(t *testing.T) {
+func TestInMemoryDatastore_List(t *testing.T) {
 
-	db, fe := getInitializedDb()
-	assert.Nil(t, fe, "error initializing DB")
+	ds, fe := getInitializedDs()
+	assert.Nil(t, fe, "error initializing Datastore")
 
-	heroes, fe := db.List(NewHero, []string{"1", "2", "3", "4"})
+	heroes, fe := ds.List(NewHero, []string{"1", "2", "3", "4"})
 
 	assert.Nil(t, fe, "error")
 	assert.NotNilf(t, heroes, "heroes is nil")
@@ -50,14 +50,14 @@ func TestInMemoryDatabase_List(t *testing.T) {
 	return
 }
 
-func TestInMemoryDatabase_Like_Suffix(t *testing.T) {
+func TestInMemoryDatastore_Like_Suffix(t *testing.T) {
 
-	db, fe := getInitializedDb()
-	assert.Nil(t, fe, "error initializing DB")
+	ds, fe := getInitializedDs()
+	assert.Nil(t, fe, "error initializing Datastore")
 
 	filter := F("name")
 	filter = filter.Like("Black*")
-	heroes, count, fe := db.Query(NewHero).Filter(filter).Find()
+	heroes, count, fe := ds.Query(NewHero).Filter(filter).Find()
 
 	assert.Nil(t, fe, "error")
 	assert.NotNilf(t, heroes, "heroes is nil")
@@ -66,14 +66,14 @@ func TestInMemoryDatabase_Like_Suffix(t *testing.T) {
 	return
 }
 
-func TestInMemoryDatabase_Like_Prefix(t *testing.T) {
+func TestInMemoryDatastore_Like_Prefix(t *testing.T) {
 
-	db, fe := getInitializedDb()
-	assert.Nil(t, fe, "error initializing DB")
+	ds, fe := getInitializedDs()
+	assert.Nil(t, fe, "error initializing Datastore")
 
 	filter := F("name")
 	filter = filter.Like("*man")
-	heroes, count, fe := db.Query(NewHero).Filter(filter).Find()
+	heroes, count, fe := ds.Query(NewHero).Filter(filter).Find()
 
 	assert.Nil(t, fe, "error")
 	assert.NotNilf(t, heroes, "heroes is nil")

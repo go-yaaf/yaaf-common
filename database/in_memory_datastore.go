@@ -1,76 +1,78 @@
 // Copyright 2022. Motty Cohen
 //
-// In-memory database table (used for testing)
+// In-memory datastore implementation of IDatastore (used for testing)
 
 package database
 
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	. "github.com/mottyc/yaaf-common/entity"
 	"github.com/mottyc/yaaf-common/logger"
 	"github.com/mottyc/yaaf-common/utils"
 )
 
-const (
-	NOT_IMPLEMENTED  = "not implemented"
-	NOT_SUPPORTED    = "not supported"
-	TABLE_NOT_EXISTS = "table does not exist"
-)
-
 // region Database store definitions -----------------------------------------------------------------------------------
 
 // Represent a db with tables
-type InMemoryDatabase struct {
+type InMemoryDatastore struct {
 	db map[string]ITable
 }
 
-// Resolve table name from entity class name
-func tableName(table, tenant string) (tblName string) {
+// Resolve index name from entity name
+func indexName(ef EntityFactory, key string) (name string) {
 
-	if strings.Contains(table, "-{{") {
-		prefix := table[:strings.Index(table, "-{{")]
-		tblName = fmt.Sprintf("%s_%s", prefix, tenant)
-	}
-	return
+	index := ef().TABLE()
+
+	// Replace templates: {{accountId}}
+	index = strings.Replace(index, "{{accountId}}", key, -1)
+
+	// Replace templates: {{year}}
+	index = strings.Replace(index, "{{year}}", time.Now().Format("2006"), -1)
+
+	// Replace templates: {{month}}
+	index = strings.Replace(index, "{{month}}", time.Now().Format("01"), -1)
+
+	return index
 }
 
 // endregion
 
-// region Factory and connectivity methods for Database ----------------------------------------------------------------
+// region Factory and connectivity methods for Datastore ---------------------------------------------------------------
 
 /**
- * Factory method for DB store
+ * Factory method for Datastore
  */
-func NewInMemoryDatabase() (dbs IDatabase, err error) {
-	return &InMemoryDatabase{db: make(map[string]ITable)}, nil
+func NewInMemoryDatastore() (dbs IDatastore, err error) {
+	return &InMemoryDatastore{db: make(map[string]ITable)}, nil
 }
 
 /**
- * Test database connectivity
+ * Test connectivity for retries number of time with time interval (in seconds) between retries
  * @param retries - how many retries are required (max 10)
  * @param interval - time interval (in seconds) between retries (max 60)
  */
-func (dbs *InMemoryDatabase) Ping(retries uint, interval uint) error {
+func (dbs *InMemoryDatastore) Ping(retries uint, interval uint) error {
 	return nil
 }
 
 /**
- * Close DB and free resources
+ * Close Datastore and free resources
  */
-func (dbs *InMemoryDatabase) Close() {
-	logger.Debug("In memory database closed")
+func (dbs *InMemoryDatastore) Close() {
+	logger.Debug("In memory datastore closed")
 }
 
 //endregion
 
-// region Database store Basic CRUD methods ----------------------------------------------------------------------------
+// region Datastore Basic CRUD methods ----------------------------------------------------------------------------
 
 /**
  * Get single entity by ID
  */
-func (dbs *InMemoryDatabase) Get(factory EntityFactory, entityID string) (result Entity, err error) {
+func (dbs *InMemoryDatastore) Get(factory EntityFactory, entityID string) (result Entity, err error) {
 
 	entity := factory()
 	table := tableName(entity.TABLE(), entity.KEY())
@@ -84,7 +86,7 @@ func (dbs *InMemoryDatabase) Get(factory EntityFactory, entityID string) (result
 /**
  * Get list of entities by IDs
  */
-func (dbs *InMemoryDatabase) List(factory EntityFactory, entityIDs []string) (list []Entity, err error) {
+func (dbs *InMemoryDatastore) List(factory EntityFactory, entityIDs []string) (list []Entity, err error) {
 
 	entity := factory()
 	table := tableName(entity.TABLE(), entity.KEY())
@@ -106,7 +108,7 @@ func (dbs *InMemoryDatabase) List(factory EntityFactory, entityIDs []string) (li
 /**
  * Check if entity exists by ID
  */
-func (dbs *InMemoryDatabase) Exists(factory EntityFactory, entityID string) (result bool, err error) {
+func (dbs *InMemoryDatastore) Exists(factory EntityFactory, entityID string) (result bool, err error) {
 
 	entity := factory()
 	table := tableName(entity.TABLE(), entity.KEY())
@@ -121,7 +123,7 @@ func (dbs *InMemoryDatabase) Exists(factory EntityFactory, entityID string) (res
 /**
  * Add new entity
  */
-func (dbs *InMemoryDatabase) Insert(entity Entity) (added Entity, err error) {
+func (dbs *InMemoryDatastore) Insert(entity Entity) (added Entity, err error) {
 
 	table := tableName(entity.TABLE(), entity.KEY())
 
@@ -135,7 +137,7 @@ func (dbs *InMemoryDatabase) Insert(entity Entity) (added Entity, err error) {
 /**
  * Update existing entity in the data store
  */
-func (dbs *InMemoryDatabase) Update(entity Entity) (updated Entity, err error) {
+func (dbs *InMemoryDatastore) Update(entity Entity) (updated Entity, err error) {
 	table := tableName(entity.TABLE(), entity.KEY())
 
 	if _, ok := dbs.db[table]; !ok {
@@ -148,7 +150,7 @@ func (dbs *InMemoryDatabase) Update(entity Entity) (updated Entity, err error) {
 /**
  * Update existing entity in the data store or add it if it does not exist
  */
-func (dbs *InMemoryDatabase) Upsert(entity Entity) (updated Entity, err error) {
+func (dbs *InMemoryDatastore) Upsert(entity Entity) (updated Entity, err error) {
 	table := tableName(entity.TABLE(), entity.KEY())
 	if tbl, ok := dbs.db[table]; ok {
 		return tbl.Upsert(entity)
@@ -160,7 +162,7 @@ func (dbs *InMemoryDatabase) Upsert(entity Entity) (updated Entity, err error) {
 /**
  * Delete entity by id
  */
-func (dbs *InMemoryDatabase) Delete(factory EntityFactory, entityID string) (err error) {
+func (dbs *InMemoryDatastore) Delete(factory EntityFactory, entityID string) (err error) {
 
 	entity := factory()
 
@@ -175,7 +177,7 @@ func (dbs *InMemoryDatabase) Delete(factory EntityFactory, entityID string) (err
 /**
  * Add multiple entities to data store (all must be of the same type)
  */
-func (dbs *InMemoryDatabase) BulkInsert(entities []Entity) (affected int64, err error) {
+func (dbs *InMemoryDatastore) BulkInsert(entities []Entity) (affected int64, err error) {
 	if len(entities) == 0 {
 		return 0, nil
 	}
@@ -190,7 +192,7 @@ func (dbs *InMemoryDatabase) BulkInsert(entities []Entity) (affected int64, err 
 /**
  * Update multiple entities in the data store (all must be of the same type)
  */
-func (dbs *InMemoryDatabase) BulkUpdate(entities []Entity) (affected int64, err error) {
+func (dbs *InMemoryDatastore) BulkUpdate(entities []Entity) (affected int64, err error) {
 	if len(entities) == 0 {
 		return 0, nil
 	}
@@ -205,7 +207,7 @@ func (dbs *InMemoryDatabase) BulkUpdate(entities []Entity) (affected int64, err 
 /**
  * Update or insert multiple entities in the data store (all must be of the same type)
  */
-func (dbs *InMemoryDatabase) BulkUpsert(entities []Entity) (affected int64, err error) {
+func (dbs *InMemoryDatastore) BulkUpsert(entities []Entity) (affected int64, err error) {
 	if len(entities) == 0 {
 		return 0, nil
 	}
@@ -220,7 +222,7 @@ func (dbs *InMemoryDatabase) BulkUpsert(entities []Entity) (affected int64, err 
 /**
  * Delete multiple entities by id list
  */
-func (dbs *InMemoryDatabase) BulkDelete(factory EntityFactory, entityIDs []string) (affected int64, err error) {
+func (dbs *InMemoryDatastore) BulkDelete(factory EntityFactory, entityIDs []string) (affected int64, err error) {
 	if len(entityIDs) == 0 {
 		return 0, nil
 	}
@@ -235,7 +237,7 @@ func (dbs *InMemoryDatabase) BulkDelete(factory EntityFactory, entityIDs []strin
 /**
  * Update single field of the document in a single transaction (eliminates the need to fetch - change - update)
  */
-func (dbs *InMemoryDatabase) SetField(factory EntityFactory, entityID string, field string, value any) (err error) {
+func (dbs *InMemoryDatastore) SetField(factory EntityFactory, entityID string, field string, value any) (err error) {
 	fields := make(map[string]any)
 	fields[field] = value
 	return dbs.SetFields(factory, entityID, fields)
@@ -244,7 +246,7 @@ func (dbs *InMemoryDatabase) SetField(factory EntityFactory, entityID string, fi
 /**
  * Update some numeric fields of the document in a single transaction (eliminates the need to fetch - change - update)
  */
-func (dbs *InMemoryDatabase) SetFields(factory EntityFactory, entityID string, fields map[string]any) (err error) {
+func (dbs *InMemoryDatastore) SetFields(factory EntityFactory, entityID string, fields map[string]any) (err error) {
 
 	entity, fe := dbs.Get(factory, entityID)
 	if fe != nil {
@@ -274,8 +276,8 @@ func (dbs *InMemoryDatabase) SetFields(factory EntityFactory, entityID string, f
 /**
  * Helper method to construct query
  */
-func (dbs *InMemoryDatabase) Query(factory EntityFactory) IQuery {
-	return &inMemoryDatabaseQuery{
+func (dbs *InMemoryDatastore) Query(factory EntityFactory) IQuery {
+	return &inMemoryDatastoreQuery{
 		db:         dbs,
 		factory:    factory,
 		allFilters: make([][]QueryFilter, 0),
@@ -290,45 +292,56 @@ func (dbs *InMemoryDatabase) Query(factory EntityFactory) IQuery {
 
 // endregion
 
-// region Database DDL and DML -----------------------------------------------------------------------------------------
+// region Datastore Index methods --------------------------------------------------------------------------------------
 
 /**
- * Execute DDL - create table and indexes
- * The ddl parameter is a map of strings (table names) to array of strings (list of fields to index)
+ * Test if index exists
  */
-func (dbs *InMemoryDatabase) ExecuteDDL(ddl map[string][]string) (err error) {
+func (dbs *InMemoryDatastore) IndexExists(indexName string) (exists bool) {
 
-	for table, fields := range ddl {
-		logger.Debug("Creating table: %s with fields indexes: %s", table, strings.Join(fields, ","))
-
-		if _, ok := dbs.db[table]; !ok {
-			dbs.db[table] = &InMemoryTable{table: make(map[string]Entity)}
-		}
+	if _, ok := dbs.db[indexName]; ok {
+		return true
+	} else {
+		return false
 	}
-	return nil
 }
 
 /**
- * Execute SQL command
+ * Create index by name
  */
-func (dbs *InMemoryDatabase) ExecuteSQL(sql string, args ...interface{}) (affected int64, err error) {
-	return 0, fmt.Errorf(NOT_SUPPORTED)
+func (dbs *InMemoryDatastore) CreateIndex(indexName string) (name string, err error) {
+	// Create index
+	if _, ok := dbs.db[indexName]; !ok {
+		dbs.db[indexName] = &InMemoryTable{table: make(map[string]Entity)}
+	}
+	return indexName, nil
 }
 
 /**
- * Drop table and indexes
+ * Create index of entity and add entity field mapping
  */
-func (dbs *InMemoryDatabase) DropTable(table string) (err error) {
-	delete(dbs.db, table)
-	return nil
+func (dbs *InMemoryDatastore) CreateEntityIndex(ef EntityFactory, key string) (name string, err error) {
+
+	idxName := indexName(ef, key)
+
+	// Create index
+	if _, ok := dbs.db[idxName]; !ok {
+		dbs.db[idxName] = NewInMemTable()
+	}
+	return idxName, nil
 }
 
 /**
- * Fast delete table content (truncate)
+ * Drop index
  */
-func (dbs *InMemoryDatabase) PurgeTable(table string) (err error) {
-	delete(dbs.db, table)
-	return nil
+func (dbs *InMemoryDatastore) DropIndex(indexName string) (ack bool, err error) {
+
+	if _, ok := dbs.db[indexName]; !ok {
+		return false, nil
+	} else {
+		delete(dbs.db, indexName)
+		return true, nil
+	}
 }
 
-// endregion
+//endregion

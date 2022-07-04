@@ -1,14 +1,15 @@
 // Copyright 2022. Motty Cohen
 //
-// In-memory database query helpers (used for mock)
+// In-memory database query helpers (used for testing)
 //
 package database
 
 import (
 	"fmt"
-	"github.com/mottyc/yaaf-common/utils/collections"
 	"strconv"
 	"strings"
+
+	"github.com/mottyc/yaaf-common/utils/collections"
 )
 
 var operators map[queryOperator]FilterFunction
@@ -72,7 +73,14 @@ func like(raw map[string]any, filter QueryFilter) bool {
 	}
 	v1 := fmt.Sprintf("%v", entityVal)
 	v2 := filter.GetStringValue(0)
-	return strings.Contains(v1, v2)
+
+	if strings.HasSuffix(v2, "*") {
+		return strings.HasPrefix(v1, v2[:len(v2)-1])
+	} else if strings.HasPrefix(v2, "*") {
+		return strings.HasSuffix(v1, v2[1:])
+	} else {
+		return strings.Contains(v1, v2)
+	}
 }
 
 // Greater than

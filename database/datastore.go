@@ -11,56 +11,64 @@ import (
 // Datastore interface
 type IDatastore interface {
 
-	// Test connectivity for retries number of time with time interval (in seconds) between retries
+	// Test database connectivity for retries number of time with time interval (in seconds) between retries
 	Ping(retries uint, intervalInSeconds uint) error
 
 	// Get single entity by ID
-	Get(accountID, entityID string, ef EntityFactory) (entity Entity, err error)
+	Get(factory EntityFactory, entityID string) (result Entity, err error)
+
+	// Get multiple entities by IDs
+	List(factory EntityFactory, entityIDs []string) (list []Entity, err error)
 
 	// Check if entity exists by ID
-	Exists(accountID, entityID string, ef EntityFactory) (result bool, err error)
+	Exists(factory EntityFactory, entityID string) (result bool, err error)
 
 	// Insert new entity
-	Insert(accountID string, entity Entity) (added Entity, err error)
+	Insert(entity Entity) (added Entity, err error)
 
 	// Update existing entity
-	Update(accountID string, entity Entity) (updated Entity, err error)
+	Update(entity Entity) (updated Entity, err error)
 
-	// Delete existing entity
-	Delete(accountId, entityId string, ef EntityFactory) (err error)
+	// Update entity or create it if it does not exist
+	Upsert(entity Entity) (updated Entity, err error)
+
+	// Delete entity by id and shard (key)
+	Delete(factory EntityFactory, entityID string) (err error)
 
 	// Insert multiple entities
-	BulkInsert(accountID string, entities []Entity) (affected int64, err error)
+	BulkInsert(entities []Entity) (affected int64, err error)
+
+	// Update multiple entities
+	BulkUpdate(entities []Entity) (affected int64, err error)
+
+	// Update or insert multiple entities
+	BulkUpsert(entities []Entity) (affected int64, err error)
 
 	// Delete multiple entities by IDs
-	BulkDelete(entityIDs []string, key string, ef EntityFactory) (affected int, err error)
+	BulkDelete(factory EntityFactory, entityIDs []string) (affected int64, err error)
 
-	// Update single string field of the document in a single transaction
-	SetField(accountId string, entityId string, ef EntityFactory, field string, value any) (err error)
+	// Update single field of the document in a single transaction (eliminates the need to fetch - change - update)
+	SetField(factory EntityFactory, entityID string, field string, value any) (err error)
 
 	// Update some fields of the document in a single transaction (eliminates the need to fetch - change - update)
-	SetFields(entityID, key string, ef EntityFactory, fields map[string]any) (err error)
+	SetFields(factory EntityFactory, entityID string, fields map[string]any) (err error)
 
-	// Utility struct to build a query
-	Query(f EntityFactory) IQuery
+	// Utility struct method to build a query
+	Query(factory EntityFactory) IQuery
 
-	// Close connection and free resources
+	// Close DB and free resources
 	Close()
 
 	// Index Actions ---------------------------------------------------------------------------------------------------
-
-	// Create index of entity and add entity field mapping
-	CreateEntityIndex(ef EntityFactory, accountId string) (name string, err error)
+	// Test if index exists
+	IndexExists(indexName string) (exists bool)
 
 	// Create index by name (without mapping)
 	CreateIndex(indexName string) (name string, err error)
 
+	// Create index of entity and add entity field mapping
+	CreateEntityIndex(ef EntityFactory, key string) (name string, err error)
+
 	// Drop index
 	DropIndex(indexName string) (ack bool, err error)
-
-	// Test if index exists
-	IndexExists(indexName string) (exists bool)
-
-	// Get indices (selective and sorted)
-	GetIndices(indicesPattern, requestedColumns, sortByColumn string) (indices []string, err error)
 }

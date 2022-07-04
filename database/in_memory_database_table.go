@@ -1,6 +1,6 @@
 // Copyright 2022. Motty Cohen
 //
-// In-memory database implementation of IDatabase (used for mock)
+// In-memory datastore implementation of IDatabase (used for testing)
 //
 package database
 

@@ -1,6 +1,6 @@
 // Copyright 2022. Motty Cohen
 //
-// In-memory database implementation of IQuery (used for testing)
+// In-memory datastore implementation of IQuery (used for testing)
 //
 package database
 
@@ -15,8 +15,8 @@ import (
 
 // region queryBuilder internal structure ------------------------------------------------------------------------------
 
-type inMemoryDatabaseQuery struct {
-	db         *InMemoryDatabase
+type inMemoryDatastoreQuery struct {
+	db         *InMemoryDatastore
 	factory    EntityFactory
 	allFilters [][]QueryFilter
 	anyFilters [][]QueryFilter
@@ -34,7 +34,7 @@ type inMemoryDatabaseQuery struct {
 /**
  * Add callback to apply on each result entity in the query
  */
-func (s *inMemoryDatabaseQuery) Apply(cb func(in Entity) Entity) IQuery {
+func (s *inMemoryDatastoreQuery) Apply(cb func(in Entity) Entity) IQuery {
 	if cb != nil {
 		s.callbacks = append(s.callbacks, cb)
 	}
@@ -44,7 +44,7 @@ func (s *inMemoryDatabaseQuery) Apply(cb func(in Entity) Entity) IQuery {
 /**
  * Add single field filter
  */
-func (s *inMemoryDatabaseQuery) Filter(filter QueryFilter) IQuery {
+func (s *inMemoryDatastoreQuery) Filter(filter QueryFilter) IQuery {
 	if filter.IsActive() {
 		s.allFilters = append(s.allFilters, []QueryFilter{filter})
 	}
@@ -54,7 +54,7 @@ func (s *inMemoryDatabaseQuery) Filter(filter QueryFilter) IQuery {
 /**
  * Add list of filters, all of them should be satisfied (AND)
  */
-func (s *inMemoryDatabaseQuery) MatchAll(filters ...QueryFilter) IQuery {
+func (s *inMemoryDatastoreQuery) MatchAll(filters ...QueryFilter) IQuery {
 
 	list := make([]QueryFilter, 0)
 	for _, filter := range filters {
@@ -69,7 +69,7 @@ func (s *inMemoryDatabaseQuery) MatchAll(filters ...QueryFilter) IQuery {
 /**
  * // Add list of filters, any of them should be satisfied (OR)
  */
-func (s *inMemoryDatabaseQuery) MatchAny(filters ...QueryFilter) IQuery {
+func (s *inMemoryDatastoreQuery) MatchAny(filters ...QueryFilter) IQuery {
 	list := make([]QueryFilter, 0)
 	for _, filter := range filters {
 		if filter.IsActive() == true {
@@ -84,7 +84,7 @@ func (s *inMemoryDatabaseQuery) MatchAny(filters ...QueryFilter) IQuery {
 /**
  * Add sort order by field,  expects sort parameter in the following form: field_name (Ascending) or field_name- (Descending)
  */
-func (s *inMemoryDatabaseQuery) Sort(sort string) IQuery {
+func (s *inMemoryDatastoreQuery) Sort(sort string) IQuery {
 	if sort == "" {
 		return s
 	}
@@ -103,7 +103,7 @@ func (s *inMemoryDatabaseQuery) Sort(sort string) IQuery {
 /**
  * Set page size limit (for pagination)
  */
-func (s *inMemoryDatabaseQuery) Limit(limit int) IQuery {
+func (s *inMemoryDatastoreQuery) Limit(limit int) IQuery {
 	s.limit = limit
 	return s
 }
@@ -111,7 +111,7 @@ func (s *inMemoryDatabaseQuery) Limit(limit int) IQuery {
 /**
  * Set requested page number (used for pagination)
  */
-func (s *inMemoryDatabaseQuery) Page(page int) IQuery {
+func (s *inMemoryDatastoreQuery) Page(page int) IQuery {
 	s.page = page
 	return s
 }
@@ -123,7 +123,7 @@ func (s *inMemoryDatabaseQuery) Page(page int) IQuery {
 /**
  * Execute a query to get list of entities by IDs (the criteria is ignored)
  */
-func (s *inMemoryDatabaseQuery) List(entityIDs []string) (out []Entity, err error) {
+func (s *inMemoryDatastoreQuery) List(entityIDs []string) (out []Entity, err error) {
 
 	result, err := s.db.List(s.factory, entityIDs)
 	if err != nil {
@@ -144,7 +144,7 @@ func (s *inMemoryDatabaseQuery) List(entityIDs []string) (out []Entity, err erro
  * Execute query based on the criteria, order and pagination
  * On each record, after the marshaling the result shall be transformed via the query callback chain
  */
-func (s *inMemoryDatabaseQuery) Find() (out []Entity, total int64, err error) {
+func (s *inMemoryDatastoreQuery) Find() (out []Entity, total int64, err error) {
 
 	ent := s.factory()
 	table := tableName(ent.TABLE(), ent.KEY())
@@ -175,7 +175,7 @@ func (s *inMemoryDatabaseQuery) Find() (out []Entity, total int64, err error) {
  * Execute query based on the where criteria to get a single (the first) result
  * After the marshaling the result shall be transformed via the query callback chain
  */
-func (s *inMemoryDatabaseQuery) FindSingle() (entity Entity, err error) {
+func (s *inMemoryDatastoreQuery) FindSingle() (entity Entity, err error) {
 	if list, _, fe := s.Find(); fe != nil {
 		return nil, fe
 	} else {
@@ -190,7 +190,7 @@ func (s *inMemoryDatabaseQuery) FindSingle() (entity Entity, err error) {
 /**
  * Execute query based on the criteria, order and pagination and return the results as a map of id->Entity
  */
-func (s *inMemoryDatabaseQuery) GetMap() (out map[string]Entity, err error) {
+func (s *inMemoryDatastoreQuery) GetMap() (out map[string]Entity, err error) {
 
 	out = make(map[string]Entity)
 	if list, _, fe := s.Find(); fe != nil {
@@ -206,7 +206,7 @@ func (s *inMemoryDatabaseQuery) GetMap() (out map[string]Entity, err error) {
 /**
  * Execute query based on the where criteria, order and pagination and return the results as a list of Ids
  */
-func (s *inMemoryDatabaseQuery) GetIds() (out []string, err error) {
+func (s *inMemoryDatastoreQuery) GetIds() (out []string, err error) {
 
 	out = make([]string, 0)
 
@@ -223,14 +223,14 @@ func (s *inMemoryDatabaseQuery) GetIds() (out []string, err error) {
 /**
  * Find only subset of object's fields
  */
-func (s *inMemoryDatabaseQuery) FindFields(fields []string) (out []map[string]any, total int64, err error) {
+func (s *inMemoryDatastoreQuery) FindFields(fields []string) (out []map[string]any, total int64, err error) {
 	return nil, 0, fmt.Errorf(NOT_SUPPORTED)
 }
 
 /**
  * Execute delete command based on the where criteria
  */
-func (s *inMemoryDatabaseQuery) Delete() (total int64, err error) {
+func (s *inMemoryDatastoreQuery) Delete() (total int64, err error) {
 	deleteIds := make([]string, 0)
 
 	if list, _, fe := s.Find(); fe != nil {
@@ -251,7 +251,7 @@ func (s *inMemoryDatabaseQuery) Delete() (total int64, err error) {
 /**
  * Update single field of all the documents meeting the criteria in a single transaction
  */
-func (s *inMemoryDatabaseQuery) SetField(field string, value any) (total int64, err error) {
+func (s *inMemoryDatastoreQuery) SetField(field string, value any) (total int64, err error) {
 	fields := make(map[string]any)
 	fields[field] = value
 	return s.SetFields(fields)
@@ -260,7 +260,7 @@ func (s *inMemoryDatabaseQuery) SetField(field string, value any) (total int64, 
 /**
  * Update multiple fields of all the documents meeting the criteria in a single transaction
  */
-func (s *inMemoryDatabaseQuery) SetFields(fields map[string]any) (total int64, err error) {
+func (s *inMemoryDatastoreQuery) SetFields(fields map[string]any) (total int64, err error) {
 
 	changeList := make([]Entity, 0)
 
@@ -298,7 +298,7 @@ func (s *inMemoryDatabaseQuery) SetFields(fields map[string]any) (total int64, e
 /**
  * Filter entity based on conditions
  */
-func (s *inMemoryDatabaseQuery) filter(in Entity) (out Entity) {
+func (s *inMemoryDatastoreQuery) filter(in Entity) (out Entity) {
 
 	// convert entity to Json
 	raw, fe := utils.JsonUtils().ToJson(in)
@@ -336,7 +336,7 @@ func (s *inMemoryDatabaseQuery) filter(in Entity) (out Entity) {
 /**
  * Transform the entity through the chain of callbacks
  */
-func (s *inMemoryDatabaseQuery) processCallbacks(in Entity) (out Entity) {
+func (s *inMemoryDatastoreQuery) processCallbacks(in Entity) (out Entity) {
 	if len(s.callbacks) == 0 {
 		out = in
 		return
@@ -360,7 +360,7 @@ func (s *inMemoryDatabaseQuery) processCallbacks(in Entity) (out Entity) {
 /**
  * Get the string representation of the query
  */
-func (s *inMemoryDatabaseQuery) ToString() string {
+func (s *inMemoryDatastoreQuery) ToString() string {
 	// Create Json representing the internal builder
 	if bytes, err := json.Marshal(s); err != nil {
 		return err.Error()
