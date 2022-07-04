@@ -7,7 +7,7 @@ package utils
 // All performs recover for all panics.
 //
 // Sample usage:
-//		defer recover.All(func(err interface{}) {
+//		defer RecoverAll(func(err interface{}) {
 //			fmt.Printf("got error: %s", err)
 //		})
 //

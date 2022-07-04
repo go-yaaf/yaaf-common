@@ -1,4 +1,4 @@
-// Copyright 2020. Motty Cohen.
+// Copyright 2022. Motty Cohen.
 //
 // We often need our programs to perform operations on
 // collections of data, like selecting all items that
@@ -66,7 +66,7 @@ func AnyN(vs []int, f func(int) bool) bool {
 	return false
 }
 
-// All returns `true` if all of the strings in the slice satisfy the predicate `f`.
+// All returns `true` if all the strings in the slice satisfy the predicate `f`.
 func All(vs []string, f func(string) bool) bool {
 	for _, v := range vs {
 		if !f(v) {
@@ -76,7 +76,7 @@ func All(vs []string, f func(string) bool) bool {
 	return true
 }
 
-// AllN returns `true` if all of the integers in the slice satisfy the predicate `f`.
+// AllN returns `true` if all the integers in the slice satisfy the predicate `f`.
 func AllN(vs []int, f func(int) bool) bool {
 	for _, v := range vs {
 		if !f(v) {
