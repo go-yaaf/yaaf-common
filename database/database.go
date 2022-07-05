@@ -62,14 +62,14 @@ type IDatabase interface {
 	// DDL Actions -----------------------------------------------------------------------------------------------------
 
 	// Execute DDL - create table and indexes
-	ExecuteDDL(ddl map[string][]string) error
+	ExecuteDDL(ddl map[string][]string) (err error)
 
 	// Execute SQL - execute SQL command
 	ExecuteSQL(sql string, args ...any) (affected int64, err error)
 
 	// Drop table and indexes
-	DropTable(table string) error
+	DropTable(table string) (err error)
 
 	// Fast delete table content (truncate)
-	PurgeTable(table string) error
+	PurgeTable(table string) (err error)
 }
