@@ -28,28 +28,28 @@ func init2() {
 /**
  * Debug
  */
-func Debug2(format string, params ...interface{}) {
+func Debug2(format string, params ...any) {
 	DebugLogger.Printf(format, params)
 }
 
 /**
  * Info
  */
-func Info2(format string, params ...interface{}) {
+func Info2(format string, params ...any) {
 	InfoLogger.Printf(format, params)
 }
 
 /**
  * Warn
  */
-func Warn2(format string, params ...interface{}) {
+func Warn2(format string, params ...any) {
 	WarningLogger.Printf(format, params)
 }
 
 /**
  * Error
  */
-func Error2(format string, params ...interface{}) {
+func Error2(format string, params ...any) {
 	ErrorLogger.Printf(format, params)
 }
 

@@ -33,31 +33,28 @@ type IQuery interface {
 	Limit(page int) IQuery
 
 	// Execute a query to get list of entities by IDs (the criteria is ignored)
-	List(entityIDs []string) (out []Entity, err error)
+	List(entityIDs []string, keys ...string) (out []Entity, err error)
 
 	// Execute the query based on the criteria, order and pagination
-	Find() (out []Entity, total int64, err error)
+	Find(keys ...string) (out []Entity, total int64, err error)
 
 	// Execute query based on the where criteria to get a single (the first) result
-	FindSingle() (entity Entity, err error)
+	FindSingle(keys ...string) (entity Entity, err error)
 
 	// Execute query based on the criteria, order and pagination and return the results as a map of id->Entity
-	GetMap() (out map[string]Entity, err error)
+	GetMap(keys ...string) (out map[string]Entity, err error)
 
 	// Execute query based on the where criteria, order and pagination and return the results as a list of Ids
-	GetIds() (out []string, err error)
-
-	// Find only subset of object's fields
-	FindFields(fields []string) (out []map[string]any, total int64, err error)
+	GetIds(keys ...string) (out []string, err error)
 
 	// Delete the entities satisfying the criteria
-	Delete() (total int64, err error)
+	Delete(keys ...string) (total int64, err error)
 
 	// Update single field of all the documents meeting the criteria in a single transaction
-	SetField(field string, value any) (total int64, err error)
+	SetField(field string, value any, keys ...string) (total int64, err error)
 
 	// Update multiple fields of all the documents meeting the criteria in a single transaction
-	SetFields(fields map[string]any) (total int64, err error)
+	SetFields(fields map[string]any, keys ...string) (total int64, err error)
 
 	// Get the string representation of the query
 	ToString() string

@@ -29,7 +29,7 @@ func TestInMemoryDatabase_Get(t *testing.T) {
 	db, fe := getInitializedDb()
 	assert.Nil(t, fe, "error initializing DB")
 
-	hero, fe := db.Get(NewHero, "2")
+	hero, fe := db.Get(NewHero, "2", "")
 
 	assert.Nil(t, fe, "error")
 	assert.NotNilf(t, hero, "hero is nil")
@@ -41,7 +41,7 @@ func TestInMemoryDatabase_List(t *testing.T) {
 	db, fe := getInitializedDb()
 	assert.Nil(t, fe, "error initializing DB")
 
-	heroes, fe := db.List(NewHero, []string{"1", "2", "3", "4"})
+	heroes, fe := db.List(NewHero, []string{"1", "2", "3", "4"}, "")
 
 	assert.Nil(t, fe, "error")
 	assert.NotNilf(t, heroes, "heroes is nil")

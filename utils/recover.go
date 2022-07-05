@@ -7,7 +7,7 @@ package utils
 // All performs recover for all panics.
 //
 // Sample usage:
-//		defer RecoverAll(func(err interface{}) {
+//		defer RecoverAll(func(err any) {
 //			fmt.Printf("got error: %s", err)
 //		})
 //
@@ -20,7 +20,7 @@ func RecoverAll(cb func(v any)) {
 // in case when recovered value equals to e otherwise panic won't be recovered and will be propagated.
 //
 // Sample usage:
-//		defer recover.One(ErrorUsernameBlank, func(err interface{}) {
+//		defer recover.One(ErrorUsernameBlank, func(err any) {
 // 			fmt.Printf("got error: %s", err)
 //		})
 //
@@ -40,7 +40,7 @@ func RecoverOne(e error, cb func(v any)) {
 // in case when recovered value exists in slice errors.
 //
 // Sample usage:
-//		defer recover.Any([]error{ErrorUsernameBlank, ErrorUsernameAlreadyTaken}, func(err interface{}) {
+//		defer recover.Any([]error{ErrorUsernameBlank, ErrorUsernameAlreadyTaken}, func(err any) {
 //  		fmt.Printf("got error: %s", err)
 //		})
 //

@@ -123,9 +123,9 @@ func (s *inMemoryDatabaseQuery) Page(page int) IQuery {
 /**
  * Execute a query to get list of entities by IDs (the criteria is ignored)
  */
-func (s *inMemoryDatabaseQuery) List(entityIDs []string) (out []Entity, err error) {
+func (s *inMemoryDatabaseQuery) List(entityIDs []string, keys ...string) (out []Entity, err error) {
 
-	result, err := s.db.List(s.factory, entityIDs)
+	result, err := s.db.List(s.factory, entityIDs, keys...)
 	if err != nil {
 		return nil, err
 	}
@@ -144,10 +144,10 @@ func (s *inMemoryDatabaseQuery) List(entityIDs []string) (out []Entity, err erro
  * Execute query based on the criteria, order and pagination
  * On each record, after the marshaling the result shall be transformed via the query callback chain
  */
-func (s *inMemoryDatabaseQuery) Find() (out []Entity, total int64, err error) {
+func (s *inMemoryDatabaseQuery) Find(keys ...string) (out []Entity, total int64, err error) {
 
 	ent := s.factory()
-	table := tableName(ent.TABLE(), ent.KEY())
+	table := tableName(ent.TABLE(), keys...)
 
 	tbl, ok := s.db.db[table]
 	if !ok {
@@ -175,8 +175,8 @@ func (s *inMemoryDatabaseQuery) Find() (out []Entity, total int64, err error) {
  * Execute query based on the where criteria to get a single (the first) result
  * After the marshaling the result shall be transformed via the query callback chain
  */
-func (s *inMemoryDatabaseQuery) FindSingle() (entity Entity, err error) {
-	if list, _, fe := s.Find(); fe != nil {
+func (s *inMemoryDatabaseQuery) FindSingle(keys ...string) (entity Entity, err error) {
+	if list, _, fe := s.Find(keys...); fe != nil {
 		return nil, fe
 	} else {
 		if len(list) == 0 {
@@ -190,10 +190,10 @@ func (s *inMemoryDatabaseQuery) FindSingle() (entity Entity, err error) {
 /**
  * Execute query based on the criteria, order and pagination and return the results as a map of id->Entity
  */
-func (s *inMemoryDatabaseQuery) GetMap() (out map[string]Entity, err error) {
+func (s *inMemoryDatabaseQuery) GetMap(keys ...string) (out map[string]Entity, err error) {
 
 	out = make(map[string]Entity)
-	if list, _, fe := s.Find(); fe != nil {
+	if list, _, fe := s.Find(keys...); fe != nil {
 		return nil, fe
 	} else {
 		for _, ent := range list {
@@ -206,11 +206,11 @@ func (s *inMemoryDatabaseQuery) GetMap() (out map[string]Entity, err error) {
 /**
  * Execute query based on the where criteria, order and pagination and return the results as a list of Ids
  */
-func (s *inMemoryDatabaseQuery) GetIds() (out []string, err error) {
+func (s *inMemoryDatabaseQuery) GetIds(keys ...string) (out []string, err error) {
 
 	out = make([]string, 0)
 
-	if list, _, fe := s.Find(); fe != nil {
+	if list, _, fe := s.Find(keys...); fe != nil {
 		return nil, fe
 	} else {
 		for _, ent := range list {
@@ -221,19 +221,12 @@ func (s *inMemoryDatabaseQuery) GetIds() (out []string, err error) {
 }
 
 /**
- * Find only subset of object's fields
- */
-func (s *inMemoryDatabaseQuery) FindFields(fields []string) (out []map[string]any, total int64, err error) {
-	return nil, 0, fmt.Errorf(NOT_SUPPORTED)
-}
-
-/**
  * Execute delete command based on the where criteria
  */
-func (s *inMemoryDatabaseQuery) Delete() (total int64, err error) {
+func (s *inMemoryDatabaseQuery) Delete(keys ...string) (total int64, err error) {
 	deleteIds := make([]string, 0)
 
-	if list, _, fe := s.Find(); fe != nil {
+	if list, _, fe := s.Find(keys...); fe != nil {
 		return 0, fe
 	} else {
 		for _, ent := range list {
@@ -241,7 +234,7 @@ func (s *inMemoryDatabaseQuery) Delete() (total int64, err error) {
 		}
 	}
 
-	if affected, fe := s.db.BulkDelete(s.factory, deleteIds); fe != nil {
+	if affected, fe := s.db.BulkDelete(s.factory, deleteIds, keys...); fe != nil {
 		return 0, fe
 	} else {
 		return affected, nil
@@ -251,20 +244,20 @@ func (s *inMemoryDatabaseQuery) Delete() (total int64, err error) {
 /**
  * Update single field of all the documents meeting the criteria in a single transaction
  */
-func (s *inMemoryDatabaseQuery) SetField(field string, value any) (total int64, err error) {
+func (s *inMemoryDatabaseQuery) SetField(field string, value any, keys ...string) (total int64, err error) {
 	fields := make(map[string]any)
 	fields[field] = value
-	return s.SetFields(fields)
+	return s.SetFields(fields, keys...)
 }
 
 /**
  * Update multiple fields of all the documents meeting the criteria in a single transaction
  */
-func (s *inMemoryDatabaseQuery) SetFields(fields map[string]any) (total int64, err error) {
+func (s *inMemoryDatabaseQuery) SetFields(fields map[string]any, keys ...string) (total int64, err error) {
 
 	changeList := make([]Entity, 0)
 
-	list, _, fe := s.Find()
+	list, _, fe := s.Find(keys...)
 	if fe != nil {
 		return 0, fe
 	}

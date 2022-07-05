@@ -12,10 +12,10 @@ import (
 // Queue functions for manager data items in a stack
 type Queue interface {
 	// Push item into a queue
-	Push(v interface{})
+	Push(v any)
 
 	// Pop last item
-	Pop() (interface{}, bool)
+	Pop() (any, bool)
 
 	// Get length of the queue
 	Length() int
@@ -23,13 +23,13 @@ type Queue interface {
 
 type defaultQueue struct {
 	sync.Mutex
-	queue []interface{}
+	queue []any
 }
 
 // New get queue functions manager
 func NewQueue() Queue {
 	return &defaultQueue{
-		queue: make([]interface{}, 0),
+		queue: make([]any, 0),
 	}
 }
 

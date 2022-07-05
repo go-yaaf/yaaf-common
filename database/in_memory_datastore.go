@@ -14,6 +14,10 @@ import (
 	"github.com/mottyc/yaaf-common/utils"
 )
 
+const (
+	INDEX_NOT_EXISTS = "index does not exist"
+)
+
 // region Database store definitions -----------------------------------------------------------------------------------
 
 // Represent a db with tables
@@ -22,18 +26,29 @@ type InMemoryDatastore struct {
 }
 
 // Resolve index name from entity name
-func indexName(ef EntityFactory, key string) (name string) {
+func indexName(table string, keys ...string) (name string) {
 
-	index := ef().TABLE()
+	index := table
 
-	// Replace templates: {{accountId}}
-	index = strings.Replace(index, "{{accountId}}", key, -1)
+	if len(keys) == 0 {
+		return index
+	}
+
+	// Replace accountId placeholder with the first key
+	index = strings.Replace(index, "{{accountId}}", "{{0}}", -1)
+
+	for idx, key := range keys {
+		placeHolder := fmt.Sprintf("{{%d}}", idx)
+		index = strings.Replace(index, placeHolder, key, -1)
+	}
 
 	// Replace templates: {{year}}
 	index = strings.Replace(index, "{{year}}", time.Now().Format("2006"), -1)
 
 	// Replace templates: {{month}}
 	index = strings.Replace(index, "{{month}}", time.Now().Format("01"), -1)
+
+	// TODO: Replace templates: {{week}}
 
 	return index
 }
@@ -72,35 +87,34 @@ func (dbs *InMemoryDatastore) Close() {
 /**
  * Get single entity by ID
  */
-func (dbs *InMemoryDatastore) Get(factory EntityFactory, entityID string) (result Entity, err error) {
+func (dbs *InMemoryDatastore) Get(factory EntityFactory, entityID string, keys ...string) (result Entity, err error) {
 
 	entity := factory()
-	table := tableName(entity.TABLE(), entity.KEY())
-	if tbl, ok := dbs.db[table]; ok {
+	index := indexName(entity.TABLE(), keys...)
+	if tbl, ok := dbs.db[index]; ok {
 		return tbl.Get(entityID)
 	} else {
-		return nil, fmt.Errorf(TABLE_NOT_EXISTS)
+		return nil, fmt.Errorf(INDEX_NOT_EXISTS)
 	}
 }
 
 /**
  * Get list of entities by IDs
  */
-func (dbs *InMemoryDatastore) List(factory EntityFactory, entityIDs []string) (list []Entity, err error) {
+func (dbs *InMemoryDatastore) List(factory EntityFactory, entityIDs []string, keys ...string) (list []Entity, err error) {
 
-	entity := factory()
-	table := tableName(entity.TABLE(), entity.KEY())
+	index := indexName(factory().TABLE(), keys...)
 
 	list = make([]Entity, 0)
 
-	if tbl, ok := dbs.db[table]; ok {
+	if tbl, ok := dbs.db[index]; ok {
 		for _, id := range entityIDs {
 			if ent, err := tbl.Get(id); err == nil {
 				list = append(list, ent)
 			}
 		}
 	} else {
-		return list, fmt.Errorf(TABLE_NOT_EXISTS)
+		return list, fmt.Errorf(INDEX_NOT_EXISTS)
 	}
 	return
 }
@@ -108,15 +122,14 @@ func (dbs *InMemoryDatastore) List(factory EntityFactory, entityIDs []string) (l
 /**
  * Check if entity exists by ID
  */
-func (dbs *InMemoryDatastore) Exists(factory EntityFactory, entityID string) (result bool, err error) {
+func (dbs *InMemoryDatastore) Exists(factory EntityFactory, entityID string, keys ...string) (result bool, err error) {
 
-	entity := factory()
-	table := tableName(entity.TABLE(), entity.KEY())
+	index := indexName(factory().TABLE(), keys...)
 
-	if tbl, ok := dbs.db[table]; ok {
+	if tbl, ok := dbs.db[index]; ok {
 		return tbl.Exists(entityID)
 	} else {
-		return false, fmt.Errorf(TABLE_NOT_EXISTS)
+		return false, fmt.Errorf(INDEX_NOT_EXISTS)
 	}
 }
 
@@ -125,52 +138,50 @@ func (dbs *InMemoryDatastore) Exists(factory EntityFactory, entityID string) (re
  */
 func (dbs *InMemoryDatastore) Insert(entity Entity) (added Entity, err error) {
 
-	table := tableName(entity.TABLE(), entity.KEY())
+	index := indexName(entity.TABLE(), entity.KEY())
 
-	if _, ok := dbs.db[table]; !ok {
-		dbs.db[table] = NewInMemTable()
+	if _, ok := dbs.db[index]; !ok {
+		dbs.db[index] = NewInMemTable()
 	}
 
-	return dbs.db[table].Insert(entity)
+	return dbs.db[index].Insert(entity)
 }
 
 /**
  * Update existing entity in the data store
  */
 func (dbs *InMemoryDatastore) Update(entity Entity) (updated Entity, err error) {
-	table := tableName(entity.TABLE(), entity.KEY())
+	index := indexName(entity.TABLE(), entity.KEY())
 
-	if _, ok := dbs.db[table]; !ok {
-		dbs.db[table] = NewInMemTable()
+	if _, ok := dbs.db[index]; !ok {
+		dbs.db[index] = NewInMemTable()
 	}
 
-	return dbs.db[table].Update(entity)
+	return dbs.db[index].Update(entity)
 }
 
 /**
  * Update existing entity in the data store or add it if it does not exist
  */
 func (dbs *InMemoryDatastore) Upsert(entity Entity) (updated Entity, err error) {
-	table := tableName(entity.TABLE(), entity.KEY())
-	if tbl, ok := dbs.db[table]; ok {
+	index := indexName(entity.TABLE(), entity.KEY())
+	if tbl, ok := dbs.db[index]; ok {
 		return tbl.Upsert(entity)
 	} else {
-		return nil, fmt.Errorf(TABLE_NOT_EXISTS)
+		return nil, fmt.Errorf(INDEX_NOT_EXISTS)
 	}
 }
 
 /**
  * Delete entity by id
  */
-func (dbs *InMemoryDatastore) Delete(factory EntityFactory, entityID string) (err error) {
+func (dbs *InMemoryDatastore) Delete(factory EntityFactory, entityID string, keys ...string) (err error) {
 
-	entity := factory()
-
-	table := tableName(entity.TABLE(), entity.KEY())
-	if tbl, ok := dbs.db[table]; ok {
+	index := indexName(factory().TABLE(), keys...)
+	if tbl, ok := dbs.db[index]; ok {
 		return tbl.Delete(entityID)
 	} else {
-		return fmt.Errorf(TABLE_NOT_EXISTS)
+		return fmt.Errorf(INDEX_NOT_EXISTS)
 	}
 }
 
@@ -222,12 +233,12 @@ func (dbs *InMemoryDatastore) BulkUpsert(entities []Entity) (affected int64, err
 /**
  * Delete multiple entities by id list
  */
-func (dbs *InMemoryDatastore) BulkDelete(factory EntityFactory, entityIDs []string) (affected int64, err error) {
+func (dbs *InMemoryDatastore) BulkDelete(factory EntityFactory, entityIDs []string, keys ...string) (affected int64, err error) {
 	if len(entityIDs) == 0 {
 		return 0, nil
 	}
 	for _, entityID := range entityIDs {
-		if err := dbs.Delete(factory, entityID); err == nil {
+		if err := dbs.Delete(factory, entityID, keys...); err == nil {
 			affected += 1
 		}
 	}
@@ -237,18 +248,18 @@ func (dbs *InMemoryDatastore) BulkDelete(factory EntityFactory, entityIDs []stri
 /**
  * Update single field of the document in a single transaction (eliminates the need to fetch - change - update)
  */
-func (dbs *InMemoryDatastore) SetField(factory EntityFactory, entityID string, field string, value any) (err error) {
+func (dbs *InMemoryDatastore) SetField(factory EntityFactory, entityID string, field string, value any, keys ...string) (err error) {
 	fields := make(map[string]any)
 	fields[field] = value
-	return dbs.SetFields(factory, entityID, fields)
+	return dbs.SetFields(factory, entityID, fields, keys...)
 }
 
 /**
  * Update some numeric fields of the document in a single transaction (eliminates the need to fetch - change - update)
  */
-func (dbs *InMemoryDatastore) SetFields(factory EntityFactory, entityID string, fields map[string]any) (err error) {
+func (dbs *InMemoryDatastore) SetFields(factory EntityFactory, entityID string, fields map[string]any, keys ...string) (err error) {
 
-	entity, fe := dbs.Get(factory, entityID)
+	entity, fe := dbs.Get(factory, entityID, keys...)
 	if fe != nil {
 		return fe
 	}
@@ -320,9 +331,9 @@ func (dbs *InMemoryDatastore) CreateIndex(indexName string) (name string, err er
 /**
  * Create index of entity and add entity field mapping
  */
-func (dbs *InMemoryDatastore) CreateEntityIndex(ef EntityFactory, key string) (name string, err error) {
+func (dbs *InMemoryDatastore) CreateEntityIndex(factory EntityFactory, key string) (name string, err error) {
 
-	idxName := indexName(ef, key)
+	idxName := indexName(factory().TABLE(), key)
 
 	// Create index
 	if _, ok := dbs.db[idxName]; !ok {

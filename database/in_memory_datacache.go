@@ -146,7 +146,7 @@ func (dc *InMemoryDataCache) Scan(from uint64, match string, count int64) (keys 
 	rex, _ := regexp.Compile(match)
 
 	keys = make([]string, 0)
-	cb := func(k, v interface{}) bool {
+	cb := func(k, v any) bool {
 		if rex != nil {
 			if rex.MatchString(fmt.Sprintf("%v", k)) {
 				keys = append(keys, fmt.Sprintf("%v", k))

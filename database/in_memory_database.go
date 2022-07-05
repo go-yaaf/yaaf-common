@@ -7,6 +7,7 @@ package database
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	. "github.com/mottyc/yaaf-common/entity"
 	"github.com/mottyc/yaaf-common/logger"
@@ -26,13 +27,31 @@ type InMemoryDatabase struct {
 	db map[string]ITable
 }
 
-// Resolve table name from entity class name
-func tableName(table, tenant string) (tblName string) {
+// Resolve table name from entity class name and shard keys
+func tableName(table string, keys ...string) (tblName string) {
 
-	if strings.Contains(table, "-{{") {
-		prefix := table[:strings.Index(table, "-{{")]
-		tblName = fmt.Sprintf("%s_%s", prefix, tenant)
+	tblName = table
+
+	if len(keys) == 0 {
+		return tblName
 	}
+
+	// replace accountId placeholder with the first key
+	tblName = strings.Replace(tblName, "{{accountId}}", "{{0}}", -1)
+
+	for idx, key := range keys {
+		placeHolder := fmt.Sprintf("{{%d}}", idx)
+		tblName = strings.Replace(tblName, placeHolder, key, -1)
+	}
+
+	// Replace templates: {{year}}
+	tblName = strings.Replace(tblName, "{{year}}", time.Now().Format("2006"), -1)
+
+	// Replace templates: {{month}}
+	tblName = strings.Replace(tblName, "{{month}}", time.Now().Format("01"), -1)
+
+	// TODO: Replace templates: {{week}}
+
 	return
 }
 
@@ -70,10 +89,10 @@ func (dbs *InMemoryDatabase) Close() {
 /**
  * Get single entity by ID
  */
-func (dbs *InMemoryDatabase) Get(factory EntityFactory, entityID string) (result Entity, err error) {
+func (dbs *InMemoryDatabase) Get(factory EntityFactory, entityID string, keys ...string) (result Entity, err error) {
 
 	entity := factory()
-	table := tableName(entity.TABLE(), entity.KEY())
+	table := tableName(entity.TABLE(), keys...)
 	if tbl, ok := dbs.db[table]; ok {
 		return tbl.Get(entityID)
 	} else {
@@ -84,10 +103,10 @@ func (dbs *InMemoryDatabase) Get(factory EntityFactory, entityID string) (result
 /**
  * Get list of entities by IDs
  */
-func (dbs *InMemoryDatabase) List(factory EntityFactory, entityIDs []string) (list []Entity, err error) {
+func (dbs *InMemoryDatabase) List(factory EntityFactory, entityIDs []string, keys ...string) (list []Entity, err error) {
 
 	entity := factory()
-	table := tableName(entity.TABLE(), entity.KEY())
+	table := tableName(entity.TABLE(), keys...)
 
 	list = make([]Entity, 0)
 
@@ -106,10 +125,10 @@ func (dbs *InMemoryDatabase) List(factory EntityFactory, entityIDs []string) (li
 /**
  * Check if entity exists by ID
  */
-func (dbs *InMemoryDatabase) Exists(factory EntityFactory, entityID string) (result bool, err error) {
+func (dbs *InMemoryDatabase) Exists(factory EntityFactory, entityID string, keys ...string) (result bool, err error) {
 
 	entity := factory()
-	table := tableName(entity.TABLE(), entity.KEY())
+	table := tableName(entity.TABLE(), keys...)
 
 	if tbl, ok := dbs.db[table]; ok {
 		return tbl.Exists(entityID)
@@ -160,11 +179,11 @@ func (dbs *InMemoryDatabase) Upsert(entity Entity) (updated Entity, err error) {
 /**
  * Delete entity by id
  */
-func (dbs *InMemoryDatabase) Delete(factory EntityFactory, entityID string) (err error) {
+func (dbs *InMemoryDatabase) Delete(factory EntityFactory, entityID string, keys ...string) (err error) {
 
 	entity := factory()
 
-	table := tableName(entity.TABLE(), entity.KEY())
+	table := tableName(entity.TABLE(), keys...)
 	if tbl, ok := dbs.db[table]; ok {
 		return tbl.Delete(entityID)
 	} else {
@@ -220,12 +239,12 @@ func (dbs *InMemoryDatabase) BulkUpsert(entities []Entity) (affected int64, err 
 /**
  * Delete multiple entities by id list
  */
-func (dbs *InMemoryDatabase) BulkDelete(factory EntityFactory, entityIDs []string) (affected int64, err error) {
+func (dbs *InMemoryDatabase) BulkDelete(factory EntityFactory, entityIDs []string, keys ...string) (affected int64, err error) {
 	if len(entityIDs) == 0 {
 		return 0, nil
 	}
 	for _, entityID := range entityIDs {
-		if err := dbs.Delete(factory, entityID); err == nil {
+		if err := dbs.Delete(factory, entityID, keys...); err == nil {
 			affected += 1
 		}
 	}
@@ -235,18 +254,18 @@ func (dbs *InMemoryDatabase) BulkDelete(factory EntityFactory, entityIDs []strin
 /**
  * Update single field of the document in a single transaction (eliminates the need to fetch - change - update)
  */
-func (dbs *InMemoryDatabase) SetField(factory EntityFactory, entityID string, field string, value any) (err error) {
+func (dbs *InMemoryDatabase) SetField(factory EntityFactory, entityID string, field string, value any, keys ...string) (err error) {
 	fields := make(map[string]any)
 	fields[field] = value
-	return dbs.SetFields(factory, entityID, fields)
+	return dbs.SetFields(factory, entityID, fields, keys...)
 }
 
 /**
  * Update some numeric fields of the document in a single transaction (eliminates the need to fetch - change - update)
  */
-func (dbs *InMemoryDatabase) SetFields(factory EntityFactory, entityID string, fields map[string]any) (err error) {
+func (dbs *InMemoryDatabase) SetFields(factory EntityFactory, entityID string, fields map[string]any, keys ...string) (err error) {
 
-	entity, fe := dbs.Get(factory, entityID)
+	entity, fe := dbs.Get(factory, entityID, keys...)
 	if fe != nil {
 		return fe
 	}
@@ -311,7 +330,7 @@ func (dbs *InMemoryDatabase) ExecuteDDL(ddl map[string][]string) (err error) {
 /**
  * Execute SQL command
  */
-func (dbs *InMemoryDatabase) ExecuteSQL(sql string, args ...interface{}) (affected int64, err error) {
+func (dbs *InMemoryDatabase) ExecuteSQL(sql string, args ...any) (affected int64, err error) {
 	return 0, fmt.Errorf(NOT_SUPPORTED)
 }
 
