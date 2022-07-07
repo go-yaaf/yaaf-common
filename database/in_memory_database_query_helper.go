@@ -12,10 +12,10 @@ import (
 	"github.com/mottyc/yaaf-common/utils/collections"
 )
 
-var operators map[queryOperator]FilterFunction
+var operators map[QueryOperator]FilterFunction
 
 func init() {
-	operators = make(map[queryOperator]FilterFunction)
+	operators = make(map[QueryOperator]FilterFunction)
 
 	operators[Eq] = eq
 	operators[Neq] = neq

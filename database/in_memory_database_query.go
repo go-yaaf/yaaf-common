@@ -172,6 +172,36 @@ func (s *inMemoryDatabaseQuery) Find(keys ...string) (out []Entity, total int64,
 }
 
 /**
+ * Execute query based on the criteria, order and pagination
+ * Return only the count of matching rows
+ */
+func (s *inMemoryDatabaseQuery) Count(keys ...string) (total int64, err error) {
+	ent := s.factory()
+	table := tableName(ent.TABLE(), keys...)
+
+	tbl, ok := s.db.db[table]
+	if !ok {
+		return 0, fmt.Errorf(TABLE_NOT_EXISTS)
+	}
+
+	// Apply filters
+	for _, entity := range tbl.Table() {
+		ent := s.filter(entity)
+		if ent == nil {
+			continue
+		}
+
+		// apply callbacks
+		transformed := s.processCallbacks(entity)
+		if transformed != nil {
+			total += 1
+		}
+	}
+
+	return total, nil
+}
+
+/**
  * Execute query based on the where criteria to get a single (the first) result
  * After the marshaling the result shall be transformed via the query callback chain
  */

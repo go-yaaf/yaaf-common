@@ -51,7 +51,7 @@ type QueryFilter interface {
 	GetField() string
 
 	// Get the criteria operator
-	GetOperator() queryOperator
+	GetOperator() QueryOperator
 
 	// Get the criteria values
 	GetValues() []any
@@ -67,7 +67,7 @@ type QueryFilter interface {
 // Query filter
 type queryFilter struct {
 	field    string
-	operator queryOperator
+	operator QueryOperator
 	values   []any
 	active   bool
 }
@@ -168,7 +168,7 @@ func (q *queryFilter) GetField() string {
 }
 
 // Get the criteria operator
-func (q *queryFilter) GetOperator() queryOperator {
+func (q *queryFilter) GetOperator() QueryOperator {
 	return q.operator
 }
 

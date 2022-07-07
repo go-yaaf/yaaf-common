@@ -38,6 +38,9 @@ type IQuery interface {
 	// Execute the query based on the criteria, order and pagination
 	Find(keys ...string) (out []Entity, total int64, err error)
 
+	// Execute the query based on the criteria, order and pagination and return only the count of matching rows
+	Count(keys ...string) (total int64, err error)
+
 	// Execute query based on the where criteria to get a single (the first) result
 	FindSingle(keys ...string) (entity Entity, err error)
 

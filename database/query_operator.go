@@ -4,10 +4,10 @@
 //
 package database
 
-type queryOperator string
+type QueryOperator string
 
 const (
-	Eq       queryOperator = "="
+	Eq       QueryOperator = "="
 	Neq                    = "!"
 	Like                   = "~"
 	Gt                     = ">"
