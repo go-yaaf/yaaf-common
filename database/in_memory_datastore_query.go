@@ -78,7 +78,6 @@ func (s *inMemoryDatastoreQuery) MatchAny(filters ...QueryFilter) IQuery {
 	}
 	s.anyFilters = append(s.allFilters, list)
 	return s
-
 }
 
 /**
@@ -169,6 +168,36 @@ func (s *inMemoryDatastoreQuery) Find(keys ...string) (out []Entity, total int64
 	}
 
 	return out, int64(len(out)), nil
+}
+
+/**
+ * Count executes a query based on the criteria, order and pagination
+ * Returns only the count of matching rows
+ */
+func (s *inMemoryDatastoreQuery) Count(keys ...string) (total int64, err error) {
+	ent := s.factory()
+	table := tableName(ent.TABLE(), keys...)
+
+	tbl, ok := s.db.db[table]
+	if !ok {
+		return 0, fmt.Errorf(TABLE_NOT_EXISTS)
+	}
+
+	// Apply filters
+	for _, entity := range tbl.Table() {
+		ent := s.filter(entity)
+		if ent == nil {
+			continue
+		}
+
+		// apply callbacks
+		transformed := s.processCallbacks(entity)
+		if transformed != nil {
+			total += 1
+		}
+	}
+
+	return total, nil
 }
 
 /**

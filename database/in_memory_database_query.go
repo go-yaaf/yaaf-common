@@ -32,7 +32,7 @@ type inMemoryDatabaseQuery struct {
 // region QueryBuilder Construction Methods ----------------------------------------------------------------------------
 
 /**
- * Add callback to apply on each result entity in the query
+ * Apply adds callback to apply on each result entity in the query
  */
 func (s *inMemoryDatabaseQuery) Apply(cb func(in Entity) Entity) IQuery {
 	if cb != nil {
@@ -42,7 +42,7 @@ func (s *inMemoryDatabaseQuery) Apply(cb func(in Entity) Entity) IQuery {
 }
 
 /**
- * Add single field filter
+ * Filter adds a single field filter
  */
 func (s *inMemoryDatabaseQuery) Filter(filter QueryFilter) IQuery {
 	if filter.IsActive() {
@@ -52,7 +52,7 @@ func (s *inMemoryDatabaseQuery) Filter(filter QueryFilter) IQuery {
 }
 
 /**
- * Add list of filters, all of them should be satisfied (AND)
+ * MatchAll adds a list of filters, all of them should be satisfied (AND operator equivalent)
  */
 func (s *inMemoryDatabaseQuery) MatchAll(filters ...QueryFilter) IQuery {
 
@@ -67,7 +67,7 @@ func (s *inMemoryDatabaseQuery) MatchAll(filters ...QueryFilter) IQuery {
 }
 
 /**
- * // Add list of filters, any of them should be satisfied (OR)
+ * MatchAny adds a list of filters, any of them should be satisfied (OR operator equivalent)
  */
 func (s *inMemoryDatabaseQuery) MatchAny(filters ...QueryFilter) IQuery {
 	list := make([]QueryFilter, 0)
@@ -82,7 +82,8 @@ func (s *inMemoryDatabaseQuery) MatchAny(filters ...QueryFilter) IQuery {
 }
 
 /**
- * Add sort order by field,  expects sort parameter in the following form: field_name (Ascending) or field_name- (Descending)
+ * Sort adds sort order by field
+ * The expects sort parameter should be in the following form: field_name (Ascending) or field_name- (Descending)
  */
 func (s *inMemoryDatabaseQuery) Sort(sort string) IQuery {
 	if sort == "" {
@@ -101,7 +102,7 @@ func (s *inMemoryDatabaseQuery) Sort(sort string) IQuery {
 }
 
 /**
- * Set page size limit (for pagination)
+ * Limit sets the page size limit (for pagination)
  */
 func (s *inMemoryDatabaseQuery) Limit(limit int) IQuery {
 	s.limit = limit
@@ -109,7 +110,7 @@ func (s *inMemoryDatabaseQuery) Limit(limit int) IQuery {
 }
 
 /**
- * Set requested page number (used for pagination)
+ * Page sets the requested page number (used for pagination)
  */
 func (s *inMemoryDatabaseQuery) Page(page int) IQuery {
 	s.page = page
@@ -121,7 +122,7 @@ func (s *inMemoryDatabaseQuery) Page(page int) IQuery {
 // region QueryBuilder Execution Methods -------------------------------------------------------------------------------
 
 /**
- * Execute a query to get list of entities by IDs (the criteria is ignored)
+ * List executes a query to get a list of entities by IDs (the criteria is ignored)
  */
 func (s *inMemoryDatabaseQuery) List(entityIDs []string, keys ...string) (out []Entity, err error) {
 
@@ -141,7 +142,7 @@ func (s *inMemoryDatabaseQuery) List(entityIDs []string, keys ...string) (out []
 }
 
 /**
- * Execute query based on the criteria, order and pagination
+ * Find executes a query based on the criteria, order and pagination
  * On each record, after the marshaling the result shall be transformed via the query callback chain
  */
 func (s *inMemoryDatabaseQuery) Find(keys ...string) (out []Entity, total int64, err error) {
@@ -172,8 +173,8 @@ func (s *inMemoryDatabaseQuery) Find(keys ...string) (out []Entity, total int64,
 }
 
 /**
- * Execute query based on the criteria, order and pagination
- * Return only the count of matching rows
+ * Count executes a query based on the criteria, order and pagination
+ * Returns only the count of matching rows
  */
 func (s *inMemoryDatabaseQuery) Count(keys ...string) (total int64, err error) {
 	ent := s.factory()
@@ -202,7 +203,7 @@ func (s *inMemoryDatabaseQuery) Count(keys ...string) (total int64, err error) {
 }
 
 /**
- * Execute query based on the where criteria to get a single (the first) result
+ * FindSingle execute a query based on the where criteria to get a single (the first) result
  * After the marshaling the result shall be transformed via the query callback chain
  */
 func (s *inMemoryDatabaseQuery) FindSingle(keys ...string) (entity Entity, err error) {
@@ -218,7 +219,7 @@ func (s *inMemoryDatabaseQuery) FindSingle(keys ...string) (entity Entity, err e
 }
 
 /**
- * Execute query based on the criteria, order and pagination and return the results as a map of id->Entity
+ * GetMap execute a query based on the criteria, order and pagination and return the results as a map of id->Entity
  */
 func (s *inMemoryDatabaseQuery) GetMap(keys ...string) (out map[string]Entity, err error) {
 
@@ -234,7 +235,7 @@ func (s *inMemoryDatabaseQuery) GetMap(keys ...string) (out map[string]Entity, e
 }
 
 /**
- * Execute query based on the where criteria, order and pagination and return the results as a list of Ids
+ * GetIds execute a query based on the where criteria, order and pagination and return the results as a list of Ids
  */
 func (s *inMemoryDatabaseQuery) GetIds(keys ...string) (out []string, err error) {
 
@@ -251,7 +252,7 @@ func (s *inMemoryDatabaseQuery) GetIds(keys ...string) (out []string, err error)
 }
 
 /**
- * Execute delete command based on the where criteria
+ * Delete execute a delete command based on the where criteria
  */
 func (s *inMemoryDatabaseQuery) Delete(keys ...string) (total int64, err error) {
 	deleteIds := make([]string, 0)
@@ -272,7 +273,7 @@ func (s *inMemoryDatabaseQuery) Delete(keys ...string) (total int64, err error) 
 }
 
 /**
- * Update single field of all the documents meeting the criteria in a single transaction
+ * SetField updates a single field of all the documents meeting the criteria in a single transaction
  */
 func (s *inMemoryDatabaseQuery) SetField(field string, value any, keys ...string) (total int64, err error) {
 	fields := make(map[string]any)
@@ -281,7 +282,7 @@ func (s *inMemoryDatabaseQuery) SetField(field string, value any, keys ...string
 }
 
 /**
- * Update multiple fields of all the documents meeting the criteria in a single transaction
+ * SetFields updates multiple fields of all the documents meeting the criteria in a single transaction
  */
 func (s *inMemoryDatabaseQuery) SetFields(fields map[string]any, keys ...string) (total int64, err error) {
 
@@ -357,7 +358,7 @@ func (s *inMemoryDatabaseQuery) filter(in Entity) (out Entity) {
 }
 
 /**
- * Transform the entity through the chain of callbacks
+ * processCallbacks transforms the entity through the chain of callbacks
  */
 func (s *inMemoryDatabaseQuery) processCallbacks(in Entity) (out Entity) {
 	if len(s.callbacks) == 0 {
@@ -381,7 +382,7 @@ func (s *inMemoryDatabaseQuery) processCallbacks(in Entity) (out Entity) {
 
 // region QueryBuilder ToString Methods --------------------------------------------------------------------------------
 /**
- * Get the string representation of the query
+ * ToString gets a string representation of the query
  */
 func (s *inMemoryDatabaseQuery) ToString() string {
 	// Create Json representing the internal builder
