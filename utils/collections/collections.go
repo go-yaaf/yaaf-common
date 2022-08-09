@@ -7,6 +7,11 @@
 //
 package collections
 
+import (
+	"fmt"
+	"strings"
+)
+
 // Index returns the first index of the target string `t`, or -1 if no match is found.
 func Index(vs []string, t string) int {
 	for i, v := range vs {
@@ -243,4 +248,19 @@ func Remove(vs []string, t string) []string {
 		}
 	}
 	return vs
+}
+
+// BitMaskInclude checks if the src bitmask including the flag
+func BitMaskInclude(src, flag int) bool {
+	return src&flag == flag
+}
+
+// JoinN convert all integers in the slice to strings and joins them together as a single string with separator
+func JoinN(slice []int, sep string) string {
+
+	list := make([]string, 0)
+	for _, v := range slice {
+		list = append(list, fmt.Sprintf("%d", v))
+	}
+	return strings.Join(list, sep)
 }
