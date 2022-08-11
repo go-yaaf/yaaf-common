@@ -2,6 +2,8 @@ module github.com/mottyc/yaaf-common
 
 go 1.18
 
+replace github.com/mottyc/yaaf-common => ./yaaf-common
+
 require (
 	github.com/google/uuid v1.3.0
 	github.com/stretchr/testify v1.7.4
