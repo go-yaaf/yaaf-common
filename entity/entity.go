@@ -6,10 +6,12 @@ package entity
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/jaevor/go-nanoid"
 )
 
 // region Json Document ------------------------------------------------------------------------------------------------
@@ -108,10 +110,15 @@ func EntityIndex(entity Entity, tenantId string) string {
 
 // region Entity Ids ---------------------------------------------------------------------------------------------------
 /**
- * Generate new id based on current timestamp millis
+ * Generate new id based on nanoId (faster and smaller than GUID)
  */
 func NewId() string {
-	return strconv.FormatUint(uint64(time.Now().UnixNano()/1000000), 36)
+	if generator, err := nanoid.Standard(21); err != nil {
+		return strconv.FormatUint(uint64(time.Now().UnixNano()/1000000), 36)
+	} else {
+		return generator()
+	}
+
 }
 
 /**
