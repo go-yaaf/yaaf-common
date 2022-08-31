@@ -18,8 +18,8 @@ func getInitializedDb() (dbs IDatabase, err error) {
 		return nil, err
 	}
 
-	dbs.BulkInsert(list_of_heroes)
-	return dbs, nil
+	_, err = dbs.BulkInsert(list_of_heroes)
+	return dbs, err
 }
 
 // endregion
@@ -55,7 +55,7 @@ func TestInMemoryDatabase_Like_Suffix(t *testing.T) {
 	db, fe := getInitializedDb()
 	assert.Nil(t, fe, "error initializing DB")
 
-	filter := F("name")
+	filter := Filter("name")
 	filter = filter.Like("Black*")
 	heroes, count, fe := db.Query(NewHero).Filter(filter).Find()
 
@@ -71,7 +71,7 @@ func TestInMemoryDatabase_Like_Prefix(t *testing.T) {
 	db, fe := getInitializedDb()
 	assert.Nil(t, fe, "error initializing DB")
 
-	filter := F("name")
+	filter := Filter("name")
 	filter = filter.Like("*man")
 	heroes, count, fe := db.Query(NewHero).Filter(filter).Find()
 

@@ -18,8 +18,8 @@ func getInitializedDs() (ds IDatastore, err error) {
 		return nil, err
 	}
 
-	ds.BulkInsert(list_of_heroes)
-	return ds, nil
+	_, err = ds.BulkInsert(list_of_heroes)
+	return ds, err
 }
 
 // endregion
@@ -55,7 +55,7 @@ func TestInMemoryDatastore_Like_Suffix(t *testing.T) {
 	ds, fe := getInitializedDs()
 	assert.Nil(t, fe, "error initializing Datastore")
 
-	filter := F("name")
+	filter := Filter("name")
 	filter = filter.Like("Black*")
 	heroes, count, fe := ds.Query(NewHero).Filter(filter).Find()
 
@@ -71,7 +71,7 @@ func TestInMemoryDatastore_Like_Prefix(t *testing.T) {
 	ds, fe := getInitializedDs()
 	assert.Nil(t, fe, "error initializing Datastore")
 
-	filter := F("name")
+	filter := Filter("name")
 	filter = filter.Like("*man")
 	heroes, count, fe := ds.Query(NewHero).Filter(filter).Find()
 

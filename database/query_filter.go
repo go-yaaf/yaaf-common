@@ -73,7 +73,7 @@ type queryFilter struct {
 }
 
 // Filter by field
-func F(field string) QueryFilter {
+func Filter(field string) QueryFilter {
 	return &queryFilter{
 		field:    field,
 		operator: Eq,
