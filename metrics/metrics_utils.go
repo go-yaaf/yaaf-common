@@ -6,8 +6,7 @@ package metrics
 
 import (
 	"fmt"
-	"github.com/agentvi/innovi-core-commons/config"
-	"github.com/mottyc/yaaf-common/utils"
+	"github.com/go-yaaf/yaaf-common/utils"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
@@ -15,6 +14,7 @@ import (
 
 const (
 	namespace             = "yaaf"
+	subsystem             = "subsystem"
 	gaugeConnectedClients = "connectedClients"
 )
 
@@ -29,7 +29,7 @@ func AddBytesCounterForTopic(topic string) {
 		messageCounters[hash] = prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Namespace: namespace,
-				Subsystem: config.GetBaseConfig().InstrumentingSubsystem(),
+				Subsystem: subsystem,
 				Name:      fmt.Sprintf("topic_%s", topic),
 			}, []string{"counter_of"})
 		prometheus.MustRegister(messageCounters[hash])
@@ -48,7 +48,7 @@ func AddMessageCounterForOpCode(opCode int) {
 		messageCounters[uint32(opCode)] = prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Namespace: namespace,
-				Subsystem: config.GetBaseConfig().InstrumentingSubsystem(),
+				Subsystem: subsystem,
 				Name:      fmt.Sprintf("op_code_%d", opCode),
 			}, []string{"counter_of"})
 
@@ -68,7 +68,7 @@ func AddConnectedClientsGauge() {
 		gauges[gaugeConnectedClients] = prometheus.NewGauge(
 			prometheus.GaugeOpts{
 				Namespace: namespace,
-				Subsystem: config.GetBaseConfig().InstrumentingSubsystem(),
+				Subsystem: subsystem,
 				Name:      "connected_clients"})
 		prometheus.MustRegister(gauges[gaugeConnectedClients])
 	}
@@ -79,7 +79,7 @@ func AddGauge(name, key string) {
 		gauges[key] = prometheus.NewGauge(
 			prometheus.GaugeOpts{
 				Namespace: namespace,
-				Subsystem: config.GetBaseConfig().InstrumentingSubsystem(),
+				Subsystem: subsystem,
 				Name:      name})
 		prometheus.MustRegister(gauges[key])
 	}

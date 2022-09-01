@@ -7,7 +7,7 @@ package utils
 import (
 	"encoding/json"
 
-	. "github.com/mottyc/yaaf-common/entity"
+	. "github.com/go-yaaf/yaaf-common/entity"
 )
 
 // region Factory method -----------------------------------------------------------------------------------------------

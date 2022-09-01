@@ -7,10 +7,10 @@ package database
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/mottyc/yaaf-common/utils"
+	"github.com/go-yaaf/yaaf-common/utils"
 	"strings"
 
-	. "github.com/mottyc/yaaf-common/entity"
+	. "github.com/go-yaaf/yaaf-common/entity"
 )
 
 // region queryBuilder internal structure ------------------------------------------------------------------------------

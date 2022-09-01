@@ -1,6 +1,6 @@
 # yaaf-common
 
-[![Build](https://github.com/mottyc/yaaf-common/actions/workflows/build.yml/badge.svg)](https://github.com/mottyc/yaaf-common/actions/workflows/build.yml)
+[![Build](https://github.com/go-yaaf/yaaf-common/actions/workflows/build.yml/badge.svg)](https://github.com/go-yaaf/yaaf-common/actions/workflows/build.yml)
 
 Common interfaces to YAAF (Yet Another Application Framework) library
 
@@ -34,5 +34,5 @@ Collection of utility helpers
 #### Adding dependency
 
 ```bash
-$ go get -v -t github.com/mottyc/yaaf-common ./...
+$ go get -v -t github.com/go-yaaf/yaaf-common ./...
 ```

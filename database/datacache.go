@@ -7,7 +7,7 @@ package database
 import (
 	"time"
 
-	. "github.com/mottyc/yaaf-common/entity"
+	. "github.com/go-yaaf/yaaf-common/entity"
 )
 
 // DataCache interface

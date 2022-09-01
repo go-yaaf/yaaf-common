@@ -6,7 +6,7 @@ package database
 
 import (
 	"fmt"
-	. "github.com/mottyc/yaaf-common/entity"
+	. "github.com/go-yaaf/yaaf-common/entity"
 )
 
 // Database table interface

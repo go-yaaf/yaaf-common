@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/mottyc/yaaf-common/utils/collections"
+	"github.com/go-yaaf/yaaf-common/utils/collections"
 )
 
 var operators map[QueryOperator]FilterFunction

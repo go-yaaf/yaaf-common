@@ -5,7 +5,7 @@
 package test
 
 import (
-	"github.com/mottyc/yaaf-common/utils/collections"
+	"github.com/go-yaaf/yaaf-common/utils/collections"
 	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"

@@ -11,11 +11,11 @@ import (
 	"sync"
 	"time"
 
-	. "github.com/mottyc/yaaf-common/entity"
-	"github.com/mottyc/yaaf-common/logger"
-	"github.com/mottyc/yaaf-common/utils"
-	"github.com/mottyc/yaaf-common/utils/cache"
-	"github.com/mottyc/yaaf-common/utils/collections"
+	. "github.com/go-yaaf/yaaf-common/entity"
+	"github.com/go-yaaf/yaaf-common/logger"
+	"github.com/go-yaaf/yaaf-common/utils"
+	"github.com/go-yaaf/yaaf-common/utils/cache"
+	"github.com/go-yaaf/yaaf-common/utils/collections"
 )
 
 // region Database store definitions -----------------------------------------------------------------------------------

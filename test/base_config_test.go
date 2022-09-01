@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/mottyc/yaaf-common/config"
+	"github.com/go-yaaf/yaaf-common/config"
 	"github.com/stretchr/testify/assert"
 )
 

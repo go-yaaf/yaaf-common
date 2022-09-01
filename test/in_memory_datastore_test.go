@@ -5,7 +5,7 @@
 package test
 
 import (
-	. "github.com/mottyc/yaaf-common/database"
+	. "github.com/go-yaaf/yaaf-common/database"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
