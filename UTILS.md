@@ -11,3 +11,8 @@ git tag -l | xargs -n 1 git push --delete origin
 #Delete local tasg.
 git tag -l | xargs git tag -d
 ```
+
+#### Clean Go modules cache
+```bash
+go clean -modcache
+```
