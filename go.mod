@@ -1,8 +1,6 @@
 module github.com/go-yaaf/yaaf-common
 
-go 1.18
-
-replace github.com/go-yaaf/yaaf-common => ./yaaf-common
+go 1.19
 
 require (
 	github.com/google/uuid v1.3.0

@@ -1,7 +1,10 @@
-// Copyright 2022. Motty Cohen
+/*
+ * Copyright (c) 2022. Motty Cohen
+ */
+
+// Package database
 //
 // General interface for distributed cache and data structure store (e.g. Redis)
-//
 package database
 
 import (

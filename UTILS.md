@@ -16,3 +16,9 @@ git tag -l | xargs git tag -d
 ```bash
 go clean -modcache
 ```
+
+#### Run all tests in the project
+```bash
+go test ./...
+```
+

@@ -1,4 +1,8 @@
-// Copyright 2022. Motty Cohen
+/*
+ * Copyright (c) 2022. Motty Cohen
+ */
+
+// Package config
 //
 // Base configuration utility
 // This utility is used to read configuration parameters from environment variables and expose them to the application
@@ -7,7 +11,6 @@
 // The concrete application / service should inherit its own special configuration and extend the base configuration
 // with added variables. The base configuration exposes some common configuration parameters used by the middleware
 // components
-//
 package config
 
 import (
