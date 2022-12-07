@@ -2,6 +2,9 @@ module github.com/go-yaaf/yaaf-common
 
 go 1.19
 
+// Version not ready yet
+retract v1.0.1
+
 require (
 	github.com/google/uuid v1.3.0
 	github.com/jaevor/go-nanoid v1.2.0
