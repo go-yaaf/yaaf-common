@@ -1,7 +1,6 @@
 // Copyright 2022. Motty Cohen
 //
 // Hash utilities
-//
 package utils
 
 import (
@@ -18,7 +17,7 @@ type hashUtils struct{}
 
 var hashUtilsSingleton *hashUtils = nil
 
-// Factory method that acts as a static member
+// HashUtils is a factory method that acts as a static member
 func HashUtils() *hashUtils {
 	doOnceForHashUtils.Do(func() {
 		hashUtilsSingleton = &hashUtils{}
