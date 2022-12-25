@@ -1,6 +1,7 @@
 // Copyright 2022. Motty Cohen
 //
 // Hash utilities
+
 package utils
 
 import (

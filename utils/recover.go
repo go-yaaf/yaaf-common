@@ -4,26 +4,26 @@
 
 package utils
 
-// All performs recover for all panics.
+// RecoverAll performs recover for all panics.
 //
 // Sample usage:
-//		defer RecoverAll(func(err any) {
-//			fmt.Printf("got error: %s", err)
-//		})
 //
+//	defer RecoverAll(func(err any) {
+//		fmt.Printf("got error: %s", err)
+//	})
 func RecoverAll(cb func(v any)) {
 	r := recover()
 	cb(r)
 }
 
-// One performs call cb function with recovered value
+// RecoverOne calls the callback function: cb with recovered value
 // in case when recovered value equals to e otherwise panic won't be recovered and will be propagated.
 //
 // Sample usage:
-//		defer recover.One(ErrorUsernameBlank, func(err any) {
-// 			fmt.Printf("got error: %s", err)
-//		})
 //
+//	defer recover.One(ErrorUsernameBlank, func(err any) {
+//		fmt.Printf("got error: %s", err)
+//	})
 func RecoverOne(e error, cb func(v any)) {
 	r := recover()
 
@@ -36,14 +36,14 @@ func RecoverOne(e error, cb func(v any)) {
 	panic(r)
 }
 
-// Any performs call cb function with recovered value
+// RecoverAny calls the callback function: cb with recovered value
 // in case when recovered value exists in slice errors.
 //
 // Sample usage:
-//		defer recover.Any([]error{ErrorUsernameBlank, ErrorUsernameAlreadyTaken}, func(err any) {
-//  		fmt.Printf("got error: %s", err)
-//		})
 //
+//			defer recover.Any([]error{ErrorUsernameBlank, ErrorUsernameAlreadyTaken}, func(err any) {
+//	 		fmt.Printf("got error: %s", err)
+//			})
 func RecoverAny(errors []error, cb func(v any)) {
 	r := recover()
 
