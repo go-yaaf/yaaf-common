@@ -1,6 +1,5 @@
-/*
- * Copyright (c) 2022. Motty Cohen
- */
+// Copyright (c) 2022. Motty Cohen
+//
 
 // Package database
 //

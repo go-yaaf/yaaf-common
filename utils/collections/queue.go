@@ -17,7 +17,7 @@ type Queue interface {
 	// Pop last item
 	Pop() (any, bool)
 
-	// Get length of the queue
+	// Length get length of the queue
 	Length() int
 }
 
@@ -26,7 +26,7 @@ type defaultQueue struct {
 	queue []any
 }
 
-// New get queue functions manager
+// NewQueue get queue functions manager
 func NewQueue() Queue {
 	return &defaultQueue{
 		queue: make([]any, 0),
@@ -53,7 +53,7 @@ func (p *defaultQueue) Pop() (v any, exist bool) {
 	return
 }
 
-// Get queue length (number of items)
+// Length get queue length (number of items)
 func (p *defaultQueue) Length() int {
 	p.Lock()
 	defer p.Unlock()
