@@ -16,6 +16,8 @@ jobs:
 
     - name: Show environment variables
       run: env
+    - name: Show build number
+      run: echo ${{github:run_number}}
 
     - name: Set up Go
       uses: actions/setup-go@v3
