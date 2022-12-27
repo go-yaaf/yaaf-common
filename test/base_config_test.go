@@ -21,9 +21,9 @@ func TestBaseConfig_ReadConfig(t *testing.T) {
 		assert.FailNow(t, err.Error())
 	}
 
-	config.Get().AddOrUpdateConfigPair("LOG_LEVEL", "ERROR")
-	config.Get().AddOrUpdateConfigPair("KEY_2", "true")
-	config.Get().AddOrUpdateConfigPair("KEY_3", "456")
+	config.Get().AddConfigVar("LOG_LEVEL", "ERROR")
+	config.Get().AddConfigVar("KEY_2", "true")
+	config.Get().AddConfigVar("KEY_3", "456")
 	mp := config.Get().GetAllVars()
 
 	if val, ok := mp["LOG_LEVEL"]; !ok {

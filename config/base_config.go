@@ -1,7 +1,5 @@
-/*
- * Copyright (c) 2022. Motty Cohen
- */
-
+// Copyright 2022. Motty Cohen.
+//
 // Package config
 //
 // Base configuration utility
@@ -11,6 +9,7 @@
 // The concrete application / service should inherit its own special configuration and extend the base configuration
 // with added variables. The base configuration exposes some common configuration parameters used by the middleware
 // components
+
 package config
 
 import (
@@ -72,7 +71,7 @@ func Get() *BaseConfig {
 
 // region Helper methods -----------------------------------------------------------------------------------------------
 
-// Get a map of all the configuration variables and values
+// GetAllVars gets a map of all the configuration variables and values
 func (c *BaseConfig) GetAllVars() map[string]string {
 	result := make(map[string]string)
 	for key, value := range c.cfg {
@@ -81,7 +80,7 @@ func (c *BaseConfig) GetAllVars() map[string]string {
 	return result
 }
 
-// Get a list of all the configuration keys
+// GetAllKeysSorted gets a list of all the configuration keys
 func (c *BaseConfig) GetAllKeysSorted() []string {
 
 	keys := make([]string, 0, len(c.cfg))
@@ -92,12 +91,12 @@ func (c *BaseConfig) GetAllKeysSorted() []string {
 	return keys
 }
 
-// Add or update configuration key
-func (c *BaseConfig) AddOrUpdateConfigPair(key, value string) {
+// AddConfigVar adds or updates configuration variable
+func (c *BaseConfig) AddConfigVar(key, value string) {
 	c.cfg[key] = value
 }
 
-// Scan all environment variables and map their values to existing configuration keys
+// ScanEnvVariables scans all environment variables and map their values to existing configuration keys
 func (c *BaseConfig) ScanEnvVariables() {
 	for key := range c.cfg {
 		if tmp := os.Getenv(key); tmp != "" {
@@ -106,7 +105,7 @@ func (c *BaseConfig) ScanEnvVariables() {
 	}
 }
 
-// Get environment variable as int
+// GetIntParamValueOrDefault gets environment variable as int
 func (c *BaseConfig) GetIntParamValueOrDefault(key string, defaultValue int) (val int) {
 	val = defaultValue
 	if len(c.cfg[key]) > 0 {
@@ -117,7 +116,7 @@ func (c *BaseConfig) GetIntParamValueOrDefault(key string, defaultValue int) (va
 	return
 }
 
-// Get environment variable as string
+// GetStringParamValueOrDefault gets environment variable as string
 func (c *BaseConfig) GetStringParamValueOrDefault(key string, defaultValue string) (val string) {
 	val = defaultValue
 	if len(c.cfg[key]) > 0 {
@@ -126,7 +125,7 @@ func (c *BaseConfig) GetStringParamValueOrDefault(key string, defaultValue strin
 	return
 }
 
-// Get environment variable as int64
+// GetInt64ParamValueOrDefault gets environment variable as int64
 func (c *BaseConfig) GetInt64ParamValueOrDefault(key string, defaultValue int64) (val int64) {
 	val = defaultValue
 	if len(c.cfg[key]) > 0 {
@@ -135,7 +134,7 @@ func (c *BaseConfig) GetInt64ParamValueOrDefault(key string, defaultValue int64)
 	return
 }
 
-// Get environment variable as bool
+// GetBoolParamValueOrDefault gets environment variable as bool
 func (c *BaseConfig) GetBoolParamValueOrDefault(key string, defaultValue bool) (val bool) {
 	val = defaultValue
 	if len(c.cfg[key]) > 0 {
@@ -149,47 +148,47 @@ func (c *BaseConfig) GetBoolParamValueOrDefault(key string, defaultValue bool) (
 
 // region Configuration accessors methods ------------------------------------------------------------------------------
 
-// Log level accessor
+// LogLevel gets log level
 func (c *BaseConfig) LogLevel() string {
 	return c.GetStringParamValueOrDefault(CfgLoglevel, "INFO")
 }
 
-// HTTP read time out
+// HttpReadTimeoutMs gets HTTP read time out in milliseconds
 func (c *BaseConfig) HttpReadTimeoutMs() int {
 	return c.GetIntParamValueOrDefault(CfgHttpReadTimeoutMs, 3000)
 }
 
-// HTTP write time out
+// HttpWriteTimeoutMs gets HTTP write time out in milliseconds
 func (c *BaseConfig) HttpWriteTimeoutMs() int {
 	return c.GetIntParamValueOrDefault(CfgHttpWriteTimeoutMs, 3000)
 }
 
-// Web socket keep alive interval (in seconds)
+// WsKeepALiveInterval gets web socket keep alive interval (in seconds)
 func (c *BaseConfig) WsKeepALiveInterval() int64 {
 	return c.GetInt64ParamValueOrDefault(CfgWsKeepAliveSec, -1)
 }
 
-// Web socket read buffer size
+// WsReadBufferSizeBytes gets web socket read buffer size
 func (c *BaseConfig) WsReadBufferSizeBytes() int {
 	return c.GetIntParamValueOrDefault(CfgWsReadBufferSizeBytes, 1048576)
 }
 
-// Web socket write buffer size
+// WsWriteBufferSizeBytes gets web socket write buffer size
 func (c *BaseConfig) WsWriteBufferSizeBytes() int {
 	return c.GetIntParamValueOrDefault(CfgWsWriteBufferSizeBytes, 1048576)
 }
 
-// Web socket compression on write
+// WsWriteCompress gets web socket compression on write flag
 func (c *BaseConfig) WsWriteCompress() bool {
 	return c.GetBoolParamValueOrDefault(CfgWsWriteCompress, true)
 }
 
-// Web socket PONG time out un seconds
+// WsPongTimeoutSec gets web socket PONG time out in seconds
 func (c *BaseConfig) WsPongTimeoutSec() int {
 	return c.GetIntParamValueOrDefault(CfgWsPongTimeoutSec, 5)
 }
 
-// Web socket write time out in seconds
+// WsWriteTimeoutSec gets web socket write time out in seconds
 func (c *BaseConfig) WsWriteTimeoutSec() int {
 	return c.GetIntParamValueOrDefault(CfgWsWriteTimeoutSec, 5)
 }

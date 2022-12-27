@@ -22,7 +22,7 @@ const (
 
 // region Database store definitions -----------------------------------------------------------------------------------
 
-// Represent a db with tables
+// InMemoryDatabase represents in memory database with tables
 type InMemoryDatabase struct {
 	db map[string]ITable
 }
@@ -59,25 +59,19 @@ func tableName(table string, keys ...string) (tblName string) {
 
 // region Factory and connectivity methods for Database ----------------------------------------------------------------
 
-/**
- * Factory method for DB store
- */
+// NewInMemoryDatabase Factory method for database
 func NewInMemoryDatabase() (dbs IDatabase, err error) {
 	return &InMemoryDatabase{db: make(map[string]ITable)}, nil
 }
 
-/**
- * Test database connectivity
- * @param retries - how many retries are required (max 10)
- * @param interval - time interval (in seconds) between retries (max 60)
- */
+// Ping Test database connectivity
+// @param retries - how many retries are required (max 10)
+// @param interval - time interval (in seconds) between retries (max 60)
 func (dbs *InMemoryDatabase) Ping(retries uint, interval uint) error {
 	return nil
 }
 
-/**
- * Close DB and free resources
- */
+// Close DB and free resources
 func (dbs *InMemoryDatabase) Close() {
 	logger.Debug("In memory database closed")
 }
@@ -86,9 +80,7 @@ func (dbs *InMemoryDatabase) Close() {
 
 // region Database store Basic CRUD methods ----------------------------------------------------------------------------
 
-/**
- * Get single entity by ID
- */
+// Get single entity by ID
 func (dbs *InMemoryDatabase) Get(factory EntityFactory, entityID string, keys ...string) (result Entity, err error) {
 
 	entity := factory()
@@ -100,9 +92,7 @@ func (dbs *InMemoryDatabase) Get(factory EntityFactory, entityID string, keys ..
 	}
 }
 
-/**
- * Get list of entities by IDs
- */
+// List get a list of entities by IDs
 func (dbs *InMemoryDatabase) List(factory EntityFactory, entityIDs []string, keys ...string) (list []Entity, err error) {
 
 	entity := factory()
@@ -122,9 +112,7 @@ func (dbs *InMemoryDatabase) List(factory EntityFactory, entityIDs []string, key
 	return
 }
 
-/**
- * Check if entity exists by ID
- */
+// Exists checks if entity exists by ID
 func (dbs *InMemoryDatabase) Exists(factory EntityFactory, entityID string, keys ...string) (result bool, err error) {
 
 	entity := factory()
@@ -137,9 +125,7 @@ func (dbs *InMemoryDatabase) Exists(factory EntityFactory, entityID string, keys
 	}
 }
 
-/**
- * Add new entity
- */
+// Insert Add new entity
 func (dbs *InMemoryDatabase) Insert(entity Entity) (added Entity, err error) {
 
 	table := tableName(entity.TABLE(), entity.KEY())
@@ -147,26 +133,20 @@ func (dbs *InMemoryDatabase) Insert(entity Entity) (added Entity, err error) {
 	if _, ok := dbs.db[table]; !ok {
 		dbs.db[table] = NewInMemTable()
 	}
-
 	return dbs.db[table].Insert(entity)
 }
 
-/**
- * Update existing entity in the data store
- */
+// Update existing entity in the data store
 func (dbs *InMemoryDatabase) Update(entity Entity) (updated Entity, err error) {
 	table := tableName(entity.TABLE(), entity.KEY())
 
 	if _, ok := dbs.db[table]; !ok {
 		dbs.db[table] = NewInMemTable()
 	}
-
 	return dbs.db[table].Update(entity)
 }
 
-/**
- * Update existing entity in the data store or add it if it does not exist
- */
+// Upsert updates existing entity in the data store or add it if it does not exist
 func (dbs *InMemoryDatabase) Upsert(entity Entity) (updated Entity, err error) {
 	table := tableName(entity.TABLE(), entity.KEY())
 	if tbl, ok := dbs.db[table]; ok {
@@ -176,9 +156,7 @@ func (dbs *InMemoryDatabase) Upsert(entity Entity) (updated Entity, err error) {
 	}
 }
 
-/**
- * Delete entity by id
- */
+// Delete entity by id
 func (dbs *InMemoryDatabase) Delete(factory EntityFactory, entityID string, keys ...string) (err error) {
 
 	entity := factory()
@@ -191,9 +169,7 @@ func (dbs *InMemoryDatabase) Delete(factory EntityFactory, entityID string, keys
 	}
 }
 
-/**
- * Add multiple entities to data store (all must be of the same type)
- */
+// BulkInsert adds multiple entities to data store (all must be of the same type)
 func (dbs *InMemoryDatabase) BulkInsert(entities []Entity) (affected int64, err error) {
 	if len(entities) == 0 {
 		return 0, nil
@@ -206,9 +182,7 @@ func (dbs *InMemoryDatabase) BulkInsert(entities []Entity) (affected int64, err 
 	return affected, nil
 }
 
-/**
- * Update multiple entities in the data store (all must be of the same type)
- */
+// BulkUpdate updates multiple entities in the data store (all must be of the same type)
 func (dbs *InMemoryDatabase) BulkUpdate(entities []Entity) (affected int64, err error) {
 	if len(entities) == 0 {
 		return 0, nil
@@ -221,9 +195,7 @@ func (dbs *InMemoryDatabase) BulkUpdate(entities []Entity) (affected int64, err 
 	return affected, nil
 }
 
-/**
- * Update or insert multiple entities in the data store (all must be of the same type)
- */
+// BulkUpsert update or insert multiple entities in the data store (all must be of the same type)
 func (dbs *InMemoryDatabase) BulkUpsert(entities []Entity) (affected int64, err error) {
 	if len(entities) == 0 {
 		return 0, nil
@@ -236,9 +208,7 @@ func (dbs *InMemoryDatabase) BulkUpsert(entities []Entity) (affected int64, err 
 	return affected, nil
 }
 
-/**
- * Delete multiple entities by id list
- */
+// BulkDelete delete multiple entities by id list
 func (dbs *InMemoryDatabase) BulkDelete(factory EntityFactory, entityIDs []string, keys ...string) (affected int64, err error) {
 	if len(entityIDs) == 0 {
 		return 0, nil
@@ -251,18 +221,14 @@ func (dbs *InMemoryDatabase) BulkDelete(factory EntityFactory, entityIDs []strin
 	return affected, nil
 }
 
-/**
- * Update single field of the document in a single transaction (eliminates the need to fetch - change - update)
- */
+// SetField updates single field of the document in a single transaction (eliminates the need to fetch - change - update)
 func (dbs *InMemoryDatabase) SetField(factory EntityFactory, entityID string, field string, value any, keys ...string) (err error) {
 	fields := make(map[string]any)
 	fields[field] = value
 	return dbs.SetFields(factory, entityID, fields, keys...)
 }
 
-/**
- * Update some numeric fields of the document in a single transaction (eliminates the need to fetch - change - update)
- */
+// SetFields Updates some numeric fields of the document in a single transaction (eliminates the need to fetch - change - update)
 func (dbs *InMemoryDatabase) SetFields(factory EntityFactory, entityID string, fields map[string]any, keys ...string) (err error) {
 
 	entity, fe := dbs.Get(factory, entityID, keys...)
@@ -290,9 +256,7 @@ func (dbs *InMemoryDatabase) SetFields(factory EntityFactory, entityID string, f
 	return fe
 }
 
-/**
- * Helper method to construct query
- */
+// Query is a builder method to construct query
 func (dbs *InMemoryDatabase) Query(factory EntityFactory) IQuery {
 	return &inMemoryDatabaseQuery{
 		db:         dbs,
@@ -311,10 +275,8 @@ func (dbs *InMemoryDatabase) Query(factory EntityFactory) IQuery {
 
 // region Database DDL and DML -----------------------------------------------------------------------------------------
 
-/**
- * Execute DDL - create table and indexes
- * The ddl parameter is a map of strings (table names) to array of strings (list of fields to index)
- */
+// ExecuteDDL create table and indexes
+// The ddl parameter is a map of strings (table names) to array of strings (list of fields to index)
 func (dbs *InMemoryDatabase) ExecuteDDL(ddl map[string][]string) (err error) {
 
 	for table, fields := range ddl {
@@ -327,24 +289,18 @@ func (dbs *InMemoryDatabase) ExecuteDDL(ddl map[string][]string) (err error) {
 	return nil
 }
 
-/**
- * Execute SQL command
- */
+// ExecuteSQL execute raw SQL command
 func (dbs *InMemoryDatabase) ExecuteSQL(sql string, args ...any) (affected int64, err error) {
 	return 0, fmt.Errorf(NOT_SUPPORTED)
 }
 
-/**
- * Drop table and indexes
- */
+// DropTable drop a table and its related indexes
 func (dbs *InMemoryDatabase) DropTable(table string) (err error) {
 	delete(dbs.db, table)
 	return nil
 }
 
-/**
- * Fast delete table content (truncate)
- */
+// PurgeTable fast delete table content (truncate)
 func (dbs *InMemoryDatabase) PurgeTable(table string) (err error) {
 	delete(dbs.db, table)
 	return nil

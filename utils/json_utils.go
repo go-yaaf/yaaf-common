@@ -2,6 +2,7 @@
 //
 // JSON utilities
 //
+
 package utils
 
 import (
@@ -16,7 +17,7 @@ import (
 type jsonUtils struct {
 }
 
-// Factory method
+// JsonUtils factory method
 func JsonUtils() *jsonUtils {
 	return &jsonUtils{}
 }
@@ -25,9 +26,7 @@ func JsonUtils() *jsonUtils {
 
 // region Public methods -----------------------------------------------------------------------------------------------
 
-/**
- * Convert entity to raw json (map of string keys into values)
- */
+// ToJson convert entity to raw json (map of string keys into values)
 func (t *jsonUtils) ToJson(entity Entity) (raw map[string]any, err error) {
 
 	// Convert entity to string
@@ -46,9 +45,7 @@ func (t *jsonUtils) ToJson(entity Entity) (raw map[string]any, err error) {
 	return raw, nil
 }
 
-/**
- * Convert raw json to entity
- */
+// FromJson convert raw json to entity
 func (t *jsonUtils) FromJson(factory EntityFactory, raw map[string]any) (entity Entity, err error) {
 
 	// Convert raw to string
