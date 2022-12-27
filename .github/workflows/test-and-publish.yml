@@ -36,3 +36,8 @@ jobs:
         release_name: v${{ env.major }}.${{ env.minor }}.${{ github.run_number }}
         draft: false
         prerelease: false
+
+    - name: Update Go package repository
+      run: go list -m github.com/go-yaaf/yaaf-common
+      env:
+        GOPROXY: proxy.golang.org
