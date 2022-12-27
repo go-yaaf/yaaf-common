@@ -38,6 +38,6 @@ jobs:
         prerelease: false
 
     - name: Update Go package repository
-      run: go list -m github.com/go-yaaf/yaaf-common
+      run: curl https://proxy.golang.org/github.com/go-yaaf/yaaf-common/@v/v${{ env.major }}.${{ env.minor }}.${{ github.run_number }}.info
       env:
         GOPROXY: proxy.golang.org
