@@ -4,7 +4,7 @@
 name: Test and Publish
 env:
   major: 1
-  minor: 0
+  minor: 1
 on:
   push:
     branches: [ "main" ]

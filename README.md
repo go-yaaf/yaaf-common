@@ -25,6 +25,14 @@ Under the database folder you should find in memory implementation of IDatabase 
 Interface of document database. It is used by concrete implementations of NoSQL Document oriented databases (e.g. Elasticsearch, Couchbase...).
 Under the database folder you should find in memory implementation of IDatastore interface, used mainly for testing.
 
+### IDataCache
+Interface of a data structure cache. It is used by concrete implementations of distributed cache (e.g. Redis...).
+Under the database folder you should find in memory implementation of IDataCache interface, used mainly for testing.
+
+### IMessageBus
+Interface of a messaging system (publish-subscribe and queueing messaging patterns). It is used by concrete implementations of messaging middleware (e.g. Kafka, Google PubSub, Redis...).
+Under the messaging folder you should find in memory implementation of IMessageBus interface, used mainly for testing.
+
 ### Logger
 Simple wrapper for zap logger used as system-wide logging framework
 
@@ -35,4 +43,9 @@ Collection of utility helpers
 
 ```bash
 $ go get -v -t github.com/go-yaaf/yaaf-common ./...
+```
+
+#### Publishing module
+```bash
+$ GOPROXY=proxy.golang.org go list -m github.com/go-yaaf/yaaf-common@v1.1.0
 ```
