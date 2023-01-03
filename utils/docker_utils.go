@@ -84,9 +84,8 @@ func (c *DockerContainer) AutoRemove(value bool) *DockerContainer {
 // Run builds and run command
 func (c *DockerContainer) Run() error {
 
-	// First, stop container if exists
-	if c.Exists() {
-		_ = c.Stop()
+	if c.IsRunning() {
+		return nil
 	}
 
 	// construct the docker shell command
@@ -174,6 +173,17 @@ func (c *DockerContainer) Stop() error {
 // Exists return true if the container exists
 func (c *DockerContainer) Exists() bool {
 	cmd := fmt.Sprintf("docker ps -a | grep '%s'", c.name)
+	out, err := exec.Command("bash", "-c", cmd).Output()
+	if err != nil {
+		return false
+	} else {
+		return strings.Contains(string(out), c.name)
+	}
+}
+
+// IsRunning return true if the container exists and running
+func (c *DockerContainer) IsRunning() bool {
+	cmd := fmt.Sprintf(`docker ps -f "status=running" | grep '%s'`, c.name)
 	out, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
 		return false
