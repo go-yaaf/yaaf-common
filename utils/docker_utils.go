@@ -141,9 +141,7 @@ func (c *DockerContainer) Run() error {
 	}
 
 	cmd := exec.Command(command, args...)
-	go func() {
-		_ = cmd.Run()
-	}()
+	go cmd.Run()
 	return nil
 }
 
