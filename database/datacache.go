@@ -6,6 +6,7 @@
 package database
 
 import (
+	"io"
 	"time"
 
 	. "github.com/go-yaaf/yaaf-common/entity"
@@ -14,62 +15,59 @@ import (
 // IDataCache DataCache interface
 type IDataCache interface {
 
-	// Ping Test connectivity for retries number of time with time interval (in seconds) between retries
-	Ping(retries uint, intervalInSeconds uint) error
+	// Closer includes method Close()
+	io.Closer
 
-	// Close cache and free resources
-	Close()
+	// Ping tests connectivity for retries number of time with time interval (in seconds) between retries
+	Ping(retries uint, intervalInSeconds uint) error
 
 	// region Key actions ----------------------------------------------------------------------------------------------
 
 	// Get the value of a key
 	Get(factory EntityFactory, key string) (result Entity, err error)
 
-	// Set value of key with expiration
-	Set(key string, entity Entity) (err error)
+	// GetKeys Get the value of all the given keys
+	GetKeys(factory EntityFactory, keys ...string) (results []Entity, err error)
+
+	// Set value of key with optional expiration
+	Set(key string, entity Entity, expiration ...time.Duration) (err error)
+
+	// Add Set the value of a key only if the key does not exist
+	Add(key string, entity Entity, expiration time.Duration) (result bool, err error)
 
 	// Del Delete keys
 	Del(keys ...string) (err error)
 
-	// MGet Get the value of all the given keys
-	MGet(factory EntityFactory, keys ...string) (results []Entity, err error)
-
-	// SetNX Set the value of a key only if the key does not exist
-	SetNX(key string, entity Entity, expiration time.Duration) (result bool, err error)
-
-	// SetWithExp Set object value to a key with expiration
-	SetWithExp(key string, entity Entity, expiration time.Duration) (err error)
-
 	// Rename a key
 	Rename(key string, newKey string) (err error)
 
-	// Scan keys from the provided cursor
-	Scan(from uint64, match string, count int64) (keys []string, cursor uint64, err error)
-
 	// Exists Check if key exists
 	Exists(key string) (result bool, err error)
+
+	// Scan keys from the provided cursor
+	Scan(from uint64, match string, count int64) (keys []string, cursor uint64, err error)
 
 	// endregion
 
 	// region Hash actions ---------------------------------------------------------------------------------------------
 
-	// HGet Get the value of a hash field
+	// HGet gets the value of a hash field
 	HGet(factory EntityFactory, key, field string) (result Entity, err error)
 
-	// HKeys Get all the fields in a hash
+	// HKeys gets all the fields in a hash
 	HKeys(key string) (fields []string, err error)
 
-	// HGetAll Get all the fields and values in a hash
+	// HGetAll gets all the fields and values in a hash
 	HGetAll(factory EntityFactory, key string) (result map[string]Entity, err error)
 
-	// HSet Set the value of a hash field
+	// HSet sets the value of a hash field
 	HSet(key, field string, entity Entity) (err error)
 
-	// HDel Delete one or more hash fields
+	// HDel delete one or more hash fields
 	HDel(key string, fields ...string) (err error)
 
-	// HSetNX Set the value of a key only if the key does not exist
-	HSetNX(key, field string, entity Entity) (result bool, err error)
+	// HAdd sets the value of a key only if the key does not exist
+	HAdd(key, field string, entity Entity) (result bool, err error)
 
 	// HExists Check if key exists
 	HExists(key, field string) (result bool, err error)

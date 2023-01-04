@@ -1,5 +1,3 @@
-// Copyright 2022. Motty Cohen
-//
 // Utility functions for metrics monitoring (using Prometheus)
 //
 

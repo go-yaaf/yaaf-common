@@ -1,7 +1,4 @@
-// Copyright 2022. Motty Cohen
-//
 // Test in memory database implementation
-//
 package test
 
 import (

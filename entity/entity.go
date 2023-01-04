@@ -1,8 +1,4 @@
-// Copyright 2022. Motty Cohen
-//
-// Entity interface and base entity for all persistent model entities
-//
-
+// Package entity Entity interface and base entity for all persistent model entities
 package entity
 
 import (

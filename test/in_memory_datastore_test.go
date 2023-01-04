@@ -1,7 +1,4 @@
-// Copyright 2022. Motty Cohen
-//
 // Test in memory datastore implementation tests
-//
 package test
 
 import (

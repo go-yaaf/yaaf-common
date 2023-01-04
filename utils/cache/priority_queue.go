@@ -3,6 +3,7 @@
  *
  * Based on https://github.com/ReneKroon/ttlcache
  */
+
 package cache
 
 import (

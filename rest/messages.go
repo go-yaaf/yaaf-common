@@ -1,5 +1,3 @@
-// Copyright 2022. Shield-IoT Ltd.
-//
 // Common REST messages
 //
 

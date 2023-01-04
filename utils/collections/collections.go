@@ -1,10 +1,9 @@
-// Copyright 2022. Motty Cohen.
-//
 // We often need our programs to perform operations on
 // collections of data, like selecting all items that
 // satisfy a given predicate or mapping all items to a new
 // collection with a custom function.
 //
+
 package collections
 
 import (

@@ -1,5 +1,3 @@
-// Copyright 2020. Motty Cohen.
-//
 // The recover utility helps to work with `recover` in bit pleasant way.
 
 package utils

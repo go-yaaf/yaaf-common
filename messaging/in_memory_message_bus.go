@@ -1,5 +1,3 @@
-// Copyright 2022. Motty Cohen
-//
 // In-memory implementation of a message bus (IMessageBus interface)
 
 package messaging
@@ -8,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-yaaf/yaaf-common/entity"
+	"github.com/go-yaaf/yaaf-common/logger"
 	"sync"
 	"time"
 
@@ -37,6 +36,12 @@ func (m *InMemoryMessageBus) Ping(retries uint, intervalInSeconds uint) error {
 	return nil
 }
 
+// Close client and free resources
+func (m *InMemoryMessageBus) Close() error {
+	logger.Debug("In memory data-cache closed")
+	return nil
+}
+
 // Publish messages to a channel (topic)
 func (m *InMemoryMessageBus) Publish(messages ...IMessage) error {
 	// Thread safeguard
@@ -58,7 +63,7 @@ func (m *InMemoryMessageBus) Publish(messages ...IMessage) error {
 }
 
 // Subscribe on topics
-func (m *InMemoryMessageBus) Subscribe(callback SubscriptionCallback, mf MessageFactory, topics ...string) (subscriptionId string) {
+func (m *InMemoryMessageBus) Subscribe(mf MessageFactory, callback SubscriptionCallback, topics ...string) (subscriptionId string) {
 
 	// Validate callback
 	if callback == nil {

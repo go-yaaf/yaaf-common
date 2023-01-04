@@ -1,7 +1,3 @@
-// Copyright 2022. Motty Cohen
-//
-// In-memory database query helpers (used for testing)
-//
 package database
 
 import (
@@ -31,7 +27,7 @@ func init() {
 
 }
 
-// Signature of a filter function
+// FilterFunction signature of a filter function
 type FilterFunction func(raw map[string]any, filter QueryFilter) bool
 
 // Get filter function implementing an operator and a value

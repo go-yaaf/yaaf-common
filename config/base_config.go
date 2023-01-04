@@ -1,5 +1,3 @@
-// Copyright 2022. Motty Cohen.
-//
 // Package config
 //
 // Base configuration utility

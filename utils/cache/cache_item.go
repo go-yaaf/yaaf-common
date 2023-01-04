@@ -1,8 +1,5 @@
-/*
- * Cache item implementation
- *
- * Based on https://github.com/ReneKroon/ttlcache
- */
+// Package cache Cache item implementation
+// Based on https://github.com/ReneKroon/ttlcache
 package cache
 
 import (

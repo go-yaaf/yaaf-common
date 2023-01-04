@@ -1,5 +1,3 @@
-// Copyright 2022. Motty Cohen
-//
 // JWT token utilities
 //
 

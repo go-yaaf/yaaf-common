@@ -1,7 +1,3 @@
-// Copyright 2022. Motty Cohen
-//
-// In-memory database table (used for testing)
-
 package database
 
 import (
@@ -72,8 +68,9 @@ func (dbs *InMemoryDatabase) Ping(retries uint, interval uint) error {
 }
 
 // Close DB and free resources
-func (dbs *InMemoryDatabase) Close() {
+func (dbs *InMemoryDatabase) Close() error {
 	logger.Debug("In memory database closed")
+	return nil
 }
 
 //endregion

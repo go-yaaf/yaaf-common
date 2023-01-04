@@ -1,17 +1,15 @@
-// Copyright (c) 2022. Motty Cohen
-//
-
-// Package database
-//
-// The Database interface for RDBMS wrapper implementations
 package database
 
 import (
 	. "github.com/go-yaaf/yaaf-common/entity"
+	"io"
 )
 
 // IDatabase Database interface
 type IDatabase interface {
+
+	// Closer includes method Close()
+	io.Closer
 
 	// Ping Test database connectivity for retries number of time with time interval (in seconds) between retries
 	Ping(retries uint, intervalInSeconds uint) error
@@ -57,9 +55,6 @@ type IDatabase interface {
 
 	// Query Utility struct method to build a query
 	Query(factory EntityFactory) IQuery
-
-	// Close DB and free resources
-	Close()
 
 	// DDL Actions -----------------------------------------------------------------------------------------------------
 

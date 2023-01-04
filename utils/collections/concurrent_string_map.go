@@ -1,6 +1,3 @@
-// Copyright 2022. Motty Cohen.
-//
-//
 package collections
 
 import (

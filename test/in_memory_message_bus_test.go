@@ -1,5 +1,3 @@
-// Copyright 2022. Motty Cohen
-//
 // Test in memory message queue implementation tests
 package test
 
@@ -117,7 +115,7 @@ func TestInMemoryMessageBus_PubSub(t *testing.T) {
 	go publishMessages(wg, bus, "heroes_1", time.Second)
 	go publishMessages(wg, bus, "heroes_2", time.Second)
 
-	bus.Subscribe(subscriber, NewHeroMessage, "heroes_1")
+	bus.Subscribe(NewHeroMessage, subscriber, "heroes_1")
 
 	wg.Wait()
 	fmt.Println("done")

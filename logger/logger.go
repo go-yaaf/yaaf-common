@@ -1,8 +1,4 @@
-// Copyright 2022. Motty Cohen.
-//
-// Logger implementation based on zap log package (https://github.com/uber-go/zap)
-//
-
+// Package logger Logger implementation based on zap log package (https://github.com/uber-go/zap)
 package logger
 
 import (
