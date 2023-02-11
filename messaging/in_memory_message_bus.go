@@ -63,11 +63,11 @@ func (m *InMemoryMessageBus) Publish(messages ...IMessage) error {
 }
 
 // Subscribe on topics
-func (m *InMemoryMessageBus) Subscribe(mf MessageFactory, callback SubscriptionCallback, topics ...string) (subscriptionId string) {
+func (m *InMemoryMessageBus) Subscribe(mf MessageFactory, callback SubscriptionCallback, subscriber string, topics ...string) (subscriptionId string, error error) {
 
 	// Validate callback
 	if callback == nil {
-		return ""
+		return "", fmt.Errorf("callback is nil")
 	}
 
 	// Thread safeguard
@@ -97,7 +97,7 @@ func (m *InMemoryMessageBus) Subscribe(mf MessageFactory, callback SubscriptionC
 		}
 	}()
 
-	return subscriptionId
+	return subscriptionId, nil
 }
 
 // Unsubscribe with the given subscriber id
@@ -144,6 +144,11 @@ func (m *InMemoryMessageBus) Pop(mf MessageFactory, timeout time.Duration, queue
 			return nil, fmt.Errorf("timeout")
 		}
 	}
+}
+
+// CreateProducer creates message producer for specific topic
+func (m *InMemoryMessageBus) CreateProducer(topic string) (IMessageProducer, error) {
+	return m, nil
 }
 
 // try to pop message from one of the queues

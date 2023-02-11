@@ -20,15 +20,28 @@ type IMessageBus interface {
 	// Publish messages to a channel (topic)
 	Publish(messages ...IMessage) error
 
-	// Subscribe on topics
-	Subscribe(mf MessageFactory, callback SubscriptionCallback, topics ...string) (subscriptionId string)
+	// Subscribe on topics and return subscriberId
+	Subscribe(mf MessageFactory, callback SubscriptionCallback, subscriber string, topics ...string) (string, error)
 
 	// Unsubscribe with the given subscriber id
-	Unsubscribe(subscriptionId string) (success bool)
+	Unsubscribe(subscriptionId string) bool
 
 	// Push Append one or multiple messages to a queue
 	Push(messages ...IMessage) error
 
 	// Pop Remove and get the last message in a queue or block until timeout expires
 	Pop(mf MessageFactory, timeout time.Duration, queue ...string) (IMessage, error)
+
+	// CreateProducer creates message producer for specific topic
+	CreateProducer(topic string) (IMessageProducer, error)
+}
+
+// IMessageProducer Message bus producer interface
+type IMessageProducer interface {
+
+	// Closer includes method Close()
+	io.Closer
+
+	// Publish messages to a producer channel (topic)
+	Publish(messages ...IMessage) error
 }
