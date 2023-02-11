@@ -115,7 +115,7 @@ func TestInMemoryMessageBus_PubSub(t *testing.T) {
 	go publishMessages(wg, bus, "heroes_1", time.Second)
 	go publishMessages(wg, bus, "heroes_2", time.Second)
 
-	bus.Subscribe(NewHeroMessage, subscriber, "heroes_1")
+	bus.Subscribe(NewHeroMessage, subscriberCallback, "subscriber", "heroes_1")
 
 	wg.Wait()
 	fmt.Println("done")
@@ -147,7 +147,8 @@ func publishMessages(wg *sync.WaitGroup, bus IMessageBus, topic string, timeout 
 }
 
 // subscriber function callback
-func subscriber(msg IMessage) {
+func subscriberCallback(msg IMessage) bool {
 	hero := msg.Payload().(*Hero)
 	fmt.Println(msg.Topic(), msg.OpCode(), msg.SessionId(), hero.Id, hero.Name)
+	return true
 }
