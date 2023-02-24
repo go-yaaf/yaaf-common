@@ -77,10 +77,20 @@ func Filter(field string) QueryFilter {
 	}
 }
 
+// F filter by field
+func F(field string) QueryFilter {
+	return &queryFilter{
+		field:    field,
+		operator: Eq,
+		active:   true,
+	}
+}
+
 // Eq - Equal
 func (q *queryFilter) Eq(value any) QueryFilter {
 	q.operator = Eq
 	q.values = []any{value}
+	q.active = len(fmt.Sprintf("%v", value)) > 0
 	return q
 }
 
@@ -88,6 +98,7 @@ func (q *queryFilter) Eq(value any) QueryFilter {
 func (q *queryFilter) Neq(value any) QueryFilter {
 	q.operator = Neq
 	q.values = []any{value}
+	q.active = len(fmt.Sprintf("%v", value)) > 0
 	return q
 }
 
@@ -95,6 +106,7 @@ func (q *queryFilter) Neq(value any) QueryFilter {
 func (q *queryFilter) Like(value string) QueryFilter {
 	q.operator = Like
 	q.values = []any{value}
+	q.active = len(fmt.Sprintf("%v", value)) > 0
 	return q
 }
 
@@ -130,6 +142,7 @@ func (q *queryFilter) Lte(value any) QueryFilter {
 func (q *queryFilter) In(values ...any) QueryFilter {
 	q.operator = In
 	q.values = []any{values}
+	q.active = len(values) > 0
 	return q
 }
 
@@ -137,6 +150,7 @@ func (q *queryFilter) In(values ...any) QueryFilter {
 func (q *queryFilter) NotIn(values ...any) QueryFilter {
 	q.operator = NotIn
 	q.values = []any{values}
+	q.active = len(values) > 0
 	return q
 }
 
