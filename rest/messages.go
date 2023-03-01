@@ -73,29 +73,29 @@ func NewEntityResponseError(err error) (res *EntityResponse) {
 // EntitiesResponse message is returned for any action returning multiple entities
 type EntitiesResponse struct {
 	BaseRestResponse
-	Page     int      `json:"page"`     // Current page (Bulk) number
-	PageSize int      `json:"pageSize"` // Size of page (items in bulk)
-	Pages    int      `json:"pages"`    // Total number of pages
-	Total    int      `json:"total"`    // Total number of items in the query
-	List     []Entity `json:"list"`     // List of objects in the current result set
+	Page  int      `json:"page"`  // Current page (Bulk) number
+	Size  int      `json:"size"`  // Size of page (items in bulk)
+	Pages int      `json:"pages"` // Total number of pages
+	Total int      `json:"total"` // Total number of items in the query
+	List  []Entity `json:"list"`  // List of objects in the current result set
 }
 
 // NewEntitiesResponse factory method
-func NewEntitiesResponse(entities []Entity, page, pageSize, total int) *EntitiesResponse {
+func NewEntitiesResponse(entities []Entity, page, size, total int) *EntitiesResponse {
 
-	if pageSize == 0 {
-		pageSize = 1
+	if size == 0 {
+		size = 1
 	}
 	rem := 0
-	if total%pageSize > 0 {
+	if total%size > 0 {
 		rem = 1
 	}
 	return &EntitiesResponse{
-		Page:     page,
-		PageSize: pageSize,
-		Total:    total,
-		Pages:    (total / pageSize) + rem,
-		List:     entities,
+		Page:  page,
+		Size:  size,
+		Total: total,
+		Pages: (total / size) + rem,
+		List:  entities,
 	}
 }
 
