@@ -24,23 +24,6 @@ type JsonDoc struct {
 
 // endregion
 
-// region Timestamp ----------------------------------------------------------------------------------------------------
-
-// Timestamp represents Epoch milliseconds timestamp
-type Timestamp int64
-
-// EpochNowMillis return current time as Epoch time milliseconds with delta in millis
-func EpochNowMillis(delta int64) Timestamp {
-	return Timestamp((time.Now().UnixNano() / 1000000) + delta)
-}
-
-// Now return current time as Epoch time milliseconds with delta in millis
-func Now() Timestamp {
-	return EpochNowMillis(0)
-}
-
-// endregion
-
 // region Entity Interface ---------------------------------------------------------------------------------------------
 
 // Entity is a marker interface for all serialized domain model entities with identity
