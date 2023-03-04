@@ -28,6 +28,7 @@ const (
 	CfgWsWriteCompress        = "WS_WRITE_COMPRESS"
 	CfgWsWriteTimeoutSec      = "WS_WRITE_TIMEOUT"
 	CfgWsPongTimeoutSec       = "WS_PONG_TIMEOUT"
+	CfgTopicPartitions        = "TOPIC_PARTITIONS"
 )
 
 // region BaseConfig singleton pattern ---------------------------------------------------------------------------------
@@ -189,6 +190,11 @@ func (c *BaseConfig) WsPongTimeoutSec() int {
 // WsWriteTimeoutSec gets web socket write time out in seconds
 func (c *BaseConfig) WsWriteTimeoutSec() int {
 	return c.GetIntParamValueOrDefault(CfgWsWriteTimeoutSec, 5)
+}
+
+// TopicPartitions gets default number of partitions per topic
+func (c *BaseConfig) TopicPartitions() int {
+	return c.GetIntParamValueOrDefault(CfgTopicPartitions, 1)
 }
 
 // endregion
