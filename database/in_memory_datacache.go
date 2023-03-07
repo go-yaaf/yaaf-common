@@ -86,6 +86,19 @@ func (dc *InMemoryDataCache) Set(key string, entity Entity, expiration ...time.D
 	return nil
 }
 
+// SetNX Set value of key only if it is not exist with optional expiration, return false if the key exists
+func (dc *InMemoryDataCache) SetNX(key string, entity Entity, expiration ...time.Duration) (bool, error) {
+	if exists, err := dc.Exists(key); err != nil {
+		return false, err
+	} else {
+		if exists {
+			return false, nil
+		} else {
+			return true, dc.Set(key, entity, expiration...)
+		}
+	}
+}
+
 // Add Set the value of a key only if the key does not exist
 func (dc *InMemoryDataCache) Add(key string, entity Entity, expiration time.Duration) (result bool, err error) {
 	if _, fe := dc.Get(nil, key); fe != nil {
@@ -180,6 +193,19 @@ func (dc *InMemoryDataCache) HGetAll(factory EntityFactory, key string) (result 
 func (dc *InMemoryDataCache) HSet(key, field string, entity Entity) (err error) {
 	hKey := fmt.Sprintf("%s@%s", key, field)
 	return dc.Set(hKey, entity)
+}
+
+// HSetNX Set value of key only if it is not exist with optional expiration, return false if the key exists
+func (dc *InMemoryDataCache) HSetNX(key, field string, entity Entity) (bool, error) {
+	if exists, err := dc.HExists(key, field); err != nil {
+		return false, err
+	} else {
+		if exists {
+			return false, nil
+		} else {
+			return true, dc.HSet(key, field, entity)
+		}
+	}
 }
 
 // HDel delete one or more hash fields

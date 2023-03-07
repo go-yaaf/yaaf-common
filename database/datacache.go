@@ -32,6 +32,9 @@ type IDataCache interface {
 	// Set value of key with optional expiration
 	Set(key string, entity Entity, expiration ...time.Duration) (err error)
 
+	// SetNX Set value of key only if it is not exist with optional expiration, return false if the key exists
+	SetNX(key string, entity Entity, expiration ...time.Duration) (result bool, err error)
+
 	// Add Set the value of a key only if the key does not exist
 	Add(key string, entity Entity, expiration time.Duration) (result bool, err error)
 
@@ -62,6 +65,9 @@ type IDataCache interface {
 
 	// HSet sets the value of a hash field
 	HSet(key, field string, entity Entity) (err error)
+
+	// HSetNX Set value of key only if it is not exist with optional expiration, return false if the key exists
+	HSetNX(key, field string, entity Entity) (result bool, err error)
 
 	// HDel delete one or more hash fields
 	HDel(key string, fields ...string) (err error)
