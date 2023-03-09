@@ -29,14 +29,13 @@ type BaseMessage struct {
 	MsgOpCode    int    `json:"opCode"`    // Message op code
 	MsgAddressee string `json:"addressee"` // Message final addressee
 	MsgSessionId string `json:"sessionId"` // Session id shared across all messages related to the same session
-	MsgPayload   any    `json:"payload"`   // Message payload
 }
 
 func (m *BaseMessage) Topic() string     { return m.MsgTopic }
 func (m *BaseMessage) OpCode() int       { return m.MsgOpCode }
 func (m *BaseMessage) Addressee() string { return m.MsgAddressee }
 func (m *BaseMessage) SessionId() string { return m.MsgSessionId }
-func (m *BaseMessage) Payload() any      { return m.MsgPayload }
+func (m *BaseMessage) Payload() any      { return nil }
 
 // MessageFactory is a factory method of any message
 type MessageFactory func() IMessage
