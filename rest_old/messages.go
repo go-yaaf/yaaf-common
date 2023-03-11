@@ -1,8 +1,6 @@
-// Common REST messages
-//
+package rest_old
 
-package rest
-
+/***
 import . "github.com/go-yaaf/yaaf-common/entity"
 
 // region BaseRestResponse ---------------------------------------------------------------------------------------------
@@ -21,13 +19,6 @@ func (res *BaseRestResponse) SetError(err error) {
 	}
 }
 
-// NewErrorResponse response with error
-func NewErrorResponse(err error) (res *BaseRestResponse) {
-	res = &BaseRestResponse{}
-	res.SetError(err)
-	return res
-}
-
 // endregion
 
 // region ActionResponse -----------------------------------------------------------------------------------------------
@@ -44,19 +35,33 @@ func NewActionResponse(key, data string) (er *ActionResponse) {
 	return &ActionResponse{Key: key, Data: data}
 }
 
+// NewActionResponseError with error
+func NewActionResponseError(err error) (res *ActionResponse) {
+	res = &ActionResponse{}
+	res.SetError(err)
+	return res
+}
+
 // endregion
 
 // region EntityResponse -----------------------------------------------------------------------------------------------
 
 // EntityResponse message is returned for any create/update action on entity
-type EntityResponse[T Entity] struct {
+type EntityResponse struct {
 	BaseRestResponse
-	Entity T `json:"entity"` // The entity
+	Entity Entity `json:"entity"` // The entity
 }
 
 // NewEntityResponse factory method
-func NewEntityResponse[T Entity](entity T) (er *EntityResponse[T]) {
-	return &EntityResponse[T]{Entity: entity}
+func NewEntityResponse(entity Entity) (er *EntityResponse) {
+	return &EntityResponse{Entity: entity}
+}
+
+// NewEntityResponseError with error
+func NewEntityResponseError(err error) (res *EntityResponse) {
+	res = &EntityResponse{}
+	res.SetError(err)
+	return res
 }
 
 // endregion
@@ -64,17 +69,17 @@ func NewEntityResponse[T Entity](entity T) (er *EntityResponse[T]) {
 // region EntityResponse -----------------------------------------------------------------------------------------------
 
 // EntitiesResponse message is returned for any action returning multiple entities
-type EntitiesResponse[T Entity] struct {
+type EntitiesResponse struct {
 	BaseRestResponse
-	Page  int `json:"page"`  // Current page (Bulk) number
-	Size  int `json:"size"`  // Size of page (items in bulk)
-	Pages int `json:"pages"` // Total number of pages
-	Total int `json:"total"` // Total number of items in the query
-	List  []T `json:"list"`  // List of objects in the current result set
+	Page  int      `json:"page"`  // Current page (Bulk) number
+	Size  int      `json:"size"`  // Size of page (items in bulk)
+	Pages int      `json:"pages"` // Total number of pages
+	Total int      `json:"total"` // Total number of items in the query
+	List  []Entity `json:"list"`  // List of objects in the current result set
 }
 
 // NewEntitiesResponse factory method
-func NewEntitiesResponse[T Entity](entities []T, page, size, total int) *EntitiesResponse[T] {
+func NewEntitiesResponse(entities []Entity, page, size, total int) *EntitiesResponse {
 
 	if size == 0 {
 		size = 1
@@ -83,7 +88,7 @@ func NewEntitiesResponse[T Entity](entities []T, page, size, total int) *Entitie
 	if total%size > 0 {
 		rem = 1
 	}
-	return &EntitiesResponse[T]{
+	return &EntitiesResponse{
 		Page:  page,
 		Size:  size,
 		Total: total,
@@ -92,4 +97,12 @@ func NewEntitiesResponse[T Entity](entities []T, page, size, total int) *Entitie
 	}
 }
 
+// NewEntitiesResponseError with error
+func NewEntitiesResponseError(err error) *EntitiesResponse {
+	res := &EntitiesResponse{}
+	res.SetError(err)
+	return res
+}
+
 // endregion
+***/
