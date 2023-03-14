@@ -88,18 +88,32 @@ func EntityIndex(entity Entity, tenantId string) string {
  * Generate new id based on nanoId (faster and smaller than GUID)
  */
 
-// ID return a long string (10 characters) based on Epoch micro-seconds in base 36
+// ID return a long string (alphanumeric) based on Epoch micro-seconds in base 36
 func ID() string {
 	return strconv.FormatUint(uint64(time.Now().UnixMicro()), 36)
 }
 
-// ShortID return a short string (6 characters) based on epoch seconds in base 36
+// IDN return a long string (digits only) based on Epoch micro-seconds
+func IDN() string {
+	return fmt.Sprintf("%d", time.Now().UnixMicro())
+}
+
+// ShortID return a short string (6 characters alphanumeric) based on epoch seconds in base 36
 func ShortID(delta ...int) string {
 	value := uint64(time.Now().Unix())
 	for _, d := range delta {
 		value += uint64(d)
 	}
 	return strconv.FormatUint(value, 36)
+}
+
+// ShortIDN return a short string (digits only) based on epoch seconds
+func ShortIDN(delta ...int) string {
+	value := uint64(time.Now().Unix())
+	for _, d := range delta {
+		value += uint64(d)
+	}
+	return fmt.Sprintf("%d", value)
 }
 
 // NanoID return a long string (6 characters) based on go-nanoid project (smaller and faster than GUID)

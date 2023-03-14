@@ -15,9 +15,17 @@ func TestEntityIDs(t *testing.T) {
 	fmt.Printf("%-8s %s\n", "ShortID", sid)
 	assert.Equal(t, 6, len(sid), "short id should be 6 digits length")
 
+	sidn := entity.ShortIDN()
+	fmt.Printf("%-8s %s\n", "ShortIDN", sidn)
+	assert.Equal(t, 10, len(sidn), "short idn should be 6 digits length")
+
 	lid := entity.ID()
 	fmt.Printf("%-8s %s\n", "ID", lid)
 	assert.Equal(t, 10, len(lid), "long id should be 10 digits length")
+
+	did := entity.IDN()
+	fmt.Printf("%-8s %s\n", "NumID", did)
+	assert.Equal(t, 16, len(did), "number id should be 16 digits length")
 
 	nid := entity.NanoID()
 	fmt.Printf("%-8s %s\n", "NanoID", nid)
