@@ -37,7 +37,7 @@ type Entity interface {
 	// NAME return the entity name
 	NAME() string
 
-	// KEY return the entity sharding key (tenant/account id)
+	// KEY return the entity sharding key (tenant/account id) based on one of the entity's attributes
 	KEY() string
 }
 
@@ -51,7 +51,6 @@ type EntityFactory func() Entity
 // BaseEntity is a base structure for any concrete Entity
 type BaseEntity struct {
 	Id        string    `json:"id"`        // Unique object Id
-	Key       string    `json:"key"`       // Shard (tenant) key
 	CreatedOn Timestamp `json:"createdOn"` // When the object was created [Epoch milliseconds Timestamp]
 	UpdatedOn Timestamp `json:"updatedOn"` // When the object was last updated [Epoch milliseconds Timestamp]
 }
@@ -69,8 +68,9 @@ func EntityIndex(entity Entity, tenantId string) string {
 
 	table := entity.TABLE()
 
-	// Replace templates: {{tenantId}}
+	// Replace templates: {{tenantId}} or {{accountId}}
 	index := strings.Replace(table, "{{tenantId}}", tenantId, -1)
+	index = strings.Replace(table, "{{accountId}}", tenantId, -1)
 
 	// Replace templates: {{year}}
 	index = strings.Replace(index, "{{year}}", time.Now().Format("2006"), -1)
