@@ -37,7 +37,7 @@ func init() {
 		MessageKey:     "M",
 		StacktraceKey:  "S",
 		LineEnding:     zapcore.DefaultLineEnding,
-		EncodeLevel:    zapcore.CapitalColorLevelEncoder,
+		EncodeLevel:    zapcore.CapitalLevelEncoder,
 		EncodeTime:     customEncodeTime,
 		EncodeDuration: zapcore.StringDurationEncoder,
 	}
