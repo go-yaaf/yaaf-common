@@ -90,7 +90,6 @@ func F(field string) QueryFilter {
 func (q *queryFilter) Eq(value any) QueryFilter {
 	q.operator = Eq
 	q.values = append(q.values, value)
-	//q.values = []any{value}
 	q.active = len(fmt.Sprintf("%v", value)) > 0
 	return q
 }
@@ -99,7 +98,6 @@ func (q *queryFilter) Eq(value any) QueryFilter {
 func (q *queryFilter) Neq(value any) QueryFilter {
 	q.operator = Neq
 	q.values = append(q.values, value)
-	//q.values = []any{value}
 	q.active = len(fmt.Sprintf("%v", value)) > 0
 	return q
 }
@@ -108,7 +106,6 @@ func (q *queryFilter) Neq(value any) QueryFilter {
 func (q *queryFilter) Like(value string) QueryFilter {
 	q.operator = Like
 	q.values = append(q.values, value)
-	//q.values = []any{value}
 	q.active = len(fmt.Sprintf("%v", value)) > 0
 	return q
 }
@@ -117,7 +114,6 @@ func (q *queryFilter) Like(value string) QueryFilter {
 func (q *queryFilter) Gt(value any) QueryFilter {
 	q.operator = Gt
 	q.values = append(q.values, value)
-	//q.values = []any{value}
 	return q
 }
 
@@ -125,7 +121,6 @@ func (q *queryFilter) Gt(value any) QueryFilter {
 func (q *queryFilter) Gte(value any) QueryFilter {
 	q.operator = Gte
 	q.values = append(q.values, value)
-	//q.values = []any{value}
 	return q
 }
 
@@ -133,7 +128,6 @@ func (q *queryFilter) Gte(value any) QueryFilter {
 func (q *queryFilter) Lt(value any) QueryFilter {
 	q.operator = Lt
 	q.values = append(q.values, value)
-	//q.values = []any{value}
 	return q
 }
 
@@ -141,7 +135,6 @@ func (q *queryFilter) Lt(value any) QueryFilter {
 func (q *queryFilter) Lte(value any) QueryFilter {
 	q.operator = Lte
 	q.values = append(q.values, value)
-	//q.values = []any{value}
 	return q
 }
 
@@ -149,7 +142,6 @@ func (q *queryFilter) Lte(value any) QueryFilter {
 func (q *queryFilter) In(values ...any) QueryFilter {
 	q.operator = In
 	q.values = append(q.values, values...)
-	//q.values = []any{values}
 	q.active = len(values) > 0
 	return q
 }
@@ -158,7 +150,6 @@ func (q *queryFilter) In(values ...any) QueryFilter {
 func (q *queryFilter) NotIn(values ...any) QueryFilter {
 	q.operator = NotIn
 	q.values = append(q.values, values...)
-	//q.values = []any{values}
 	q.active = len(values) > 0
 	return q
 }
@@ -167,7 +158,6 @@ func (q *queryFilter) NotIn(values ...any) QueryFilter {
 func (q *queryFilter) Between(value1, value2 any) QueryFilter {
 	q.operator = Between
 	q.values = append(q.values, value1, value2)
-	//q.values = []any{value1, value2}
 	return q
 }
 
