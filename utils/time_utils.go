@@ -205,6 +205,30 @@ func (t *timeUtils) GetSeries(end Timestamp, interval time.Duration) (series []T
 	return series
 }
 
+// GetSeriesMap creates a time series from the base time to the end time with the given interval as a map
+func (t *timeUtils) GetSeriesMap(end Timestamp, interval time.Duration) map[Timestamp]int {
+
+	series := make(map[Timestamp]int)
+	if interval == 0 {
+		return series
+	}
+
+	from := int64(t.baseTime)
+	to := int64(end)
+	step := int64(interval / time.Millisecond)
+
+	if from < to {
+		for ts := from; ts < to; ts += step {
+			series[Timestamp(ts)] = 0
+		}
+	} else {
+		for ts := from; ts > to; ts -= step {
+			series[Timestamp(ts)] = 0
+		}
+	}
+	return series
+}
+
 // GetTimeFrames creates time frames from the base time to the end time with the given interval with delay between slots
 func (t *timeUtils) GetTimeFrames(end Timestamp, interval time.Duration) (series []TimeFrame) {
 
