@@ -2,6 +2,7 @@ package entity
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"text/template"
 	"time"
@@ -119,8 +120,12 @@ func (ts *Timestamp) convertISO8601Format(format string) string {
 
 // String convert Epoch milliseconds timestamp to readable string
 func (ts *Timestamp) String(format string) string {
-	layout := ts.convertISO8601Format(format)
-	return ts.Time().Format(layout)
+	if len(format) == 0 {
+		return ts.Time().Format(time.RFC3339)
+	} else {
+		layout := ts.convertISO8601Format(format)
+		return ts.Time().Format(layout)
+	}
 }
 
 // LocalString convert Epoch milliseconds timestamp with timezone (IANA) to readable string
@@ -132,6 +137,38 @@ func (ts *Timestamp) LocalString(format string, tz string) string {
 	}
 	layout := ts.convertISO8601Format(format)
 	return ts.Time().In(loc).Format(layout)
+}
+
+// endregion
+
+// region TimeFrame ----------------------------------------------------------------------------------------------------
+
+// TimeFrame represents a slot in time
+type TimeFrame struct {
+	From Timestamp
+	To   Timestamp
+}
+
+// NewTimeFrame return new time slot using start and end time
+func NewTimeFrame(from, to Timestamp) TimeFrame {
+	return TimeFrame{From: from, To: to}
+}
+
+// GetTimeFrame return new time slot using start and duration
+func GetTimeFrame(from Timestamp, duration time.Duration) TimeFrame {
+	to := int64(from) + int64(duration/time.Millisecond)
+	return TimeFrame{From: from, To: Timestamp(to)}
+}
+
+// String convert Epoch milliseconds timestamp to readable string
+func (tf *TimeFrame) String(format string) string {
+	return fmt.Sprintf("%s - %s", tf.From.String(format), tf.To.String(format))
+}
+
+// Duration of the timeframe
+func (tf *TimeFrame) Duration() time.Duration {
+	millis := int64(tf.To) - int64(tf.From)
+	return time.Duration(millis) * time.Millisecond
 }
 
 // endregion
