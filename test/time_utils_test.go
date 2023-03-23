@@ -52,7 +52,7 @@ func printSeries(period time.Duration, interval time.Duration, format string) {
 
 	from := utils.TimeUtils(entity.Now()).LowerBound(period).Get()
 	to := utils.TimeUtils(entity.Now()).UpperBound(period).Get()
-	minutes := utils.TimeUtils(from).Series(to, interval)
+	minutes := utils.TimeUtils(from).GetSeries(to, interval)
 	for i, m := range minutes {
 		fmt.Println(i, m, utils.TimeUtils(m).Format(format))
 	}
@@ -61,7 +61,7 @@ func printSeries(period time.Duration, interval time.Duration, format string) {
 
 	from = utils.TimeUtils(entity.Now()).UpperBound(period).Get()
 	to = utils.TimeUtils(entity.Now()).LowerBound(period).Get()
-	minutes = utils.TimeUtils(from).Series(to, interval)
+	minutes = utils.TimeUtils(from).GetSeries(to, interval)
 	for i, m := range minutes {
 		fmt.Println(i, m, utils.TimeUtils(m).Format(format))
 	}
@@ -71,7 +71,7 @@ func printFrames(period time.Duration, interval time.Duration, format string) {
 
 	from := utils.TimeUtils(entity.Now()).LowerBound(period).Get()
 	to := utils.TimeUtils(entity.Now()).UpperBound(period).Get()
-	frames := utils.TimeUtils(from).TimeFrames(to, interval)
+	frames := utils.TimeUtils(from).GetTimeFrames(to, interval)
 	for i, f := range frames {
 		fmt.Println(i, f.String(format))
 	}
@@ -80,7 +80,7 @@ func printFrames(period time.Duration, interval time.Duration, format string) {
 
 	from = utils.TimeUtils(entity.Now()).UpperBound(period).Get()
 	to = utils.TimeUtils(entity.Now()).LowerBound(period).Get()
-	frames = utils.TimeUtils(from).TimeFrames(to, interval)
+	frames = utils.TimeUtils(from).GetTimeFrames(to, interval)
 	for i, f := range frames {
 		fmt.Println(i, f.String(format))
 	}

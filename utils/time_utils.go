@@ -182,8 +182,8 @@ func (t *timeUtils) UpperBound(duration time.Duration) *timeUtils {
 	return t
 }
 
-// Series creates a time series from the base time to the end time with the given interval
-func (t *timeUtils) Series(end Timestamp, interval time.Duration) (series []Timestamp) {
+// GetSeries creates a time series from the base time to the end time with the given interval
+func (t *timeUtils) GetSeries(end Timestamp, interval time.Duration) (series []Timestamp) {
 
 	if interval == 0 {
 		return series
@@ -205,8 +205,8 @@ func (t *timeUtils) Series(end Timestamp, interval time.Duration) (series []Time
 	return series
 }
 
-// TimeFrames creates time frames from the base time to the end time with the given interval with delay between slots
-func (t *timeUtils) TimeFrames(end Timestamp, interval time.Duration) (series []TimeFrame) {
+// GetTimeFrames creates time frames from the base time to the end time with the given interval with delay between slots
+func (t *timeUtils) GetTimeFrames(end Timestamp, interval time.Duration) (series []TimeFrame) {
 
 	if interval == 0 {
 		return series
@@ -238,4 +238,40 @@ func (t *timeUtils) TimeFrames(end Timestamp, interval time.Duration) (series []
 		}
 	}
 	return series
+}
+
+// GetTimeFramesMap creates time frames from the base time to the end time with the given interval as a map
+func (t *timeUtils) GetTimeFramesMap(end Timestamp, interval time.Duration) map[Timestamp]TimeFrame {
+
+	frames := make(map[Timestamp]TimeFrame)
+	if interval == 0 {
+		return frames
+	}
+
+	from := int64(t.baseTime)
+	to := int64(end)
+	step := int64(interval / time.Millisecond)
+
+	prev := int64(-1)
+
+	if from < to {
+		for ts := from; ts < to; ts += step {
+			if prev < 0 {
+				prev = ts
+			} else {
+				frames[Timestamp(prev)] = NewTimeFrame(Timestamp(prev), Timestamp(ts))
+				prev = ts
+			}
+		}
+	} else {
+		for ts := from; ts > to; ts -= step {
+			if prev < 0 {
+				prev = ts
+			} else {
+				frames[Timestamp(ts)] = NewTimeFrame(Timestamp(ts), Timestamp(prev))
+				prev = ts
+			}
+		}
+	}
+	return frames
 }
