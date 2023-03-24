@@ -174,6 +174,11 @@ func (s *inMemoryDatabaseQuery) Count(keys ...string) (total int64, err error) {
 	return total, nil
 }
 
+// GroupCount Execute the query based on the criteria, grouped by field and return count per group
+func (s *inMemoryDatabaseQuery) GroupCount(field string, keys ...string) (out map[int]int64, err error) {
+	return nil, fmt.Errorf("not yet implemented")
+}
+
 // FindSingle execute a query based on the where criteria to get a single (the first) result
 // After the marshaling the result shall be transformed via the query callback chain
 func (s *inMemoryDatabaseQuery) FindSingle(keys ...string) (entity Entity, err error) {
