@@ -38,7 +38,7 @@ type IQuery interface {
 	Count(keys ...string) (total int64, err error)
 
 	// GroupCount Execute the query based on the criteria, grouped by field and return count per group
-	GroupCount(field string, keys ...string) (out map[int]int64, err error)
+	GroupCount(field string, keys ...string) (out map[int]int64, total int64, err error)
 
 	// FindSingle Execute query based on the where criteria to get a single (the first) result
 	FindSingle(keys ...string) (entity Entity, err error)
