@@ -202,7 +202,7 @@ func (s *inMemoryDatastoreQuery) Histogram(field, function, timeField string, in
 // Histogram2D returns a two-dimensional time series data points based on the time field, supported intervals: Minute, Hour, Day, week, month
 // the data point is a calculation of the provided function on the selected field
 // supported functions: count : avg, sum, min, max
-func (s *inMemoryDatastoreQuery) Histogram2D(field, function, dim, timeField string, interval time.Duration, keys ...string) (out map[Timestamp][]Tuple[int, float64], total float64, err error) {
+func (s *inMemoryDatastoreQuery) Histogram2D(field, function, dim, timeField string, interval time.Duration, keys ...string) (out map[Timestamp]map[int]float64, total float64, err error) {
 	return nil, 0, fmt.Errorf("not yet implemented")
 }
 
