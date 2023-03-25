@@ -52,7 +52,7 @@ type IQuery interface {
 	// Histogram returns a time series data points based on the time field, supported intervals: Minute, Hour, Day, week, month
 	// the data point is a calculation of the provided function on the selected field
 	// supported functions: count : agv, sum, min, max
-	Histogram(field, function, timeField string, interval time.Duration, keys ...string) (out map[Timestamp]int64, total int64, err error)
+	Histogram(field, function, timeField string, interval time.Duration, keys ...string) (out map[Timestamp]float64, total float64, err error)
 
 	// FindSingle Execute query based on the where criteria to get a single (the first) result
 	FindSingle(keys ...string) (entity Entity, err error)

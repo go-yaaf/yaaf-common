@@ -195,7 +195,7 @@ func (s *inMemoryDatastoreQuery) GroupAggregation(field, function string, keys .
 }
 
 // Histogram returns a time series data points based on the time field, supported intervals: Minute, Hour, Day, week, month
-func (s *inMemoryDatastoreQuery) Histogram(field, function, timeField string, interval time.Duration, keys ...string) (out map[Timestamp]int64, total int64, err error) {
+func (s *inMemoryDatastoreQuery) Histogram(field, function, timeField string, interval time.Duration, keys ...string) (out map[Timestamp]float64, total float64, err error) {
 	return nil, 0, fmt.Errorf("not yet implemented")
 }
 
