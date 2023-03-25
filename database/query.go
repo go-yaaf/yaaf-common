@@ -42,7 +42,7 @@ type IQuery interface {
 	GroupCount(field string, keys ...string) (out map[int]int64, total int64, err error)
 
 	// Histogram returns a time series data points based on the time field, supported intervals: Minute, Hour, Day, week, month
-	Histogram(timeFiled string, interval time.Duration, keys ...string) (out map[Timestamp]int64, total int64, err error)
+	Histogram(timeField string, interval time.Duration, keys ...string) (out map[Timestamp]int64, total int64, err error)
 
 	// FindSingle Execute query based on the where criteria to get a single (the first) result
 	FindSingle(keys ...string) (entity Entity, err error)

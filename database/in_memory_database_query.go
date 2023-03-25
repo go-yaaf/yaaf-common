@@ -181,7 +181,7 @@ func (s *inMemoryDatabaseQuery) GroupCount(field string, keys ...string) (out ma
 }
 
 // Histogram returns a time series data points based on the time field, supported intervals: Minute, Hour, Day, week, month
-func (s *inMemoryDatabaseQuery) Histogram(timeFiled string, interval time.Duration, keys ...string) (out map[Timestamp]int64, total int64, err error) {
+func (s *inMemoryDatabaseQuery) Histogram(timeField string, interval time.Duration, keys ...string) (out map[Timestamp]int64, total int64, err error) {
 	return nil, 0, fmt.Errorf("not yet implemented")
 }
 
