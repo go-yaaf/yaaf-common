@@ -2,6 +2,7 @@ package database
 
 import (
 	. "github.com/go-yaaf/yaaf-common/entity"
+	"time"
 )
 
 // IQuery Database Query interface
@@ -39,6 +40,9 @@ type IQuery interface {
 
 	// GroupCount Execute the query based on the criteria, grouped by field and return count per group
 	GroupCount(field string, keys ...string) (out map[int]int64, total int64, err error)
+
+	// Histogram returns a time series data points based on the time field, supported intervals: Minute, Hour, Day, week, month
+	Histogram(timeFiled string, interval time.Duration, keys ...string) (out map[Timestamp]int64, total int64, err error)
 
 	// FindSingle Execute query based on the where criteria to get a single (the first) result
 	FindSingle(keys ...string) (entity Entity, err error)
