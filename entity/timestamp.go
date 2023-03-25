@@ -172,3 +172,23 @@ func (tf *TimeFrame) Duration() time.Duration {
 }
 
 // endregion
+
+// region TimeDataPoint ------------------------------------------------------------------------------------------------
+
+// TimeDataPoint model represents a generic datapoint in time
+type TimeDataPoint[V any] struct {
+	Timestamp Timestamp
+	Value     V
+}
+
+// NewTimeDataPoint return new instance of the datapoint
+func NewTimeDataPoint[V any](ts Timestamp, value V) TimeDataPoint[V] {
+	return TimeDataPoint[V]{Timestamp: ts, Value: value}
+}
+
+// String convert Epoch milliseconds timestamp to readable string
+func (tf *TimeDataPoint[V]) String(format string) string {
+	return fmt.Sprintf("%s - %v", tf.Timestamp.String(format), tf.Value)
+}
+
+// endregion
