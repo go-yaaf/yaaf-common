@@ -57,7 +57,7 @@ type IQuery interface {
 	// Histogram2D returns a two-dimensional time series data points based on the time field, supported intervals: Minute, Hour, Day, week, month
 	// the data point is a calculation of the provided function on the selected field
 	// supported functions: count : avg, sum, min, max
-	Histogram2D(field, function, dim, timeField string, interval time.Duration, keys ...string) (out map[Timestamp]float64, total float64, err error)
+	Histogram2D(field, function, dim, timeField string, interval time.Duration, keys ...string) (out map[Timestamp][]Tuple[int, float64], total float64, err error)
 
 	// FindSingle Execute query based on the where criteria to get a single (the first) result
 	FindSingle(keys ...string) (entity Entity, err error)
