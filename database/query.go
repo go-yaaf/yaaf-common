@@ -39,20 +39,25 @@ type IQuery interface {
 	Count(keys ...string) (total int64, err error)
 
 	// Aggregation Execute the query based on the criteria, order and pagination and return the provided aggregation function on the field
-	// supported functions: count : agv, sum, min, max
+	// supported functions: count : avg, sum, min, max
 	Aggregation(field, function string, keys ...string) (value float64, err error)
 
 	// GroupCount Execute the query based on the criteria, grouped by field and return count per group
 	GroupCount(field string, keys ...string) (out map[int]int64, total int64, err error)
 
 	// GroupAggregation Execute the query based on the criteria, order and pagination and return the aggregated value per group
-	// supported functions: count : agv, sum, min, max
+	// supported functions: count : avg, sum, min, max
 	GroupAggregation(field, function string, keys ...string) (out map[any]float64, err error)
 
 	// Histogram returns a time series data points based on the time field, supported intervals: Minute, Hour, Day, week, month
 	// the data point is a calculation of the provided function on the selected field
-	// supported functions: count : agv, sum, min, max
+	// supported functions: count : avg, sum, min, max
 	Histogram(field, function, timeField string, interval time.Duration, keys ...string) (out map[Timestamp]float64, total float64, err error)
+
+	// Histogram2D returns a two-dimensional time series data points based on the time field, supported intervals: Minute, Hour, Day, week, month
+	// the data point is a calculation of the provided function on the selected field
+	// supported functions: count : avg, sum, min, max
+	Histogram2D(field, function, dim, timeField string, interval time.Duration, keys ...string) (out map[Timestamp]float64, total float64, err error)
 
 	// FindSingle Execute query based on the where criteria to get a single (the first) result
 	FindSingle(keys ...string) (entity Entity, err error)

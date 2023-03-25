@@ -176,7 +176,7 @@ func (s *inMemoryDatabaseQuery) Count(keys ...string) (total int64, err error) {
 }
 
 // Aggregation Execute the query based on the criteria, order and pagination and return the provided aggregation function on the field
-// supported functions: count : agv, sum, min, max
+// supported functions: count : avg, sum, min, max
 func (s *inMemoryDatabaseQuery) Aggregation(field, function string, keys ...string) (value float64, err error) {
 	return 0, fmt.Errorf("not yet implemented")
 }
@@ -187,13 +187,20 @@ func (s *inMemoryDatabaseQuery) GroupCount(field string, keys ...string) (out ma
 }
 
 // GroupAggregation Execute the query based on the criteria, order and pagination and return the aggregated value per group
-// supported functions: count : agv, sum, min, max
+// supported functions: count : avg, sum, min, max
 func (s *inMemoryDatabaseQuery) GroupAggregation(field, function string, keys ...string) (out map[any]float64, err error) {
 	return nil, fmt.Errorf("not yet implemented")
 }
 
 // Histogram returns a time series data points based on the time field, supported intervals: Minute, Hour, Day, week, month
 func (s *inMemoryDatabaseQuery) Histogram(field, function, timeField string, interval time.Duration, keys ...string) (out map[Timestamp]float64, total float64, err error) {
+	return nil, 0, fmt.Errorf("not yet implemented")
+}
+
+// Histogram2D returns a two-dimensional time series data points based on the time field, supported intervals: Minute, Hour, Day, week, month
+// the data point is a calculation of the provided function on the selected field
+// supported functions: count : avg, sum, min, max
+func (s *inMemoryDatabaseQuery) Histogram2D(field, function, dim, timeField string, interval time.Duration, keys ...string) (out map[Timestamp]float64, total float64, err error) {
 	return nil, 0, fmt.Errorf("not yet implemented")
 }
 
