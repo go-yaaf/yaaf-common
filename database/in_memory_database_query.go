@@ -175,13 +175,25 @@ func (s *inMemoryDatabaseQuery) Count(keys ...string) (total int64, err error) {
 	return total, nil
 }
 
+// Aggregation Execute the query based on the criteria, order and pagination and return the provided aggregation function on the field
+// supported functions: count : agv, sum, min, max
+func (s *inMemoryDatabaseQuery) Aggregation(field, function string, keys ...string) (value float64, err error) {
+	return 0, fmt.Errorf("not yet implemented")
+}
+
 // GroupCount Execute the query based on the criteria, grouped by field and return count per group
 func (s *inMemoryDatabaseQuery) GroupCount(field string, keys ...string) (out map[int]int64, total int64, err error) {
 	return nil, 0, fmt.Errorf("not yet implemented")
 }
 
+// GroupAggregation Execute the query based on the criteria, order and pagination and return the aggregated value per group
+// supported functions: count : agv, sum, min, max
+func (s *inMemoryDatabaseQuery) GroupAggregation(field, function string, keys ...string) (out map[any]float64, err error) {
+	return nil, fmt.Errorf("not yet implemented")
+}
+
 // Histogram returns a time series data points based on the time field, supported intervals: Minute, Hour, Day, week, month
-func (s *inMemoryDatabaseQuery) Histogram(timeField string, interval time.Duration, keys ...string) (out map[Timestamp]int64, total int64, err error) {
+func (s *inMemoryDatabaseQuery) Histogram(field, function, timeField string, interval time.Duration, keys ...string) (out map[Timestamp]int64, total int64, err error) {
 	return nil, 0, fmt.Errorf("not yet implemented")
 }
 
