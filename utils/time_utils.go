@@ -190,11 +190,13 @@ func (t *timeUtils) GetSeries(end Timestamp, interval time.Duration) (series []T
 	}
 
 	from := int64(t.baseTime)
+	// Add 1 to include the last slot
 	to := int64(end)
 	step := int64(interval / time.Millisecond)
 
 	if from < to {
-		for ts := from; ts < to; ts += step {
+		eot := to + 1
+		for ts := from; ts < eot; ts += step {
 			series = append(series, Timestamp(ts))
 		}
 	} else {
