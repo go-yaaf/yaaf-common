@@ -145,8 +145,8 @@ func (ts *Timestamp) LocalString(format string, tz string) string {
 
 // TimeFrame represents a slot in time
 type TimeFrame struct {
-	From Timestamp
-	To   Timestamp
+	From Timestamp `json:"from"` // From Timestamp
+	To   Timestamp `json:"to"`   // To Timestamp
 }
 
 // NewTimeFrame return new time slot using start and end time
@@ -177,8 +177,8 @@ func (tf *TimeFrame) Duration() time.Duration {
 
 // TimeDataPoint model represents a generic datapoint in time
 type TimeDataPoint[V any] struct {
-	Timestamp Timestamp
-	Value     V
+	Timestamp Timestamp `json:"timestamp"` // Timestamp
+	Value     V         `json:"value"`     // Generic value
 }
 
 // NewTimeDataPoint return new instance of the datapoint
