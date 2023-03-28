@@ -3,6 +3,7 @@ package entity
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -63,6 +64,10 @@ func (e BaseEntity) NAME() string { return fmt.Sprintf("%s %s", e.TABLE(), e.Id)
 
 func (e BaseEntity) KEY() string { return "" }
 
+func NewBaseEntity() Entity {
+	return &BaseEntity{CreatedOn: Now(), UpdatedOn: Now()}
+}
+
 // EntityIndex extract table or index name from entity.TABLE()
 func EntityIndex(entity Entity, tenantId string) string {
 
@@ -79,6 +84,27 @@ func EntityIndex(entity Entity, tenantId string) string {
 	index = strings.Replace(index, "{{month}}", time.Now().Format("01"), -1)
 
 	return index
+}
+
+// endregion
+
+// region Base Entity --------------------------------------------------------------------------------------------------
+
+// SimpleEntity is a primitive type expressed as an Entity
+type SimpleEntity[T any] struct {
+	Value T `json:"value"` // entity value
+}
+
+func (e SimpleEntity[T]) ID() string { return fmt.Sprintf("%v", e.Value) }
+
+func (e SimpleEntity[T]) TABLE() string { return "" }
+
+func (e SimpleEntity[T]) NAME() string { return fmt.Sprintf("%v", reflect.TypeOf(e.Value).Name()) }
+
+func (e SimpleEntity[T]) KEY() string { return fmt.Sprintf("%v", e.Value) }
+
+func NewSimpleEntity[T any]() Entity {
+	return &SimpleEntity[T]{}
 }
 
 // endregion
