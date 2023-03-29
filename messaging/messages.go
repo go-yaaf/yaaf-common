@@ -47,17 +47,17 @@ type SubscriptionCallback func(msg IMessage) bool
 
 // endregion
 
-// Message generic implementation of IMessage interface
-type Message[T entity.Entity] struct {
-	MsgTopic     string `json:"topic"`     // Message topic (channel)
-	MsgOpCode    int    `json:"opCode"`    // Message op code
-	MsgAddressee string `json:"addressee"` // Message final addressee
-	MsgSessionId string `json:"sessionId"` // Session id shared across all messages related to the same session
-	MsgPayload   T      `json:"payload"`   // Payload
+// EntityMessage generic implementation of IMessage interface
+type EntityMessage struct {
+	MsgTopic     string        `json:"topic"`     // Message topic (channel)
+	MsgOpCode    int           `json:"opCode"`    // Message op code
+	MsgAddressee string        `json:"addressee"` // Message final addressee
+	MsgSessionId string        `json:"sessionId"` // Session id shared across all messages related to the same session
+	MsgPayload   entity.Entity `json:"payload"`   // Payload
 }
 
-func (m *Message[T]) Topic() string     { return m.MsgTopic }
-func (m *Message[T]) OpCode() int       { return m.MsgOpCode }
-func (m *Message[T]) Addressee() string { return m.MsgAddressee }
-func (m *Message[T]) SessionId() string { return m.MsgSessionId }
-func (m *Message[T]) Payload() any      { return m.MsgPayload }
+func (m *EntityMessage) Topic() string     { return m.MsgTopic }
+func (m *EntityMessage) OpCode() int       { return m.MsgOpCode }
+func (m *EntityMessage) Addressee() string { return m.MsgAddressee }
+func (m *EntityMessage) SessionId() string { return m.MsgSessionId }
+func (m *EntityMessage) Payload() any      { return m.MsgPayload }
