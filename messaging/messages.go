@@ -3,6 +3,8 @@
 
 package messaging
 
+import "github.com/go-yaaf/yaaf-common/entity"
+
 // region Message interface --------------------------------------------------------------------------------------------
 
 // IMessage General message interface
@@ -23,7 +25,7 @@ type IMessage interface {
 	Payload() any
 }
 
-// BaseMessage basie implementation of IMessage interface
+// BaseMessage base implementation of IMessage interface
 type BaseMessage struct {
 	MsgTopic     string `json:"topic"`     // Message topic (channel)
 	MsgOpCode    int    `json:"opCode"`    // Message op code
@@ -44,3 +46,18 @@ type MessageFactory func() IMessage
 type SubscriptionCallback func(msg IMessage) bool
 
 // endregion
+
+// Message generic implementation of IMessage interface
+type Message[T entity.Entity] struct {
+	MsgTopic     string `json:"topic"`     // Message topic (channel)
+	MsgOpCode    int    `json:"opCode"`    // Message op code
+	MsgAddressee string `json:"addressee"` // Message final addressee
+	MsgSessionId string `json:"sessionId"` // Session id shared across all messages related to the same session
+	MsgPayload   T      `json:"payload"`   // Payload
+}
+
+func (m *Message[T]) Topic() string     { return m.MsgTopic }
+func (m *Message[T]) OpCode() int       { return m.MsgOpCode }
+func (m *Message[T]) Addressee() string { return m.MsgAddressee }
+func (m *Message[T]) SessionId() string { return m.MsgSessionId }
+func (m *Message[T]) Payload() any      { return m.MsgPayload }

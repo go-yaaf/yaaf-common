@@ -88,7 +88,7 @@ func EntityIndex(entity Entity, tenantId string) string {
 
 // endregion
 
-// region Base Entity --------------------------------------------------------------------------------------------------
+// region Simple Entity ------------------------------------------------------------------------------------------------
 
 // SimpleEntity is a primitive type expressed as an Entity
 type SimpleEntity[T any] struct {
