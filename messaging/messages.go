@@ -49,15 +49,13 @@ type SubscriptionCallback func(msg IMessage) bool
 
 // EntityMessage generic implementation of IMessage interface
 type EntityMessage struct {
-	MsgTopic     string        `json:"topic"`     // Message topic (channel)
-	MsgOpCode    int           `json:"opCode"`    // Message op code
-	MsgAddressee string        `json:"addressee"` // Message final addressee
-	MsgSessionId string        `json:"sessionId"` // Session id shared across all messages related to the same session
-	MsgPayload   entity.Entity `json:"payload"`   // Payload
+	BaseMessage
+	MsgPayload entity.Entity `json:"payload"` // Payload
 }
 
-func (m *EntityMessage) Topic() string     { return m.MsgTopic }
-func (m *EntityMessage) OpCode() int       { return m.MsgOpCode }
-func (m *EntityMessage) Addressee() string { return m.MsgAddressee }
-func (m *EntityMessage) SessionId() string { return m.MsgSessionId }
-func (m *EntityMessage) Payload() any      { return m.MsgPayload }
+func (m *EntityMessage) Payload() any { return m.MsgPayload }
+
+// NewEntityMessage is a message factory
+func NewEntityMessage() IMessage {
+	return &EntityMessage{}
+}
