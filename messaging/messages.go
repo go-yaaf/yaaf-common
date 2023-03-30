@@ -57,3 +57,5 @@ func (m *EntityMessage) Payload() any { return m.MsgPayload }
 func NewEntityMessage() IMessage {
 	return &EntityMessage{}
 }
+
+const EntityMessageTopic = "ENTITY"
