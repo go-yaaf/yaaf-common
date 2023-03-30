@@ -3,8 +3,6 @@
 
 package messaging
 
-import "github.com/go-yaaf/yaaf-common/entity"
-
 // region Message interface --------------------------------------------------------------------------------------------
 
 // IMessage General message interface
@@ -50,7 +48,7 @@ type SubscriptionCallback func(msg IMessage) bool
 // EntityMessage generic implementation of IMessage interface
 type EntityMessage struct {
 	BaseMessage
-	MsgPayload entity.Entity `json:"payload"` // Payload
+	MsgPayload any `json:"payload"` // Payload
 }
 
 func (m *EntityMessage) Payload() any { return m.MsgPayload }
