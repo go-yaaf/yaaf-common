@@ -63,7 +63,7 @@ func (m *InMemoryMessageBus) Publish(messages ...IMessage) error {
 }
 
 // Subscribe on topics
-func (m *InMemoryMessageBus) Subscribe(mf MessageFactory, callback SubscriptionCallback, subscriber string, topics ...string) (subscriptionId string, error error) {
+func (m *InMemoryMessageBus) Subscribe(subscription string, mf MessageFactory, callback SubscriptionCallback, topics ...string) (subscriptionId string, error error) {
 
 	// Validate callback
 	if callback == nil {
@@ -152,10 +152,10 @@ func (m *InMemoryMessageBus) CreateProducer(topic string) (IMessageProducer, err
 }
 
 // CreateConsumer creates message consumer for a specific topic
-func (m *InMemoryMessageBus) CreateConsumer(mf MessageFactory, topic string) (IMessageConsumer, error) {
+func (m *InMemoryMessageBus) CreateConsumer(subscription string, mf MessageFactory, topics ...string) (IMessageConsumer, error) {
 	return &InMemoryMessageConsumer{
 		bus:     m,
-		topic:   topic,
+		topic:   topics[0],
 		factory: mf,
 	}, nil
 }

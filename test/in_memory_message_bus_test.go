@@ -115,7 +115,7 @@ func TestInMemoryMessageBus_PubSub(t *testing.T) {
 	go publishMessages(wg, bus, "heroes_1", time.Second)
 	go publishMessages(wg, bus, "heroes_2", time.Second)
 
-	bus.Subscribe(NewHeroMessage, subscriberCallback, "subscriber", "heroes_1")
+	bus.Subscribe("subscriber", NewHeroMessage, subscriberCallback, "heroes_1")
 
 	wg.Wait()
 	fmt.Println("done")

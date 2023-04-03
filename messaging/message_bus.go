@@ -21,7 +21,7 @@ type IMessageBus interface {
 	Publish(messages ...IMessage) error
 
 	// Subscribe on topics and return subscriberId
-	Subscribe(mf MessageFactory, callback SubscriptionCallback, subscriber string, topics ...string) (string, error)
+	Subscribe(subscription string, mf MessageFactory, callback SubscriptionCallback, topics ...string) (string, error)
 
 	// Unsubscribe with the given subscriber id
 	Unsubscribe(subscriptionId string) bool
@@ -36,7 +36,7 @@ type IMessageBus interface {
 	CreateProducer(topic string) (IMessageProducer, error)
 
 	// CreateConsumer creates message consumer for a specific topic
-	CreateConsumer(mf MessageFactory, topic string) (IMessageConsumer, error)
+	CreateConsumer(subscription string, mf MessageFactory, topics ...string) (IMessageConsumer, error)
 }
 
 // IMessageProducer Message bus producer interface
