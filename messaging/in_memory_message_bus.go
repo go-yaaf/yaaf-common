@@ -29,7 +29,7 @@ func NewInMemoryMessageBus() (mq IMessageBus, err error) {
 	}, nil
 }
 
-// region IMessageQueue methods implementation -------------------------------------------------------------------------
+// region IMessageBus methods implementation ---------------------------------------------------------------------------
 
 // Ping Test connectivity for retries number of time with time interval (in seconds) between retries
 func (m *InMemoryMessageBus) Ping(retries uint, intervalInSeconds uint) error {
@@ -151,6 +151,15 @@ func (m *InMemoryMessageBus) CreateProducer(topic string) (IMessageProducer, err
 	return m, nil
 }
 
+// CreateConsumer creates message consumer for a specific topic
+func (m *InMemoryMessageBus) CreateConsumer(mf MessageFactory, topic string) (IMessageConsumer, error) {
+	return &InMemoryMessageConsumer{
+		bus:     m,
+		topic:   topic,
+		factory: mf,
+	}, nil
+}
+
 // try to pop message from one of the queues
 func (m *InMemoryMessageBus) pop(queue ...string) (IMessage, error) {
 
@@ -166,6 +175,27 @@ func (m *InMemoryMessageBus) pop(queue ...string) (IMessage, error) {
 		}
 	}
 	return nil, fmt.Errorf("not found")
+}
+
+// endregion
+
+// region IMessageConsumer methods implementation ----------------------------------------------------------------------
+
+type InMemoryMessageConsumer struct {
+	bus     IMessageBus
+	topic   string
+	factory MessageFactory
+}
+
+// Close client and free resources
+func (m *InMemoryMessageConsumer) Close() error {
+	logger.Debug("In memory data-cache closed")
+	return nil
+}
+
+// Read message from topic, blocks until a new message arrive or until timeout
+func (m *InMemoryMessageConsumer) Read(timeout time.Duration) (IMessage, error) {
+	return m.bus.Pop(m.factory, timeout)
 }
 
 // endregion

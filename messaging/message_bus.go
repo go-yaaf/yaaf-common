@@ -32,8 +32,11 @@ type IMessageBus interface {
 	// Pop Remove and get the last message in a queue or block until timeout expires
 	Pop(mf MessageFactory, timeout time.Duration, queue ...string) (IMessage, error)
 
-	// CreateProducer creates message producer for specific topic
+	// CreateProducer creates message producer for a specific topic
 	CreateProducer(topic string) (IMessageProducer, error)
+
+	// CreateConsumer creates message consumer for a specific topic
+	CreateConsumer(mf MessageFactory, topic string) (IMessageConsumer, error)
 }
 
 // IMessageProducer Message bus producer interface
@@ -44,4 +47,13 @@ type IMessageProducer interface {
 
 	// Publish messages to a producer channel (topic)
 	Publish(messages ...IMessage) error
+}
+
+// IMessageConsumer Message bus consumer (reader) interface
+type IMessageConsumer interface {
+	// Closer includes method Close()
+	io.Closer
+
+	// Read message from topic, blocks until a new message arrive or until timeout
+	Read(timeout time.Duration) (IMessage, error)
 }
