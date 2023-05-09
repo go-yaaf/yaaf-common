@@ -82,7 +82,11 @@ func (dc *InMemoryDataCache) GetKeys(factory EntityFactory, keys ...string) (res
 
 // Set value of key with optional expiration
 func (dc *InMemoryDataCache) Set(key string, entity Entity, expiration ...time.Duration) (err error) {
-	dc.keys.Set(key, entity)
+	if len(expiration) == 0 {
+		dc.keys.Set(key, entity)
+	} else {
+		dc.keys.SetWithTTL(key, entity, expiration[0])
+	}
 	return nil
 }
 
@@ -102,8 +106,7 @@ func (dc *InMemoryDataCache) SetNX(key string, entity Entity, expiration ...time
 // Add Set the value of a key only if the key does not exist
 func (dc *InMemoryDataCache) Add(key string, entity Entity, expiration time.Duration) (result bool, err error) {
 	if _, fe := dc.Get(nil, key); fe != nil {
-		_ = dc.Set(key, entity, expiration)
-		return true, nil
+		return true, dc.Set(key, entity, expiration)
 	} else {
 		return false, nil
 	}
