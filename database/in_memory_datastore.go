@@ -250,6 +250,38 @@ func (dbs *InMemoryDatastore) SetFields(factory EntityFactory, entityID string, 
 	return fe
 }
 
+// BulkSetFields Update specific field of multiple entities in a single transaction (eliminates the need to fetch - change - update)
+// The field is the name of the field, values is a map of entityId -> field value
+func (dbs *InMemoryDatastore) BulkSetFields(factory EntityFactory, field string, values map[string]any, keys ...string) (affected int64, error error) {
+
+	list, _, fe := dbs.Query(factory).Find(keys...)
+	if fe != nil {
+		return 0, fe
+	}
+
+	// convert entity to Json
+	count := 0
+	for _, entity := range list {
+		js, err := utils.JsonUtils().ToJson(entity)
+		if err != nil {
+			return 0, err
+		}
+
+		// set field
+		if val, ok := values[entity.ID()]; ok {
+			js[field] = val
+
+			if toSet, _ := utils.JsonUtils().FromJson(factory, js); toSet != nil {
+				if _, er := dbs.Update(toSet); er == nil {
+					count += 1
+				}
+
+			}
+		}
+	}
+	return int64(count), nil
+}
+
 // Query is a factory method for query builder Utility
 func (dbs *InMemoryDatastore) Query(factory EntityFactory) IQuery {
 	return &inMemoryDatastoreQuery{

@@ -53,6 +53,10 @@ type IDatabase interface {
 	// SetFields Update some fields of the document in a single transaction (eliminates the need to fetch - change - update)
 	SetFields(factory EntityFactory, entityID string, fields map[string]any, keys ...string) (err error)
 
+	// BulkSetFields Update specific field of multiple entities in a single transaction (eliminates the need to fetch - change - update)
+	// The field is the name of the field, values is a map of entityId -> field value
+	BulkSetFields(factory EntityFactory, field string, values map[string]any, keys ...string) (affected int64, err error)
+
 	// Query Utility struct method to build a query
 	Query(factory EntityFactory) IQuery
 
