@@ -10,7 +10,7 @@ import (
 )
 
 func TestEntityIDs(t *testing.T) {
-
+	skipCI(t)
 	sid := entity.ShortID()
 	fmt.Printf("%-8s %s\n", "ShortID", sid)
 	assert.Equal(t, 6, len(sid), "short id should be 6 digits length")

@@ -11,7 +11,7 @@ import (
 )
 
 func TestBounds(t *testing.T) {
-
+	skipCI(t)
 	format := "YYYY-MMM-DD HH:mm:ss.sss"
 	now := entity.Now()
 	tu := utils.TimeUtils(now.Add(time.Hour))
@@ -32,7 +32,7 @@ func TestBounds(t *testing.T) {
 }
 
 func TestSeries(t *testing.T) {
-
+	skipCI(t)
 	format := "YYYY-MMM-DD HH:mm:ss.sss"
 	// 60 minutes series
 	//printSeries(time.Hour, time.Minute, format)

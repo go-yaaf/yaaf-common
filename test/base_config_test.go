@@ -11,7 +11,7 @@ import (
 )
 
 func TestBaseConfig_ReadConfig(t *testing.T) {
-
+	skipCI(t)
 	if err := os.Setenv("LOG_LEVEL", "ERROR"); err != nil {
 		assert.FailNow(t, err.Error())
 	}

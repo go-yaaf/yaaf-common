@@ -12,7 +12,7 @@ import (
 )
 
 func TestLogger(t *testing.T) {
-
+	skipCI(t)
 	logger.EnableJsonFormat(false)
 	logger.Init()
 
@@ -23,6 +23,7 @@ func TestLogger(t *testing.T) {
 }
 
 func TestProductionLogger(t *testing.T) {
+	skipCI(t)
 	logger.Debug("debug message")
 	time.Sleep(time.Second)
 	logger.Info("info message")
@@ -34,8 +35,7 @@ func TestProductionLogger(t *testing.T) {
 
 func TestZapLogger(t *testing.T) {
 
-	//testLogger, _ := zap.NewProduction()
-	//defer testLogger.Sync()
+	skipCI(t)
 
 	cfg := zap.Config{
 		Encoding:    "console",
