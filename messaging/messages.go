@@ -19,6 +19,9 @@ type IMessage interface {
 	// SessionId identifies a message exchange session which is shared across all messages related to the same session
 	SessionId() string
 
+	// Version identifies a message version
+	Version() string
+
 	// Payload is the message body
 	Payload() any
 }
@@ -27,12 +30,14 @@ type IMessage interface {
 type BaseMessage struct {
 	MsgTopic     string `json:"topic"`     // Message topic (channel)
 	MsgOpCode    int    `json:"opCode"`    // Message op code
+	MsgVersion   string `json:"version"`   // Message op code
 	MsgAddressee string `json:"addressee"` // Message final addressee
 	MsgSessionId string `json:"sessionId"` // Session id shared across all messages related to the same session
 }
 
 func (m *BaseMessage) Topic() string     { return m.MsgTopic }
 func (m *BaseMessage) OpCode() int       { return m.MsgOpCode }
+func (m *BaseMessage) Version() string   { return m.MsgVersion }
 func (m *BaseMessage) Addressee() string { return m.MsgAddressee }
 func (m *BaseMessage) SessionId() string { return m.MsgSessionId }
 func (m *BaseMessage) Payload() any      { return nil }
