@@ -2,95 +2,125 @@ package pool
 
 import (
 	"fmt"
-	"sync/atomic"
+	"sync"
 	"time"
 )
 
-// WorkerPool process all tasks
-type WorkerPool struct {
-	queueSize  int
-	numWorkers int
-	workers    []*Worker
-	jobQueue   chan Task
-	workerPool chan chan Task
-	quit       chan bool
-	results    chan any
-	refCount   int64
+type WorkerPool[T any] struct {
+	singleJob         chan Task[T]
+	queuedJob         chan Task[T]
+	readyPool         chan chan Task[T]
+	workers           []*worker[T]
+	maxWorkers        int
+	dispatcherStopped *sync.WaitGroup
+	workersStopped    *sync.WaitGroup
+	quit              chan bool
 }
 
-// NewWorkerPool factory method to create the worker pool with number of worker threads and limit the size of the task queue
-func NewWorkerPool(workers int, size int, results chan any) *WorkerPool {
-	workerPool := &WorkerPool{queueSize: size, numWorkers: workers}
-	workerPool.jobQueue = make(chan Task, size)
-	workerPool.workerPool = make(chan chan Task, workers)
-	workerPool.quit = make(chan bool)
-	workerPool.results = results
-	workerPool.createPool()
-	return workerPool
-}
-
-// Execute submits the job to the queue, return error if the queue is full
-func (t *WorkerPool) Execute(task Task) error {
-	if len(t.jobQueue) == t.queueSize {
-		return fmt.Errorf("the job queue is full")
+func NewWorkerPool[T any](maxWorkers int, capacity int) *WorkerPool[T] {
+	if capacity <= 0 {
+		capacity = 100
 	}
-	atomic.AddInt64(&t.refCount, 1)
-	t.jobQueue <- task
+	if maxWorkers <= 0 {
+		maxWorkers = 1
+	}
+
+	return &WorkerPool[T]{
+		singleJob:         make(chan Task[T]),
+		queuedJob:         make(chan Task[T], capacity),
+		readyPool:         make(chan chan Task[T], maxWorkers),
+		dispatcherStopped: &sync.WaitGroup{},
+		workersStopped:    &sync.WaitGroup{},
+		quit:              make(chan bool),
+		maxWorkers:        maxWorkers,
+	}
+}
+
+// Start pool with optional callback to be invoked on task completion
+func (q *WorkerPool[T]) Start(callback func(T)) error {
+
+	if len(q.workers) > 0 {
+		return fmt.Errorf("pool already started")
+	}
+
+	// Create and start workers
+	q.workers = make([]*worker[T], q.maxWorkers, q.maxWorkers)
+
+	// create and start workers
+	for i := 0; i < q.maxWorkers; i++ {
+		q.workers[i] = NewWorker[T](i+1, q.readyPool, q.workersStopped)
+		q.workers[i].Start(callback)
+	}
+	go q.dispatch()
 	return nil
 }
 
-// WaitForAll for all jobs to complete
-func (t *WorkerPool) WaitForAll() {
-	for t.isDone() == false {
-		time.Sleep(time.Second)
-	}
+func (q *WorkerPool[T]) Stop() {
+	q.quit <- true
+	q.dispatcherStopped.Wait()
 }
 
-func (t *WorkerPool) isDone() bool {
-
-	fmt.Println("Jobs reference count:", t.refCount)
-
-	// Check job queue length
-	//if len(t.jobQueue) > 0 {
-	//	return false
-	//}
-	return t.refCount <= 0
-}
-
-// Close will close the worker pool and terminate all waiting jobs
-// It sends the stop signal to all the worker that are running
-func (t *WorkerPool) Close() {
-	close(t.quit)       // Stops all the routines
-	close(t.workerPool) // Closes the Job worker pool
-	close(t.jobQueue)   // Closes the job Queue
-}
-
-// createPool creates the workers and start listening on the jobQueue
-func (t *WorkerPool) createPool() {
-	for i := 0; i < t.numWorkers; i++ {
-		worker := NewWorker(t.workerPool, t.quit, &t.refCount, t.results)
-		worker.Start()
-	}
-	go t.startDispatcher()
-}
-
-// start listen to the jobs queue and dispatch the jobs to a worker
-func (t *WorkerPool) startDispatcher() {
+func (q *WorkerPool[T]) dispatch() {
+	// start the dispatcher
+	q.dispatcherStopped.Add(1)
 	for {
 		select {
+		case job := <-q.singleJob:
+			workerXChannel := <-q.readyPool // wait for free worker
+			workerXChannel <- job           // dispatch job to the free worker
 
-		case job := <-t.jobQueue:
-			// Got job
-			func(job Task) {
-				// Find a worker for the job
-				jobChannel := <-t.workerPool
-				// Submit job to the worker
-				jobChannel <- job
-			}(job)
+		case job := <-q.queuedJob:
+			workerXChannel := <-q.readyPool // wait for free worker
+			workerXChannel <- job           // dispatch job to the free worker
 
-		case <-t.quit:
-			// Close the worker pool
+		case <-q.quit:
+			// free all workers
+			for i := 0; i < len(q.workers); i++ {
+				q.workers[i].Stop()
+			}
+			// wait for all workers to finish their job
+			q.workersStopped.Wait()
+
+			// stop the dispatcher
+			q.dispatcherStopped.Done()
 			return
 		}
+	}
+}
+
+// Submit a task to the job queue, blocked if no workers are available
+func (q *WorkerPool[T]) Submit(task Task[T]) {
+	q.singleJob <- task
+}
+
+// Enqueue submits a task to the buffered job queue without blocking, returns false if queue is full
+func (q *WorkerPool[T]) Enqueue(task Task[T]) bool {
+	select {
+	case q.queuedJob <- task:
+		return true
+	default:
+		return false
+	}
+}
+
+// EnqueueWithTimeout submits a task to the buffered job queue without blocking, returns false if queue is full within the duration
+func (q *WorkerPool[T]) EnqueueWithTimeout(task Task[T], timeout time.Duration) bool {
+	if timeout <= 0 {
+		timeout = 1 * time.Second
+	}
+
+	ch := make(chan bool, 1)
+	t := time.AfterFunc(timeout, func() {
+		ch <- false
+	})
+	defer func() {
+		t.Stop()
+	}()
+
+	select {
+	case q.queuedJob <- task:
+		return true
+	case <-ch:
+		return false
 	}
 }

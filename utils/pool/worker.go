@@ -1,41 +1,66 @@
 package pool
 
-import "sync/atomic"
+import (
+	"log"
+	"runtime"
+	"sync"
+)
 
-// Worker type holds the job channel and passed worker threadpool
-type Worker struct {
-	jobChannel     chan Task
-	workerPool     chan chan Task
-	quit           chan bool
-	resultChannel  chan any
-	referenceCount *int64
+type worker[T any] struct {
+	id        int
+	done      *sync.WaitGroup
+	readyPool chan chan Task[T]
+	work      chan Task[T]
+	quit      chan bool
+	callback  func(T)
 }
 
-// NewWorker creates the new worker
-func NewWorker(workerPool chan chan Task, quit chan bool, rc *int64, results chan any) *Worker {
-	return &Worker{workerPool: workerPool, jobChannel: make(chan Task), quit: quit, resultChannel: results, referenceCount: rc}
+func NewWorker[T any](id int, readyPool chan chan Task[T], done *sync.WaitGroup) *worker[T] {
+	return &worker[T]{
+		id:        id,
+		done:      done,
+		readyPool: readyPool,
+		work:      make(chan Task[T]),
+		quit:      make(chan bool),
+	}
 }
 
-// Start starts the worker by listening to the job channel
-func (w Worker) Start() {
+func (w *worker[T]) Process(task Task[T]) {
+	defer func() {
+		if r := recover(); r != nil {
+			const size = 64 << 10
+			buf := make([]byte, size)
+			buf = buf[:runtime.Stack(buf, false)]
+			log.Printf("panic running process: %v\n%s\n", r, buf)
+		}
+	}()
+	result := task.Run()
+
+	// If callback defined, invoke callback
+	if w.callback != nil {
+		go w.callback(result)
+	}
+}
+
+// Start wait for tasks with optional
+func (w *worker[T]) Start(callback func(T)) {
+	w.callback = callback
 	go func() {
+		w.done.Add(1)
 		for {
-			// Put the job into the worker pool
-			w.workerPool <- w.jobChannel
-
+			w.readyPool <- w.work
 			select {
-			// Wait for the tasks in the task channel
-			case task := <-w.jobChannel:
-				// Got the task and run it
-				result := task.Run()
-				atomic.AddInt64(w.referenceCount, -1)
-				if w.resultChannel != nil {
-					w.resultChannel <- result
-				}
+			case work := <-w.work:
+				w.Process(work)
 			case <-w.quit:
-				// Exit the go routine when the quit channel is closed
+				w.done.Done()
 				return
 			}
 		}
 	}()
+}
+
+// Stop notify worker to stop after current process
+func (w *worker[T]) Stop() {
+	w.quit <- true
 }

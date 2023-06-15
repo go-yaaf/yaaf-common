@@ -1,62 +1,71 @@
-// Base configuration utility tests
-
 package test
 
 import (
 	"fmt"
-	"github.com/go-yaaf/yaaf-common/utils/pool"
+	"log"
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/go-yaaf/yaaf-common/utils/pool"
 )
 
-type TestTask struct {
-	data  int
-	delay int
-	index int
+var rnd = rand.New(rand.NewSource(time.Now().UnixMilli()))
+
+type parseFileTask struct {
+	file string
+	num  int
+	idx  int
 }
 
-func (r *TestTask) Run() any {
-	time.Sleep(time.Duration(r.delay) * time.Second)
-	fmt.Println(fmt.Sprintf("%d: %d", r.index, r.data))
-	return fmt.Sprintf("%d: %d", r.index, r.data)
+func (p *parseFileTask) Run() int {
+	// time.Sleep(time.Duration(rnd.Intn(8)) * time.Second)
+	time.Sleep(time.Second)
+	log.Println(fmt.Sprintf("Parse Finished: %s, (%d)", p.file, p.num))
+	return rnd.Intn(1000)
 }
 
-func newTestTask(index, data, delay int) pool.Task {
-	return &TestTask{
-		index: index,
-		data:  data,
-		delay: delay,
-	}
-}
-
-func TestWorkerPool_Execute(t *testing.T) {
+func TestWorkPool(t *testing.T) {
 	skipCI(t)
+	start := time.Now().UnixMilli()
 
-	random := rand.New(rand.NewSource(time.Now().UnixNano()))
+	wp := pool.NewWorkerPool[int](20, 50)
+	wp.Start(nil)
 
-	results := make(chan any)
-
-	// Create worker pool with 4 worker threads and queue size of 100000
-	workerPool := pool.NewWorkerPool(4, 100000, results)
-
-	for i := 1; i < 21; i++ {
-		data := random.Intn(100000)
-		delay := 1 + random.Intn(5)
-
-		task := newTestTask(i, data, delay)
-		if err := workerPool.Execute(task); err != nil {
-			fmt.Println(i, "execute error", err.Error())
-		} else {
-			fmt.Println(i, "execute", data)
-		}
+	// submit tasks
+	for i := 0; i < 30; i++ {
+		wp.Submit(&parseFileTask{
+			file: fmt.Sprintf("file: %d", i),
+			num:  rnd.Intn(4),
+			idx:  i,
+		})
 	}
+	wp.Stop()
 
-	//// Wait for all tasks in the pool
-	//for res := range results {
-	//	fmt.Println("result:", res)
-	//}
-	//workerPool.WaitForAll()
+	duration := time.Now().UnixMilli() - start
+	fmt.Println("Done within", duration, "milliseconds")
+}
 
-	workerPool.Close()
+func TestWorkPoolWithResultsCallback(t *testing.T) {
+	skipCI(t)
+	start := time.Now().UnixMilli()
+
+	cb := func(res int) {
+		fmt.Println("Callback invoked:", res)
+	}
+	wp := pool.NewWorkerPool[int](20, 50)
+	wp.Start(cb)
+
+	// submit tasks
+	for i := 0; i < 30; i++ {
+		wp.Submit(&parseFileTask{
+			file: fmt.Sprintf("file: %d", i),
+			num:  rnd.Intn(4),
+			idx:  i,
+		})
+	}
+	wp.Stop()
+
+	duration := time.Now().UnixMilli() - start
+	fmt.Println("Done within", duration, "milliseconds")
 }
