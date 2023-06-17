@@ -1,13 +1,12 @@
 package database
 
 import (
-	"encoding/json"
 	"fmt"
-	"github.com/go-yaaf/yaaf-common/utils"
 	"strings"
 	"time"
 
 	. "github.com/go-yaaf/yaaf-common/entity"
+	"github.com/go-yaaf/yaaf-common/utils"
 )
 
 // region queryBuilder internal structure ------------------------------------------------------------------------------
@@ -368,7 +367,7 @@ func (s *inMemoryDatabaseQuery) processCallbacks(in Entity) (out Entity) {
 // ToString gets a string representation of the query
 func (s *inMemoryDatabaseQuery) ToString() string {
 	// Create Json representing the internal builder
-	if bytes, err := json.Marshal(s); err != nil {
+	if bytes, err := Marshal(s); err != nil {
 		return err.Error()
 	} else {
 		return string(bytes)

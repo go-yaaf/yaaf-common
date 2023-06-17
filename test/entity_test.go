@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/go-yaaf/yaaf-common/entity"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
@@ -36,4 +37,30 @@ func TestEntityIDs(t *testing.T) {
 	assert.Equal(t, 36, len(gid), "guid should be 36 digits length")
 
 	fmt.Printf("\n\n")
+}
+
+func TestFastJson(t *testing.T) {
+	skipCI(t)
+
+	hero := NewHero1("spider-man", 234, "Spider Man")
+
+	bytes, err := entity.Marshal(hero)
+	require.Nil(t, err)
+
+	result := string(bytes)
+	fmt.Println(result)
+
+	// Test Unmarshal
+	expected := NewHero()
+	err = entity.Unmarshal(bytes, expected)
+	require.Nil(t, err)
+	fmt.Println(expected.NAME())
+
+	// Test UnmarshalFromString
+	expected2 := NewHero()
+	err = entity.UnmarshalFromString(result, expected2)
+	require.Nil(t, err)
+	fmt.Println(expected2.NAME())
+
+	fmt.Printf("Done \n\n")
 }

@@ -3,12 +3,12 @@
 package messaging
 
 import (
-	"encoding/json"
 	"fmt"
-	"github.com/go-yaaf/yaaf-common/entity"
-	"github.com/go-yaaf/yaaf-common/logger"
 	"sync"
 	"time"
+
+	"github.com/go-yaaf/yaaf-common/entity"
+	"github.com/go-yaaf/yaaf-common/logger"
 
 	"github.com/go-yaaf/yaaf-common/utils/collections"
 )
@@ -49,7 +49,7 @@ func (m *InMemoryMessageBus) Publish(messages ...IMessage) error {
 	defer m.mu.Unlock()
 
 	for _, message := range messages {
-		data, err := json.Marshal(message)
+		data, err := entity.Marshal(message)
 		if err != nil {
 			return err
 		}
@@ -90,7 +90,7 @@ func (m *InMemoryMessageBus) Subscribe(subscription string, mf MessageFactory, c
 			select {
 			case data := <-cn:
 				message := mf()
-				if err := json.Unmarshal(data, &message); err == nil {
+				if err := entity.Unmarshal(data, &message); err == nil {
 					callback(message)
 				}
 			}
