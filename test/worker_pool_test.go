@@ -2,6 +2,7 @@ package test
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"log"
 	"math/rand"
 	"testing"
@@ -30,7 +31,8 @@ func TestWorkPool(t *testing.T) {
 	start := time.Now().UnixMilli()
 
 	wp := pool.NewWorkerPool[int](20, 50)
-	wp.Start(nil)
+	err := wp.Start(nil)
+	require.Nil(t, err, "failed to start worker pool")
 
 	// submit tasks
 	for i := 0; i < 30; i++ {
@@ -54,7 +56,8 @@ func TestWorkPoolWithResultsCallback(t *testing.T) {
 		fmt.Println("Callback invoked:", res)
 	}
 	wp := pool.NewWorkerPool[int](20, 50)
-	wp.Start(cb)
+	err := wp.Start(cb)
+	require.Nil(t, err, "failed to start worker pool")
 
 	// submit tasks
 	for i := 0; i < 30; i++ {
@@ -68,4 +71,31 @@ func TestWorkPoolWithResultsCallback(t *testing.T) {
 
 	duration := time.Now().UnixMilli() - start
 	fmt.Println("Done within", duration, "milliseconds")
+}
+
+func TestParallel(t *testing.T) {
+	skipCI(t)
+	start := time.Now().UnixMilli()
+
+	wp := pool.NewParallel[parseFileTask](10, 50)
+	err := wp.Start(parallelProcessor)
+	require.Nil(t, err, "failed to start worker pool")
+
+	// submit items
+	for i := 0; i < 30; i++ {
+		wp.Submit(parseFileTask{
+			file: fmt.Sprintf("file: %d", i),
+			num:  rnd.Intn(4),
+			idx:  i,
+		})
+	}
+	wp.Stop()
+
+	duration := time.Now().UnixMilli() - start
+	fmt.Println("Done within", duration, "milliseconds")
+}
+
+func parallelProcessor(p parseFileTask) {
+	time.Sleep(time.Second)
+	log.Println(fmt.Sprintf("Parse Finished: %s, (%d)", p.file, p.num))
 }
