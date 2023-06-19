@@ -6,6 +6,7 @@ import (
 	"github.com/go-yaaf/yaaf-common/entity"
 	. "github.com/go-yaaf/yaaf-common/messaging"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"sync"
 	"testing"
 	"time"
@@ -108,7 +109,9 @@ func TestInMemoryMessageBus_PubSub(t *testing.T) {
 	go publishMessages(wg, bus, "heroes_1", time.Second)
 	go publishMessages(wg, bus, "heroes_2", time.Second)
 
-	bus.Subscribe("subscriber", NewHeroMessage, subscriberCallback, "heroes_1")
+	sub, err := bus.Subscribe("subscriber", NewHeroMessage, subscriberCallback, "heroes_1")
+	require.NoError(t, err, "subscription error")
+	require.NotEmptyf(t, sub, "subscription is empty")
 
 	wg.Wait()
 	fmt.Println("done")
@@ -124,7 +127,8 @@ func publishMessages(wg *sync.WaitGroup, bus IMessageBus, topic string, timeout 
 		select {
 		case _ = <-time.Tick(time.Millisecond):
 			hero := list_of_heroes[idx]
-			message := newHeroMessage(topic, hero.(*Hero))
+			//message := newHeroMessage(topic, hero.(*Hero))
+			message := GetMessage[*Hero](topic, hero.(*Hero))
 			_ = bus.Publish(message)
 			if idx == len(list_of_heroes)-1 {
 				idx = 0
