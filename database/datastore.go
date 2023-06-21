@@ -14,8 +14,8 @@ type IDatastore interface {
 	// Ping tests database connectivity for retries number of time with time interval (in seconds) between retries
 	Ping(retries uint, intervalInSeconds uint) error
 
-	// Clone Returns a clone (copy) of the instance
-	Clone() (IDatastore, error)
+	// CloneDatastore Returns a clone (copy) of the instance
+	CloneDatastore() (IDatastore, error)
 
 	// Get a single entity by ID
 	Get(factory EntityFactory, entityID string, keys ...string) (result Entity, err error)

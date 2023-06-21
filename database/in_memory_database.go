@@ -73,8 +73,8 @@ func (dbs *InMemoryDatabase) Close() error {
 	return nil
 }
 
-// Clone Returns a clone (copy) of the database instance
-func (dbs *InMemoryDatabase) Clone() (IDatabase, error) {
+// CloneDatabase Returns a clone (copy) of the database instance
+func (dbs *InMemoryDatabase) CloneDatabase() (IDatabase, error) {
 	return dbs, nil
 }
 

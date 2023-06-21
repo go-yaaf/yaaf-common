@@ -14,8 +14,8 @@ type IDatabase interface {
 	// Ping Test database connectivity for retries number of time with time interval (in seconds) between retries
 	Ping(retries uint, intervalInSeconds uint) error
 
-	// Clone Returns a clone (copy) of the database instance
-	Clone() (IDatabase, error)
+	// CloneDatabase Returns a clone (copy) of the database instance
+	CloneDatabase() (IDatabase, error)
 
 	// Get a single entity by ID
 	Get(factory EntityFactory, entityID string, keys ...string) (result Entity, err error)

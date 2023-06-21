@@ -49,8 +49,8 @@ func (dc *InMemoryDataCache) Close() error {
 	return nil
 }
 
-// CloneCache Returns a clone (copy) of the instance
-func (dc *InMemoryDataCache) CloneCache() (IDataCache, error) {
+// CloneDataCache Returns a clone (copy) of the instance
+func (dc *InMemoryDataCache) CloneDataCache() (IDataCache, error) {
 	return dc, nil
 }
 
