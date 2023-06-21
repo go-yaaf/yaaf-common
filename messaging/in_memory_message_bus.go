@@ -42,6 +42,11 @@ func (m *InMemoryMessageBus) Close() error {
 	return nil
 }
 
+// Clone Returns a clone (copy) of the instance
+func (m *InMemoryMessageBus) Clone() (IMessageBus, error) {
+	return m, nil
+}
+
 // Publish messages to a channel (topic)
 func (m *InMemoryMessageBus) Publish(messages ...IMessage) error {
 	// Thread safeguard

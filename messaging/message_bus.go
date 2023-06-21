@@ -17,6 +17,9 @@ type IMessageBus interface {
 	// Ping Test connectivity for retries number of time with time interval (in seconds) between retries
 	Ping(retries uint, intervalInSeconds uint) error
 
+	// Clone Returns a clone (copy) of the instance
+	Clone() (IMessageBus, error)
+
 	// Publish messages to a channel (topic)
 	Publish(messages ...IMessage) error
 

@@ -49,6 +49,11 @@ func (dc *InMemoryDataCache) Close() error {
 	return nil
 }
 
+// Clone Returns a clone (copy) of the instance
+func (dc *InMemoryDataCache) Clone() (IDataCache, error) {
+	return dc, nil
+}
+
 //endregion
 
 // region Key actions ----------------------------------------------------------------------------------------------

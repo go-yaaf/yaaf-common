@@ -73,6 +73,11 @@ func (dbs *InMemoryDatabase) Close() error {
 	return nil
 }
 
+// Clone Returns a clone (copy) of the database instance
+func (dbs *InMemoryDatabase) Clone() (IDatabase, error) {
+	return dbs, nil
+}
+
 //endregion
 
 // region Database store Basic CRUD methods ----------------------------------------------------------------------------
