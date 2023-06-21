@@ -22,8 +22,8 @@ type IDataCache interface {
 	// Ping tests connectivity for retries number of time with time interval (in seconds) between retries
 	Ping(retries uint, intervalInSeconds uint) error
 
-	// Clone Returns a clone (copy) of the instance
-	Clone() (IDataCache, error)
+	// CloneCache Returns a clone (copy) of the instance
+	CloneCache() (IDataCache, error)
 
 	// region Key actions ----------------------------------------------------------------------------------------------
 
