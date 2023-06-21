@@ -42,8 +42,8 @@ func (m *InMemoryMessageBus) Close() error {
 	return nil
 }
 
-// Clone Returns a clone (copy) of the instance
-func (m *InMemoryMessageBus) Clone() (IMessageBus, error) {
+// CloneMessageBus Returns a clone (copy) of the instance
+func (m *InMemoryMessageBus) CloneMessageBus() (IMessageBus, error) {
 	return m, nil
 }
 
