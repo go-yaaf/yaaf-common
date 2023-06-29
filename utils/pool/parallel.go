@@ -58,7 +58,8 @@ func (q *Parallel[T]) Start(processor func(T)) error {
 	return nil
 }
 
-func (q *Parallel[T]) Stop() {
+// WaitAll blocks until completion of all tasks in the queue
+func (q *Parallel[T]) WaitAll() {
 	q.quit <- true
 	q.dispatcherStopped.Wait()
 }

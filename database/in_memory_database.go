@@ -328,6 +328,11 @@ func (dbs *InMemoryDatabase) ExecuteSQL(sql string, args ...any) (affected int64
 	return 0, fmt.Errorf(NOT_SUPPORTED)
 }
 
+// ExecuteQuery Execute native SQL query
+func (dbs *InMemoryDatabase) ExecuteQuery(sql string, args ...any) ([]Json, error) {
+	return nil, fmt.Errorf(NOT_SUPPORTED)
+}
+
 // DropTable drop a table and its related indexes
 func (dbs *InMemoryDatabase) DropTable(table string) (err error) {
 	delete(dbs.db, table)

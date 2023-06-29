@@ -45,3 +45,8 @@ func (w *parallelWorker[T]) Start(processor func(T)) {
 func (w *parallelWorker[T]) Stop() {
 	w.quit <- true
 }
+
+// WaitAll notify worker to stop after current process
+func (w *parallelWorker[T]) WaitAll() {
+	w.quit <- true
+}

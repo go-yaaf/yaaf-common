@@ -89,13 +89,15 @@ func TestParallel(t *testing.T) {
 			idx:  i,
 		})
 	}
-	wp.Stop()
 
+	fmt.Println("Waiting for all tasks")
+	wp.WaitAll()
 	duration := time.Now().UnixMilli() - start
 	fmt.Println("Done within", duration, "milliseconds")
 }
 
 func parallelProcessor(p parseFileTask) {
-	time.Sleep(time.Second)
-	log.Println(fmt.Sprintf("Parse Finished: %s, (%d)", p.file, p.num))
+	// log.Println("process:", p.file, p.num, p.idx)
+	time.Sleep(5 * time.Second)
+	log.Println(fmt.Sprintf("%d Parse Finished: %s,", p.idx, p.file))
 }
