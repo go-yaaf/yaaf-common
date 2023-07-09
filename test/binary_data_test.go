@@ -7,8 +7,22 @@ import (
 	"github.com/go-yaaf/yaaf-common/utils/binary"
 )
 
+type SampleObjectNotBinary struct {
+	Timestamp   entity.Timestamp
+	SrcIP       string
+	DstIPs      []string
+	IntValue    int
+	Int32Value  int32
+	Int64Value  int64
+	IntArray    []int
+	StringValue string
+	StringArray []string
+}
+
 type SampleObject struct {
 	Timestamp   entity.Timestamp
+	SrcIP       string
+	DstIPs      []string
 	IntValue    int
 	Int32Value  int32
 	Int64Value  int64
@@ -20,6 +34,8 @@ type SampleObject struct {
 // MarshalBinary convert current structure to a minimal wire-format byte array
 func (s *SampleObject) MarshalBinary() (data []byte, err error) {
 	w := binary.NewWriter()
+	w.IP(s.SrcIP)
+	w.IPArray(s.DstIPs)
 	w.Timestamp(s.Timestamp).Int(s.IntValue).Int32(s.Int32Value).Int64(s.Int64Value).IntArray(s.IntArray).String(s.StringValue).StringArray(s.StringArray)
 	return w.GetBytes(), nil
 }
@@ -27,6 +43,12 @@ func (s *SampleObject) MarshalBinary() (data []byte, err error) {
 // UnmarshalBinary reads a wire-format byte array to fill the current structure
 func (s *SampleObject) UnmarshalBinary(data []byte) (e error) {
 	r := binary.NewReader(data)
+	if s.SrcIP, e = r.IP(); e != nil {
+		return e
+	}
+	if s.DstIPs, e = r.IPArray(); e != nil {
+		return e
+	}
 	if s.Timestamp, e = r.Timestamp(); e != nil {
 		return e
 	}

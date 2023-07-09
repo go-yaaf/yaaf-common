@@ -48,9 +48,30 @@ func TestBinaryOfComplexObject(t *testing.T) {
 	fmt.Printf("\n\n")
 }
 
+// Test binary and JSON formats of writer or reader
+func TestJsonAndBinaryOfSampleObject(t *testing.T) {
+	skipCI(t)
+
+	sob := createSampleObject(16)
+	data, err := entity.BinaryMarshal(&sob)
+	require.NoError(t, err)
+	fmt.Println("Binary marshal length", len(data))
+
+	expected := &SampleObject{}
+	err = entity.BinaryUnmarshal(data, expected)
+	require.NoError(t, err)
+
+	require.Equal(t, &sob, expected)
+	fmt.Printf("\n\n")
+}
+
+// Factory methods
+
 func createSampleObject(intVal int) SampleObject {
 	return SampleObject{
 		Timestamp:   entity.Now(),
+		SrcIP:       "10.1.0.45",
+		DstIPs:      []string{"192.168.12.10", "172.113.43.17", "114.67.47.212", "125.134.67.82"},
 		IntValue:    intVal,
 		Int32Value:  18728836,
 		Int64Value:  1523324432323,
@@ -62,9 +83,8 @@ func createSampleObject(intVal int) SampleObject {
 
 func createComplexObject(intVal int, strVal string) ComplexObject {
 	co := ComplexObject{
-		//SrcIP:       "10.1.0.45",
-		SrcIP:       "2001:1db8:85a3:2005:4030:8a2e:5370:7334",
-		DstIPs:      []string{"192.168.12.10", "172.113.43.17", "114.67.47.212"},
+		SrcIP:       "10.1.0.45",
+		DstIPs:      []string{"192.168.12.10", "172.113.43.17", "114.67.47.212", "125.134.67.82"},
 		IntValue:    intVal,
 		IntArray:    []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
 		StringValue: strVal,
@@ -86,4 +106,18 @@ func createComplexObject(intVal int, strVal string) ComplexObject {
 		co.ComplexValues = append(co.ComplexValues, so)
 	}
 	return co
+}
+
+func createSampleObjectNotBinary(intVal int) SampleObjectNotBinary {
+	return SampleObjectNotBinary{
+		Timestamp:   entity.Now(),
+		SrcIP:       "10.1.0.45",
+		DstIPs:      []string{"192.168.12.10", "172.113.43.17", "114.67.47.212", "125.134.67.82"},
+		IntValue:    intVal,
+		Int32Value:  18728836,
+		Int64Value:  1523324432323,
+		IntArray:    []int{1, 2, 3, 4, 5, 6, 7, 8, 9},
+		StringValue: "my string",
+		StringArray: []string{"label_1", "label_2", "label_3", "label_4"},
+	}
 }
