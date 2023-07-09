@@ -52,6 +52,8 @@ func (s *SampleObject) UnmarshalBinary(data []byte) (e error) {
 }
 
 type ComplexObject struct {
+	SrcIP         string
+	DstIPs        []string
 	IntValue      int
 	IntArray      []int
 	StringValue   string
@@ -63,6 +65,8 @@ type ComplexObject struct {
 // MarshalBinary convert current structure to a minimal wire-format byte array
 func (c *ComplexObject) MarshalBinary() (data []byte, err error) {
 	w := binary.NewWriter()
+	w.IP(c.SrcIP)
+	w.IPArray(c.DstIPs)
 	w.Int(c.IntValue).IntArray(c.IntArray).String(c.StringValue).StringArray(c.StringArray)
 
 	// Marshal complex value
@@ -89,6 +93,12 @@ func (c *ComplexObject) MarshalBinary() (data []byte, err error) {
 // UnmarshalBinary reads a wire-format byte array to fill the current structure
 func (c *ComplexObject) UnmarshalBinary(data []byte) (e error) {
 	r := binary.NewReader(data)
+	if c.SrcIP, e = r.IP(); e != nil {
+		return e
+	}
+	if c.DstIPs, e = r.IPArray(); e != nil {
+		return e
+	}
 	if c.IntValue, e = r.Int(); e != nil {
 		return e
 	}

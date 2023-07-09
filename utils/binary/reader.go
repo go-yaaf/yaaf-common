@@ -315,6 +315,60 @@ func (r *Reader) StringArray() ([]string, error) {
 	return result, nil
 }
 
+// IP read encoded IP value that can be represented as uint32 (IPv4), bigInt (IPv6) or string (dns)
+// In order to parse header correctly, we need to read the header first:
+// 1: IP represented as string, 4: IP represented as IPv4 int (uint32), 6: IP represented as IPv6 bigInt (2 * uint64)
+func (r *Reader) IP() (string, error) {
+	// Read IP header
+	hdr, err := r.Uint8()
+	if err != nil {
+		return "", err
+	}
+	// If header is 4, it is IPv4 represented as Uint32
+	if hdr == 4 {
+		if val, er := r.Uint32(); er != nil {
+			return "", err
+		} else {
+			ip := IntToIPv4(val)
+			return ip.String(), nil
+		}
+	}
+	// If header is 6, it is IPv6 represented as two Uint64 values
+	if hdr == 6 {
+		high, er := r.Uint64()
+		if er != nil {
+			return "", err
+		}
+		low, er := r.Uint64()
+		if er != nil {
+			return "", err
+		}
+		ip := IntToIPv6(high, low)
+		return ip.String(), nil
+	}
+	// If header is not 4 or 6, read the IP as string
+	return r.String()
+}
+
+// IPArray will encode a list of IPv4 or IPv6 to byte array, each IP is stored as defined in the IP() method
+func (r *Reader) IPArray() ([]string, error) {
+	// Read array size
+	size, err := r.Int()
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]string, 0)
+	for i := 0; i < size; i++ {
+		if val, e := r.IP(); e != nil {
+			return nil, e
+		} else {
+			result = append(result, val)
+		}
+	}
+	return result, nil
+}
+
 // Bool read boolean value
 func (r *Reader) Bool() (bool, error) {
 	if u8, err := r.Uint8(); err != nil {

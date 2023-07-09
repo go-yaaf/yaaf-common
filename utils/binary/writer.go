@@ -201,6 +201,41 @@ func (w *Writer) Timestamp(v entity.Timestamp) *Writer {
 	return w.Int64(int64(v))
 }
 
+// IP will encode an IPv4 or IPv6 to byte array, to distinguish between IP types, we need a small uint8 header:
+// 1: IP represented as string, 4: IP represented as IPv4 int (uint32), 6: IP represented as IPv6 bigInt (2 * uint64)
+func (w *Writer) IP(v string) *Writer {
+	if ip, version, err := parseIP(v); err != nil {
+		return w.Uint8(1).String(v)
+	} else {
+		if version == 4 {
+			if ipv4, er := IPv4ToInt(ip); er != nil {
+				return w.Uint8(1).String(v)
+			} else {
+				return w.Uint8(4).Uint32(ipv4)
+			}
+		} else {
+			if ipv6, er := IPv6ToInt(ip); er != nil {
+				return w.Uint8(1).String(v)
+			} else {
+				return w.Uint8(6).Uint64(ipv6[0]).Uint64(ipv6[1])
+			}
+		}
+	}
+}
+
+// IPArray will encode a list of IPv4 or IPv6 to byte array, each IP is stored as defined in the IP() method
+func (w *Writer) IPArray(v []string) *Writer {
+	// Write array size
+	w.varInt(uint64(len(v)))
+
+	for _, ip := range v {
+		w.IP(ip)
+	}
+
+	w.flush()
+	return w
+}
+
 // Reset will reset the underlying bytes of the Encoder
 func (w *Writer) Reset() {
 	w.bs = w.bs[:0]

@@ -62,6 +62,9 @@ func createSampleObject(intVal int) SampleObject {
 
 func createComplexObject(intVal int, strVal string) ComplexObject {
 	co := ComplexObject{
+		//SrcIP:       "10.1.0.45",
+		SrcIP:       "2001:1db8:85a3:2005:4030:8a2e:5370:7334",
+		DstIPs:      []string{"192.168.12.10", "172.113.43.17", "114.67.47.212"},
 		IntValue:    intVal,
 		IntArray:    []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
 		StringValue: strVal,
