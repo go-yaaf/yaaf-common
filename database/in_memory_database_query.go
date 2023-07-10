@@ -147,7 +147,7 @@ func (s *inMemoryDatabaseQuery) Find(keys ...string) (out []Entity, total int64,
 }
 
 // Select is similar to find but with ability to retrieve specific fields
-func (s *inMemoryDatabaseQuery) Select(fields ...any) ([]Json, error) {
+func (s *inMemoryDatabaseQuery) Select(fields ...string) ([]Json, error) {
 	return nil, fmt.Errorf(NOT_IMPLEMENTED)
 }
 

@@ -149,7 +149,7 @@ func (s *inMemoryDatastoreQuery) Find(keys ...string) (out []Entity, total int64
 }
 
 // Select is similar to find but with ability to retrieve specific fields
-func (s *inMemoryDatastoreQuery) Select(fields ...any) ([]Json, error) {
+func (s *inMemoryDatastoreQuery) Select(fields ...string) ([]Json, error) {
 	return nil, fmt.Errorf(NOT_IMPLEMENTED)
 }
 
