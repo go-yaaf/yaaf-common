@@ -146,6 +146,11 @@ func (s *inMemoryDatabaseQuery) Find(keys ...string) (out []Entity, total int64,
 	return out, int64(len(out)), nil
 }
 
+// Select is similar to find but with ability to retrieve specific fields
+func (s *inMemoryDatabaseQuery) Select(fields ...any) ([]Json, error) {
+	return nil, fmt.Errorf(NOT_IMPLEMENTED)
+}
+
 // Count executes a query based on the criteria, order and pagination
 // Returns only the count of matching rows
 func (s *inMemoryDatabaseQuery) Count(keys ...string) (total int64, err error) {

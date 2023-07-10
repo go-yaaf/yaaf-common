@@ -35,6 +35,9 @@ type IQuery interface {
 	// Find Execute the query based on the criteria, order and pagination
 	Find(keys ...string) (out []Entity, total int64, err error)
 
+	// Select is similar to find but with ability to retrieve specific fields
+	Select(fields ...any) ([]Json, error)
+
 	// Count Execute the query based on the criteria, order and pagination and return only the count of matching rows
 	Count(keys ...string) (total int64, err error)
 
