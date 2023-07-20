@@ -49,7 +49,7 @@ func TestInMemoryDataCache_SetWithTTL(t *testing.T) {
 	hero := NewHero()
 	hero.(*Hero).Id = "test"
 	hero.(*Hero).Name = "test_hero"
-	fe = dc.Set("item_with_ttl", hero, time.Minute)
+	fe = dc.Set("item_with_ttl", hero, time.Second)
 	assert.Nil(t, fe, "error")
 
 	// Ensure key is there
@@ -59,7 +59,7 @@ func TestInMemoryDataCache_SetWithTTL(t *testing.T) {
 	assert.NotNilf(t, result, "result is nil")
 
 	// Sleep for 2 minutes
-	time.Sleep(time.Minute * 2)
+	time.Sleep(time.Second * 2)
 
 	result, err = dc.Get(NewHero, "item_with_ttl")
 	fmt.Println("result", result, "error", err)

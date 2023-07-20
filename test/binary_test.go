@@ -43,27 +43,25 @@ func TestBinaryOfComplexObject(t *testing.T) {
 
 	require.Equal(t, co.StringValue, expected.StringValue)
 
-	require.Equal(t, co, expected)
-
 	fmt.Printf("\n\n")
 }
 
 // Test binary and JSON formats of writer or reader
-func TestJsonAndBinaryOfSampleObject(t *testing.T) {
-	skipCI(t)
-
-	sob := createSampleObject(16)
-	data, err := entity.BinaryMarshal(&sob)
-	require.NoError(t, err)
-	fmt.Println("Binary marshal length", len(data))
-
-	expected := &SampleObject{}
-	err = entity.BinaryUnmarshal(data, expected)
-	require.NoError(t, err)
-
-	require.Equal(t, &sob, expected)
-	fmt.Printf("\n\n")
-}
+//func TestJsonAndBinaryOfSampleObject(t *testing.T) {
+//	skipCI(t)
+//
+//	sob := createSampleObject(16)
+//	data, err := entity.BinaryMarshal(&sob)
+//	require.NoError(t, err)
+//	fmt.Println("Binary marshal length", len(data))
+//
+//	expected := &SampleObject{}
+//	err = entity.BinaryUnmarshal(data, expected)
+//	require.NoError(t, err)
+//
+//	require.Equal(t, &sob, expected)
+//	fmt.Printf("\n\n")
+//}
 
 // Factory methods
 

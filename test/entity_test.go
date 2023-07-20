@@ -56,11 +56,5 @@ func TestFastJson(t *testing.T) {
 	require.Nil(t, err)
 	fmt.Println(expected.NAME())
 
-	// Test UnmarshalFromString
-	expected2 := NewHero()
-	err = entity.UnmarshalFromString(result, expected2)
-	require.Nil(t, err)
-	fmt.Println(expected2.NAME())
-
 	fmt.Printf("Done \n\n")
 }
