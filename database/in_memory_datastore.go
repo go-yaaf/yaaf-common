@@ -338,11 +338,11 @@ func (dbs *InMemoryDatastore) CreateEntityIndex(factory EntityFactory, key strin
 }
 
 // ListIndices returns a list of all indices matching the pattern
-func (dbs *InMemoryDatastore) ListIndices(pattern string) ([]string, error) {
-	result := make([]string, 0)
-	for k := range dbs.db {
-		if strings.Contains(k, pattern) {
-			result = append(result, k)
+func (dbs *InMemoryDatastore) ListIndices(pattern string) (map[string]int, error) {
+	result := make(map[string]int)
+	for name, table := range dbs.db {
+		if strings.Contains(name, pattern) {
+			result[name] = len(table.Table())
 		}
 	}
 	return result, nil

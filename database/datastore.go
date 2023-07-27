@@ -69,7 +69,7 @@ type IDatastore interface {
 	CreateEntityIndex(factory EntityFactory, key string) (name string, err error)
 
 	// ListIndices returns a list of all indices matching the pattern
-	ListIndices(pattern string) ([]string, error)
+	ListIndices(pattern string) (map[string]int, error)
 
 	// DropIndex drops an index
 	DropIndex(indexName string) (ack bool, err error)
