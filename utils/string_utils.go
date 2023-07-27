@@ -1,7 +1,6 @@
 package utils
 
 import (
-	. "github.com/go-yaaf/yaaf-common/entity"
 	"regexp"
 	"strings"
 )
