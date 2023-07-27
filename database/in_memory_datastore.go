@@ -64,6 +64,7 @@ func NewInMemoryDatastore() (dbs IDatastore, err error) {
 
 // Ping tests database connectivity for retries number of time with time interval (in seconds) between retries
 func (dbs *InMemoryDatastore) Ping(retries uint, interval uint) error {
+	logger.Debug("Pinging %d times with %d interval", retries, interval)
 	return nil
 }
 
@@ -334,6 +335,17 @@ func (dbs *InMemoryDatastore) CreateEntityIndex(factory EntityFactory, key strin
 		dbs.db[idxName] = NewInMemTable()
 	}
 	return idxName, nil
+}
+
+// ListIndices returns a list of all indices matching the pattern
+func (dbs *InMemoryDatastore) ListIndices(pattern string) ([]string, error) {
+	result := make([]string, 0)
+	for k := range dbs.db {
+		if strings.Contains(k, pattern) {
+			result = append(result, k)
+		}
+	}
+	return result, nil
 }
 
 // DropIndex drops an index
