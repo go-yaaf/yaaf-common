@@ -186,7 +186,7 @@ func (s *inMemoryDatabaseQuery) Aggregation(field, function string, keys ...stri
 }
 
 // GroupCount Execute the query based on the criteria, grouped by field and return count per group
-func (s *inMemoryDatabaseQuery) GroupCount(field string, keys ...string) (out map[int]int64, total int64, err error) {
+func (s *inMemoryDatabaseQuery) GroupCount(field string, keys ...string) (out map[any]int64, total int64, err error) {
 	return nil, 0, fmt.Errorf("not yet implemented")
 }
 

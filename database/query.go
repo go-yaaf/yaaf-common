@@ -46,7 +46,7 @@ type IQuery interface {
 	Aggregation(field, function string, keys ...string) (value float64, err error)
 
 	// GroupCount Execute the query based on the criteria, grouped by field and return count per group
-	GroupCount(field string, keys ...string) (out map[int]int64, total int64, err error)
+	GroupCount(field string, keys ...string) (out map[any]int64, total int64, err error)
 
 	// GroupAggregation Execute the query based on the criteria, order and pagination and return the aggregated value per group
 	// the data point is a calculation of the provided function on the selected field, each data point includes the number of documents and the calculated value
