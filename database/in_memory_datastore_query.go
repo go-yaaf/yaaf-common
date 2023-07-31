@@ -193,9 +193,11 @@ func (s *inMemoryDatastoreQuery) GroupCount(field string, keys ...string) (out m
 }
 
 // GroupAggregation Execute the query based on the criteria, order and pagination and return the aggregated value per group
-// supported functions: count : agv, sum, min, max
-func (s *inMemoryDatastoreQuery) GroupAggregation(field, function string, keys ...string) (out map[any]float64, err error) {
-	return nil, fmt.Errorf("not yet implemented")
+// the data point is a calculation of the provided function on the selected field, each data point includes the number of documents and the calculated value
+// the total is the sum of all calculated values in all the buckets
+// supported functions: count : avg, sum, min, max
+func (s *inMemoryDatastoreQuery) GroupAggregation(field, function string, keys ...string) (out map[any]Tuple[int64, float64], total float64, err error) {
+	return nil, 0, fmt.Errorf("not yet implemented")
 }
 
 // Histogram returns a time series data points based on the time field, supported intervals: Minute, Hour, Day, week, month

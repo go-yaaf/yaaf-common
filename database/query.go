@@ -49,8 +49,10 @@ type IQuery interface {
 	GroupCount(field string, keys ...string) (out map[int]int64, total int64, err error)
 
 	// GroupAggregation Execute the query based on the criteria, order and pagination and return the aggregated value per group
+	// the data point is a calculation of the provided function on the selected field, each data point includes the number of documents and the calculated value
+	// the total is the sum of all calculated values in all the buckets
 	// supported functions: count : avg, sum, min, max
-	GroupAggregation(field, function string, keys ...string) (out map[any]float64, err error)
+	GroupAggregation(field, function string, keys ...string) (out map[any]Tuple[int64, float64], total float64, err error)
 
 	// Histogram returns a time series data points based on the time field, supported intervals: Minute, Hour, Day, week, month
 	// the data point is a calculation of the provided function on the selected field, each data point includes the number of documents and the calculated value
