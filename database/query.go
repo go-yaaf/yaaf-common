@@ -14,6 +14,9 @@ type IQuery interface {
 	// Filter Add single field filter
 	Filter(filter QueryFilter) IQuery
 
+	// Range add time frame filter on specific time field
+	Range(field string, from Timestamp, to Timestamp) IQuery
+
 	// MatchAll Add list of filters, all of them should be satisfied (AND)
 	MatchAll(filters ...QueryFilter) IQuery
 

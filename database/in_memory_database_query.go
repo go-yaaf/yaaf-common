@@ -12,15 +12,18 @@ import (
 // region queryBuilder internal structure ------------------------------------------------------------------------------
 
 type inMemoryDatabaseQuery struct {
-	db         *InMemoryDatabase
-	factory    EntityFactory
-	allFilters [][]QueryFilter
-	anyFilters [][]QueryFilter
-	ascOrders  []any
-	descOrders []any
-	callbacks  []func(in Entity) Entity
-	page       int
-	limit      int
+	db         *InMemoryDatabase        // A reference to the underlying IDatabase
+	factory    EntityFactory            // The entity factory method
+	allFilters [][]QueryFilter          // List of lists of AND filters
+	anyFilters [][]QueryFilter          // List of lists of OR filters
+	ascOrders  []any                    // List of fields for ASC order
+	descOrders []any                    // List of fields for DESC order
+	callbacks  []func(in Entity) Entity // List of entity transformation callback functions
+	page       int                      // Page number (for pagination)
+	limit      int                      // Page size: how many results in a page (for pagination)
+	rangeField string                   // Field name for range filter (must be timestamp field)
+	rangeFrom  Timestamp                // Start timestamp for range filter
+	rangeTo    Timestamp                // End timestamp for range filter
 }
 
 // endregion
@@ -40,6 +43,14 @@ func (s *inMemoryDatabaseQuery) Filter(filter QueryFilter) IQuery {
 	if filter.IsActive() {
 		s.allFilters = append(s.allFilters, []QueryFilter{filter})
 	}
+	return s
+}
+
+// Range add time frame filter on specific time field
+func (s *inMemoryDatabaseQuery) Range(field string, from Timestamp, to Timestamp) IQuery {
+	s.rangeField = field
+	s.rangeFrom = from
+	s.rangeTo = to
 	return s
 }
 
@@ -129,6 +140,12 @@ func (s *inMemoryDatabaseQuery) Find(keys ...string) (out []Entity, total int64,
 		return nil, 0, fmt.Errorf(TABLE_NOT_EXISTS)
 	}
 
+	// If range is defined, add it to the filters
+	if len(s.rangeField) > 0 {
+		rangeFilter := []QueryFilter{F(s.rangeField).Between(s.rangeFrom, s.rangeTo)}
+		s.allFilters = append(s.allFilters, rangeFilter)
+	}
+
 	// Apply filters
 	for _, entity := range tbl.Table() {
 		ent := s.filter(entity)
@@ -160,6 +177,12 @@ func (s *inMemoryDatabaseQuery) Count(keys ...string) (total int64, err error) {
 	tbl, ok := s.db.db[table]
 	if !ok {
 		return 0, fmt.Errorf(TABLE_NOT_EXISTS)
+	}
+
+	// If range is defined, add it to the filters
+	if len(s.rangeField) > 0 {
+		rangeFilter := []QueryFilter{F(s.rangeField).Between(s.rangeFrom, s.rangeTo)}
+		s.allFilters = append(s.allFilters, rangeFilter)
 	}
 
 	// Apply filters
@@ -348,6 +371,7 @@ func (s *inMemoryDatabaseQuery) filter(in Entity) (out Entity) {
 			return nil
 		}
 	}
+
 	return in
 }
 
