@@ -5,6 +5,16 @@ import (
 	"time"
 )
 
+type AggFunc string
+
+const (
+	COUNT AggFunc = "count"
+	SUM   AggFunc = "sum"
+	AVG   AggFunc = "avg"
+	MIN   AggFunc = "min"
+	MAX   AggFunc = "max"
+)
+
 // IQuery Database Query interface
 type IQuery interface {
 
@@ -46,7 +56,7 @@ type IQuery interface {
 
 	// Aggregation Execute the query based on the criteria, order and pagination and return the provided aggregation function on the field
 	// supported functions: count : avg, sum, min, max
-	Aggregation(field, function string, keys ...string) (value float64, err error)
+	Aggregation(field string, function AggFunc, keys ...string) (value float64, err error)
 
 	// GroupCount Execute the query based on the criteria, grouped by field and return count per group
 	GroupCount(field string, keys ...string) (out map[any]int64, total int64, err error)
@@ -55,18 +65,18 @@ type IQuery interface {
 	// the data point is a calculation of the provided function on the selected field, each data point includes the number of documents and the calculated value
 	// the total is the sum of all calculated values in all the buckets
 	// supported functions: count : avg, sum, min, max
-	GroupAggregation(field, function string, keys ...string) (out map[any]Tuple[int64, float64], total float64, err error)
+	GroupAggregation(field string, function AggFunc, keys ...string) (out map[any]Tuple[int64, float64], total float64, err error)
 
 	// Histogram returns a time series data points based on the time field, supported intervals: Minute, Hour, Day, week, month
 	// the data point is a calculation of the provided function on the selected field, each data point includes the number of documents and the calculated value
 	// the total is the sum of all calculated values in all the buckets
 	// supported functions: count : avg, sum, min, max
-	Histogram(field, function, timeField string, interval time.Duration, keys ...string) (out map[Timestamp]Tuple[int64, float64], total float64, err error)
+	Histogram(field string, function AggFunc, timeField string, interval time.Duration, keys ...string) (out map[Timestamp]Tuple[int64, float64], total float64, err error)
 
 	// Histogram2D returns a two-dimensional time series data points based on the time field, supported intervals: Minute, Hour, Day, week, month
 	// the data point is a calculation of the provided function on the selected field
 	// supported functions: count : avg, sum, min, max
-	Histogram2D(field, function, dim, timeField string, interval time.Duration, keys ...string) (out map[Timestamp]map[any]Tuple[int64, float64], total float64, err error)
+	Histogram2D(field string, function AggFunc, dim, timeField string, interval time.Duration, keys ...string) (out map[Timestamp]map[any]Tuple[int64, float64], total float64, err error)
 
 	// FindSingle Execute query based on the where criteria to get a single (the first) result
 	FindSingle(keys ...string) (entity Entity, err error)

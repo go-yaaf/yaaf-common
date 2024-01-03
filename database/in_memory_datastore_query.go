@@ -206,7 +206,7 @@ func (s *inMemoryDatastoreQuery) Count(keys ...string) (total int64, err error) 
 
 // Aggregation Execute the query based on the criteria, order and pagination and return the provided aggregation function on the field
 // supported functions: count : agv, sum, min, max
-func (s *inMemoryDatastoreQuery) Aggregation(field, function string, keys ...string) (value float64, err error) {
+func (s *inMemoryDatastoreQuery) Aggregation(field string, function AggFunc, keys ...string) (value float64, err error) {
 	return 0, fmt.Errorf("not yet implemented")
 }
 
@@ -219,7 +219,7 @@ func (s *inMemoryDatastoreQuery) GroupCount(field string, keys ...string) (out m
 // the data point is a calculation of the provided function on the selected field, each data point includes the number of documents and the calculated value
 // the total is the sum of all calculated values in all the buckets
 // supported functions: count : avg, sum, min, max
-func (s *inMemoryDatastoreQuery) GroupAggregation(field, function string, keys ...string) (out map[any]Tuple[int64, float64], total float64, err error) {
+func (s *inMemoryDatastoreQuery) GroupAggregation(field string, function AggFunc, keys ...string) (out map[any]Tuple[int64, float64], total float64, err error) {
 	return nil, 0, fmt.Errorf("not yet implemented")
 }
 
@@ -227,14 +227,14 @@ func (s *inMemoryDatastoreQuery) GroupAggregation(field, function string, keys .
 // the data point is a calculation of the provided function on the selected field, each data point includes the number of documents and the calculated value
 // the total is the sum of all calculated values in all the buckets
 // supported functions: count : avg, sum, min, max
-func (s *inMemoryDatastoreQuery) Histogram(field, function, timeField string, interval time.Duration, keys ...string) (out map[Timestamp]Tuple[int64, float64], total float64, err error) {
+func (s *inMemoryDatastoreQuery) Histogram(field string, function AggFunc, timeField string, interval time.Duration, keys ...string) (out map[Timestamp]Tuple[int64, float64], total float64, err error) {
 	return nil, 0, fmt.Errorf("not yet implemented")
 }
 
 // Histogram2D returns a two-dimensional time series data points based on the time field, supported intervals: Minute, Hour, Day, week, month
 // the data point is a calculation of the provided function on the selected field
 // supported functions: count : avg, sum, min, max
-func (s *inMemoryDatastoreQuery) Histogram2D(field, function, dim, timeField string, interval time.Duration, keys ...string) (out map[Timestamp]map[any]Tuple[int64, float64], total float64, err error) {
+func (s *inMemoryDatastoreQuery) Histogram2D(field string, function AggFunc, dim, timeField string, interval time.Duration, keys ...string) (out map[Timestamp]map[any]Tuple[int64, float64], total float64, err error) {
 	return nil, 0, fmt.Errorf("not yet implemented")
 }
 
