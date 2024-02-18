@@ -30,6 +30,12 @@ const (
 	CfgWsPongTimeoutSec       = "WS_PONG_TIMEOUT"
 	CfgTopicPartitions        = "TOPIC_PARTITIONS"
 
+	// CfgEnableMessageOrdering is set to true to ensure that messages with the same ordering key are delivered in the order they were published.
+	// This is crucial for use cases where the order of messages is important for correct processing.
+	// Note: The Pub/Sub topic must be configured to support message ordering for this to take effect.
+	// Enabling message ordering may impact the throughput of message publishing, as it requires Pub/Sub to maintain order within each ordering key.
+	CfgEnableMessageOrdering = "ENABLE_MESSAGE_ORDERING"
+
 	// CfgPubSubNumOfGoroutines NumGoroutines specifies the number of goroutines that will be used
 	// to pull messages from the subscription in parallel. Each goroutine
 	// opens a separate StreamingPull stream. A higher number of goroutines
@@ -57,6 +63,7 @@ const (
 	DefaultPubSubNumOfGoroutines = 0
 	DefaultPubSubMaxOutstandingMessages
 	DefaultPubSubMaxOutstandingBytes = 0
+	DefaultEnableMessageOrdering     = true
 )
 
 // region BaseConfig singleton pattern ---------------------------------------------------------------------------------
@@ -84,6 +91,7 @@ func newBaseConfig() *BaseConfig {
 		CfgPubSubNumOfGoroutines:        "0",
 		CfgPubSubMaxOutstandingMessages: "0",
 		CfgPubSubMaxOutstandingBytes:    "0",
+		CfgEnableMessageOrdering:        "true",
 	}
 	return &bc
 }
@@ -237,6 +245,10 @@ func (c *BaseConfig) WsWriteTimeoutSec() int {
 // TopicPartitions gets default number of partitions per topic
 func (c *BaseConfig) TopicPartitions() int {
 	return c.GetIntParamValueOrDefault(CfgTopicPartitions, 1)
+}
+
+func (c *BaseConfig) EnableMessageOrdering() bool {
+	return c.GetBoolParamValueOrDefault(CfgEnableMessageOrdering, DefaultEnableMessageOrdering)
 }
 
 // endregion
