@@ -30,6 +30,9 @@ const (
 	CfgWsPongTimeoutSec       = "WS_PONG_TIMEOUT"
 	CfgTopicPartitions        = "TOPIC_PARTITIONS"
 
+	CfgEnableGoRuntimeProfiler = "ENABLE_GO_RUNTIME_PROFILER"
+	CfgGoRuntimeProfilerAddr   = "GO_RUNTIME_PROFILER_ADDR"
+
 	// CfgEnableMessageOrdering is set to true to ensure that messages with the same ordering key are delivered in the order they were published.
 	// This is crucial for use cases where the order of messages is important for correct processing.
 	// Note: The Pub/Sub topic must be configured to support message ordering for this to take effect.
@@ -64,6 +67,8 @@ const (
 	DefaultPubSubMaxOutstandingMessages
 	DefaultPubSubMaxOutstandingBytes = 0
 	DefaultEnableMessageOrdering     = true
+	DefaultEnableGoRuntimeProfiler   = false
+	DefaultGoRuntimeProfilerAddr     = ":6060"
 )
 
 // region BaseConfig singleton pattern ---------------------------------------------------------------------------------
@@ -92,6 +97,8 @@ func newBaseConfig() *BaseConfig {
 		CfgPubSubMaxOutstandingMessages: "0",
 		CfgPubSubMaxOutstandingBytes:    "0",
 		CfgEnableMessageOrdering:        "true",
+		CfgEnableGoRuntimeProfiler:      "false",
+		CfgGoRuntimeProfilerAddr:        DefaultGoRuntimeProfilerAddr,
 	}
 	return &bc
 }
@@ -249,6 +256,14 @@ func (c *BaseConfig) TopicPartitions() int {
 
 func (c *BaseConfig) EnableMessageOrdering() bool {
 	return c.GetBoolParamValueOrDefault(CfgEnableMessageOrdering, DefaultEnableMessageOrdering)
+}
+
+func (c *BaseConfig) EnableGoRuntimeProfiler() bool {
+	return c.GetBoolParamValueOrDefault(CfgEnableGoRuntimeProfiler, DefaultEnableGoRuntimeProfiler)
+}
+
+func (c *BaseConfig) GoRuntimeProfilerAddr() string {
+	return c.GetStringParamValueOrDefault(CfgGoRuntimeProfilerAddr, DefaultGoRuntimeProfilerAddr)
 }
 
 // endregion
