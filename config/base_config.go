@@ -11,6 +11,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"sort"
 	"strconv"
@@ -93,11 +94,11 @@ func newBaseConfig() *BaseConfig {
 		CfgWsWriteCompress:              "true",
 		CfgWsPongTimeoutSec:             "5",
 		CfgWsWriteTimeoutSec:            "5",
-		CfgPubSubNumOfGoroutines:        "0",
-		CfgPubSubMaxOutstandingMessages: "0",
-		CfgPubSubMaxOutstandingBytes:    "0",
-		CfgEnableMessageOrdering:        "true",
-		CfgEnableGoRuntimeProfiler:      "false",
+		CfgPubSubNumOfGoroutines:        fmt.Sprintf("%d", DefaultPubSubNumOfGoroutines),
+		CfgPubSubMaxOutstandingMessages: fmt.Sprintf("%d", DefaultPubSubMaxOutstandingMessages),
+		CfgPubSubMaxOutstandingBytes:    fmt.Sprintf("%d", DefaultPubSubMaxOutstandingBytes),
+		CfgEnableMessageOrdering:        fmt.Sprintf("%t", DefaultEnableMessageOrdering),
+		CfgEnableGoRuntimeProfiler:      fmt.Sprintf("%t", DefaultEnableGoRuntimeProfiler),
 		CfgGoRuntimeProfilerAddr:        DefaultGoRuntimeProfilerAddr,
 	}
 	return &bc
