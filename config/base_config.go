@@ -66,7 +66,7 @@ const (
 	DefaultPubSubNumOfGoroutines = 0
 	DefaultPubSubMaxOutstandingMessages
 	DefaultPubSubMaxOutstandingBytes = 0
-	DefaultEnableMessageOrdering     = true
+	DefaultEnableMessageOrdering     = false
 	DefaultEnableGoRuntimeProfiler   = false
 	DefaultGoRuntimeProfilerAddr     = ":6060"
 )
