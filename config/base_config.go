@@ -61,6 +61,13 @@ const (
 	// default is DefaultReceiveSettings.MaxOutstandingBytes. A negative
 	// value indicates no limit on the byte size of unprocessed messages.
 	CfgPubSubMaxOutstandingBytes = "PUSUB_MAX_OUTSTANDING_BYTES"
+
+	// CfgGcpProject specifies GCP project name
+	CfgGcpProject = "GCP_PROJECT"
+	// CfgGcpRegion specifies GCP region
+	CfgGcpRegion = "GCP_REGION"
+	// CfgGcpZone specifies GCP zone
+	CfgGcpZone = "GCP_ZONE"
 )
 
 const (
@@ -70,6 +77,10 @@ const (
 	DefaultEnableMessageOrdering     = false
 	DefaultEnableGoRuntimeProfiler   = false
 	DefaultGoRuntimeProfilerAddr     = ":6060"
+
+	DefaultGcpProject = "shieldiot-staging"
+	DefaultGcpRegion  = "europe-west3"
+	DefaultGcpZone    = "europe-west3-a"
 )
 
 // region BaseConfig singleton pattern ---------------------------------------------------------------------------------
@@ -100,6 +111,9 @@ func newBaseConfig() *BaseConfig {
 		CfgEnableMessageOrdering:        fmt.Sprintf("%t", DefaultEnableMessageOrdering),
 		CfgEnableGoRuntimeProfiler:      fmt.Sprintf("%t", DefaultEnableGoRuntimeProfiler),
 		CfgGoRuntimeProfilerAddr:        DefaultGoRuntimeProfilerAddr,
+		CfgGcpProject:                   DefaultGcpProject,
+		CfgGcpRegion:                    DefaultGcpRegion,
+		CfgGcpZone:                      DefaultGcpZone,
 	}
 	return &bc
 }
@@ -265,6 +279,18 @@ func (c *BaseConfig) EnableGoRuntimeProfiler() bool {
 
 func (c *BaseConfig) GoRuntimeProfilerAddr() string {
 	return c.GetStringParamValueOrDefault(CfgGoRuntimeProfilerAddr, DefaultGoRuntimeProfilerAddr)
+}
+
+func (c *BaseConfig) GcpProject() string {
+	return c.GetStringParamValueOrDefault(CfgGcpProject, DefaultGcpProject)
+}
+
+func (c *BaseConfig) GcpRegion() string {
+	return c.GetStringParamValueOrDefault(CfgGcpRegion, DefaultGcpRegion)
+}
+
+func (c *BaseConfig) GcpZone() string {
+	return c.GetStringParamValueOrDefault(CfgGcpZone, DefaultGcpZone)
 }
 
 // endregion
