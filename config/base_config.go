@@ -68,6 +68,8 @@ const (
 	CfgGcpRegion = "GCP_REGION"
 	// CfgGcpZone specifies GCP zone
 	CfgGcpZone = "GCP_ZONE"
+
+	CfgPubSubLiteUri = "PUBSUB_LITE_URI"
 )
 
 const (
@@ -81,6 +83,8 @@ const (
 	DefaultGcpProject = "shieldiot-staging"
 	DefaultGcpRegion  = "europe-west3"
 	DefaultGcpZone    = "europe-west3-a"
+
+	DefaultPubSubLiteUri = "pubsub://shieldiot-staging/europe-west3-a"
 )
 
 // region BaseConfig singleton pattern ---------------------------------------------------------------------------------
@@ -114,6 +118,7 @@ func newBaseConfig() *BaseConfig {
 		CfgGcpProject:                   DefaultGcpProject,
 		CfgGcpRegion:                    DefaultGcpRegion,
 		CfgGcpZone:                      DefaultGcpZone,
+		CfgPubSubLiteUri:                DefaultPubSubLiteUri,
 	}
 	return &bc
 }
@@ -291,6 +296,10 @@ func (c *BaseConfig) GcpRegion() string {
 
 func (c *BaseConfig) GcpZone() string {
 	return c.GetStringParamValueOrDefault(CfgGcpZone, DefaultGcpZone)
+}
+
+func (c *BaseConfig) PubSubLiteUri() string {
+	return c.GetStringParamValueOrDefault(CfgPubSubLiteUri, DefaultPubSubLiteUri)
 }
 
 // endregion
