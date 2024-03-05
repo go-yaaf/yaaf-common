@@ -1,20 +1,21 @@
-// Copyright (c) 2022. Motty Cohen
-//
-
-// Package database
-//
-// The Database interface for RDBMS wrapper implementations
 package database
 
 import (
 	. "github.com/go-yaaf/yaaf-common/entity"
+	"io"
 )
 
 // IDatabase Database interface
 type IDatabase interface {
 
+	// Closer includes method Close()
+	io.Closer
+
 	// Ping Test database connectivity for retries number of time with time interval (in seconds) between retries
 	Ping(retries uint, intervalInSeconds uint) error
+
+	// CloneDatabase Returns a clone (copy) of the database instance
+	CloneDatabase() (IDatabase, error)
 
 	// Get a single entity by ID
 	Get(factory EntityFactory, entityID string, keys ...string) (result Entity, err error)
@@ -55,11 +56,12 @@ type IDatabase interface {
 	// SetFields Update some fields of the document in a single transaction (eliminates the need to fetch - change - update)
 	SetFields(factory EntityFactory, entityID string, fields map[string]any, keys ...string) (err error)
 
+	// BulkSetFields Update specific field of multiple entities in a single transaction (eliminates the need to fetch - change - update)
+	// The field is the name of the field, values is a map of entityId -> field value
+	BulkSetFields(factory EntityFactory, field string, values map[string]any, keys ...string) (affected int64, err error)
+
 	// Query Utility struct method to build a query
 	Query(factory EntityFactory) IQuery
-
-	// Close DB and free resources
-	Close()
 
 	// DDL Actions -----------------------------------------------------------------------------------------------------
 
@@ -68,6 +70,9 @@ type IDatabase interface {
 
 	// ExecuteSQL Execute SQL - execute SQL command
 	ExecuteSQL(sql string, args ...any) (affected int64, err error)
+
+	// ExecuteQuery Execute native SQL query
+	ExecuteQuery(sql string, args ...any) ([]Json, error)
 
 	// DropTable Drop table and indexes
 	DropTable(table string) (err error)

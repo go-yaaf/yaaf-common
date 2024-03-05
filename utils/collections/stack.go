@@ -1,5 +1,3 @@
-// Copyright 2022. Motty Cohen.
-//
 //  Thread-safe implementation of stack data structure
 //
 

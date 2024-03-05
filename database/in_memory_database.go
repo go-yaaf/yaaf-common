@@ -1,7 +1,3 @@
-// Copyright 2022. Motty Cohen
-//
-// In-memory database table (used for testing)
-
 package database
 
 import (
@@ -72,8 +68,14 @@ func (dbs *InMemoryDatabase) Ping(retries uint, interval uint) error {
 }
 
 // Close DB and free resources
-func (dbs *InMemoryDatabase) Close() {
+func (dbs *InMemoryDatabase) Close() error {
 	logger.Debug("In memory database closed")
+	return nil
+}
+
+// CloneDatabase Returns a clone (copy) of the database instance
+func (dbs *InMemoryDatabase) CloneDatabase() (IDatabase, error) {
+	return dbs, nil
 }
 
 //endregion
@@ -256,6 +258,38 @@ func (dbs *InMemoryDatabase) SetFields(factory EntityFactory, entityID string, f
 	return fe
 }
 
+// BulkSetFields Update specific field of multiple entities in a single transaction (eliminates the need to fetch - change - update)
+// The field is the name of the field, values is a map of entityId -> field value
+func (dbs *InMemoryDatabase) BulkSetFields(factory EntityFactory, field string, values map[string]any, keys ...string) (affected int64, error error) {
+
+	list, _, fe := dbs.Query(factory).Find(keys...)
+	if fe != nil {
+		return 0, fe
+	}
+
+	// convert entity to Json
+	count := 0
+	for _, entity := range list {
+		js, err := utils.JsonUtils().ToJson(entity)
+		if err != nil {
+			return 0, err
+		}
+
+		// set field
+		if val, ok := values[entity.ID()]; ok {
+			js[field] = val
+
+			if toSet, _ := utils.JsonUtils().FromJson(factory, js); toSet != nil {
+				if _, er := dbs.Update(toSet); er == nil {
+					count += 1
+				}
+
+			}
+		}
+	}
+	return int64(count), nil
+}
+
 // Query is a builder method to construct query
 func (dbs *InMemoryDatabase) Query(factory EntityFactory) IQuery {
 	return &inMemoryDatabaseQuery{
@@ -292,6 +326,11 @@ func (dbs *InMemoryDatabase) ExecuteDDL(ddl map[string][]string) (err error) {
 // ExecuteSQL execute raw SQL command
 func (dbs *InMemoryDatabase) ExecuteSQL(sql string, args ...any) (affected int64, err error) {
 	return 0, fmt.Errorf(NOT_SUPPORTED)
+}
+
+// ExecuteQuery Execute native SQL query
+func (dbs *InMemoryDatabase) ExecuteQuery(sql string, args ...any) ([]Json, error) {
+	return nil, fmt.Errorf(NOT_SUPPORTED)
 }
 
 // DropTable drop a table and its related indexes

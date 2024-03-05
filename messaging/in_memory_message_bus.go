@@ -1,15 +1,14 @@
-// Copyright 2022. Motty Cohen
-//
 // In-memory implementation of a message bus (IMessageBus interface)
 
 package messaging
 
 import (
-	"encoding/json"
 	"fmt"
-	"github.com/go-yaaf/yaaf-common/entity"
 	"sync"
 	"time"
+
+	"github.com/go-yaaf/yaaf-common/entity"
+	"github.com/go-yaaf/yaaf-common/logger"
 
 	"github.com/go-yaaf/yaaf-common/utils/collections"
 )
@@ -30,11 +29,22 @@ func NewInMemoryMessageBus() (mq IMessageBus, err error) {
 	}, nil
 }
 
-// region IMessageQueue methods implementation -------------------------------------------------------------------------
+// region IMessageBus methods implementation ---------------------------------------------------------------------------
 
 // Ping Test connectivity for retries number of time with time interval (in seconds) between retries
 func (m *InMemoryMessageBus) Ping(retries uint, intervalInSeconds uint) error {
 	return nil
+}
+
+// Close client and free resources
+func (m *InMemoryMessageBus) Close() error {
+	logger.Debug("In memory data-cache closed")
+	return nil
+}
+
+// CloneMessageBus Returns a clone (copy) of the instance
+func (m *InMemoryMessageBus) CloneMessageBus() (IMessageBus, error) {
+	return m, nil
 }
 
 // Publish messages to a channel (topic)
@@ -44,7 +54,7 @@ func (m *InMemoryMessageBus) Publish(messages ...IMessage) error {
 	defer m.mu.Unlock()
 
 	for _, message := range messages {
-		data, err := json.Marshal(message)
+		data, err := entity.Marshal(message)
 		if err != nil {
 			return err
 		}
@@ -58,11 +68,11 @@ func (m *InMemoryMessageBus) Publish(messages ...IMessage) error {
 }
 
 // Subscribe on topics
-func (m *InMemoryMessageBus) Subscribe(callback SubscriptionCallback, mf MessageFactory, topics ...string) (subscriptionId string) {
+func (m *InMemoryMessageBus) Subscribe(subscription string, mf MessageFactory, callback SubscriptionCallback, topics ...string) (subscriptionId string, error error) {
 
 	// Validate callback
 	if callback == nil {
-		return ""
+		return "", fmt.Errorf("callback is nil")
 	}
 
 	// Thread safeguard
@@ -85,14 +95,14 @@ func (m *InMemoryMessageBus) Subscribe(callback SubscriptionCallback, mf Message
 			select {
 			case data := <-cn:
 				message := mf()
-				if err := json.Unmarshal(data, &message); err == nil {
+				if err := entity.Unmarshal(data, &message); err == nil {
 					callback(message)
 				}
 			}
 		}
 	}()
 
-	return subscriptionId
+	return subscriptionId, nil
 }
 
 // Unsubscribe with the given subscriber id
@@ -141,6 +151,20 @@ func (m *InMemoryMessageBus) Pop(mf MessageFactory, timeout time.Duration, queue
 	}
 }
 
+// CreateProducer creates message producer for specific topic
+func (m *InMemoryMessageBus) CreateProducer(topic string) (IMessageProducer, error) {
+	return m, nil
+}
+
+// CreateConsumer creates message consumer for a specific topic
+func (m *InMemoryMessageBus) CreateConsumer(subscription string, mf MessageFactory, topics ...string) (IMessageConsumer, error) {
+	return &InMemoryMessageConsumer{
+		bus:     m,
+		topic:   topics[0],
+		factory: mf,
+	}, nil
+}
+
 // try to pop message from one of the queues
 func (m *InMemoryMessageBus) pop(queue ...string) (IMessage, error) {
 
@@ -156,6 +180,27 @@ func (m *InMemoryMessageBus) pop(queue ...string) (IMessage, error) {
 		}
 	}
 	return nil, fmt.Errorf("not found")
+}
+
+// endregion
+
+// region IMessageConsumer methods implementation ----------------------------------------------------------------------
+
+type InMemoryMessageConsumer struct {
+	bus     IMessageBus
+	topic   string
+	factory MessageFactory
+}
+
+// Close client and free resources
+func (m *InMemoryMessageConsumer) Close() error {
+	logger.Debug("In memory data-cache closed")
+	return nil
+}
+
+// Read message from topic, blocks until a new message arrive or until timeout
+func (m *InMemoryMessageConsumer) Read(timeout time.Duration) (IMessage, error) {
+	return m.bus.Pop(m.factory, timeout)
 }
 
 // endregion

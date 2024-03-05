@@ -1,13 +1,6 @@
-// Copyright 2022. Motty Cohen
-//
-// JSON utilities
-//
-
 package utils
 
 import (
-	"encoding/json"
-
 	. "github.com/go-yaaf/yaaf-common/entity"
 )
 
@@ -30,14 +23,14 @@ func JsonUtils() *jsonUtils {
 func (t *jsonUtils) ToJson(entity Entity) (raw map[string]any, err error) {
 
 	// Convert entity to string
-	bytes, err := json.Marshal(entity)
+	bytes, err := Marshal(entity)
 	if err != nil {
 		return nil, err
 	}
 	raw = make(map[string]any)
 
 	// Convert string to arbitrary json
-	err = json.Unmarshal(bytes, &raw)
+	err = Unmarshal(bytes, &raw)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +42,7 @@ func (t *jsonUtils) ToJson(entity Entity) (raw map[string]any, err error) {
 func (t *jsonUtils) FromJson(factory EntityFactory, raw map[string]any) (entity Entity, err error) {
 
 	// Convert raw to string
-	bytes, err := json.Marshal(raw)
+	bytes, err := Marshal(raw)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +50,7 @@ func (t *jsonUtils) FromJson(factory EntityFactory, raw map[string]any) (entity 
 	entity = factory()
 
 	// Convert string to entity
-	err = json.Unmarshal(bytes, entity)
+	err = Unmarshal(bytes, entity)
 	if err != nil {
 		return nil, err
 	}

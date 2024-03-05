@@ -1,11 +1,12 @@
 module github.com/go-yaaf/yaaf-common
 
-go 1.19
+go 1.20
 
 // Version not ready yet
 retract v1.0.1
 
 require (
+	github.com/golang-jwt/jwt/v4 v4.4.3
 	github.com/google/uuid v1.3.0
 	github.com/jaevor/go-nanoid v1.2.0
 	github.com/prometheus/client_golang v1.13.0
@@ -17,7 +18,6 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/golang-jwt/jwt/v4 v4.4.3 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect

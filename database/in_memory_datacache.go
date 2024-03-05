@@ -1,7 +1,3 @@
-// Copyright 2022. Motty Cohen
-//
-// In-memory data-cache implementation (used for testing)
-
 package database
 
 import (
@@ -20,7 +16,7 @@ import (
 
 // region Database store definitions -----------------------------------------------------------------------------------
 
-// Represent in memory data cache
+// InMemoryDataCache represent in memory data cache
 type InMemoryDataCache struct {
 	keys   *cache.Cache
 	lists  map[string]*list.List
@@ -33,9 +29,7 @@ type InMemoryDataCache struct {
 
 // region Factory and connectivity methods for Database ----------------------------------------------------------------
 
-/**
- * Factory method for DB store
- */
+// NewInMemoryDataCache is a factory method for DB store
 func NewInMemoryDataCache() (dc IDataCache, err error) {
 	return &InMemoryDataCache{
 		keys:   cache.NewTtlCache(),
@@ -44,20 +38,20 @@ func NewInMemoryDataCache() (dc IDataCache, err error) {
 	}, nil
 }
 
-/**
- * Test cache connectivity
- * @param retries - how many retries are required (max 10)
- * @param interval - time interval (in seconds) between retries (max 60)
- */
+// Ping tests connectivity for retries number of time with time interval (in seconds) between retries
 func (dc *InMemoryDataCache) Ping(retries uint, interval uint) error {
 	return nil
 }
 
-/**
- * Close cache and free resources
- */
-func (dc *InMemoryDataCache) Close() {
+// Close cache and free resources
+func (dc *InMemoryDataCache) Close() error {
 	logger.Debug("In memory data-cache closed")
+	return nil
+}
+
+// CloneDataCache Returns a clone (copy) of the instance
+func (dc *InMemoryDataCache) CloneDataCache() (IDataCache, error) {
+	return dc, nil
 }
 
 //endregion
@@ -80,23 +74,24 @@ func (dc *InMemoryDataCache) Get(factory EntityFactory, key string) (result Enti
 	}
 }
 
-// Set value of key with expiration
-func (dc *InMemoryDataCache) Set(key string, entity Entity) (err error) {
-	dc.keys.Set(key, entity)
-	return nil
-}
+// GetRaw gets the raw value of a key
+func (dc *InMemoryDataCache) GetRaw(key string) (res []byte, err error) {
 
-// Delete keys
-func (dc *InMemoryDataCache) Del(keys ...string) (err error) {
-	for _, key := range keys {
-		dc.keys.Delete(key)
+	defer utils.RecoverAll(func(er any) {
+		if er != nil {
+			err = fmt.Errorf("%v", er)
+		}
+	})
+
+	if value, ok := dc.keys.Get(key); ok {
+		return value.([]byte), nil
+	} else {
+		return nil, fmt.Errorf("key %s not found", key)
 	}
-	return nil
 }
 
-// Get the value of all the given keys
-func (dc *InMemoryDataCache) MGet(factory EntityFactory, keys ...string) (results []Entity, err error) {
-
+// GetKeys Get the value of all the given keys
+func (dc *InMemoryDataCache) GetKeys(factory EntityFactory, keys ...string) (results []Entity, err error) {
 	results = make([]Entity, 0)
 	for _, key := range keys {
 		if entity, fe := dc.Get(factory, key); fe == nil {
@@ -106,19 +101,86 @@ func (dc *InMemoryDataCache) MGet(factory EntityFactory, keys ...string) (result
 	return
 }
 
-// Set the value of a key only if the key does not exist
-func (dc *InMemoryDataCache) SetNX(key string, entity Entity, expiration time.Duration) (result bool, err error) {
+// GetRawKeys gets the raw value of all the given keys
+func (dc *InMemoryDataCache) GetRawKeys(keys ...string) ([]Tuple[string, []byte], error) {
+	results := make([]Tuple[string, []byte], 0)
+	for _, key := range keys {
+		if bytes, fe := dc.GetRaw(key); fe == nil {
+			results = append(results, Tuple[string, []byte]{Key: key, Value: bytes})
+		}
+	}
+	return results, nil
+}
+
+// Set value of key with optional expiration
+func (dc *InMemoryDataCache) Set(key string, entity Entity, expiration ...time.Duration) (err error) {
+	if len(expiration) == 0 {
+		dc.keys.Set(key, entity)
+	} else {
+		dc.keys.SetWithTTL(key, entity, expiration[0])
+	}
+	return nil
+}
+
+// SetRaw sets the raw value of key with optional expiration
+func (dc *InMemoryDataCache) SetRaw(key string, bytes []byte, expiration ...time.Duration) (err error) {
+	if len(expiration) == 0 {
+		dc.keys.Set(key, bytes)
+	} else {
+		dc.keys.SetWithTTL(key, bytes, expiration[0])
+	}
+	return nil
+}
+
+// SetNX Set value of key only if it is not exist with optional expiration, return false if the key exists
+func (dc *InMemoryDataCache) SetNX(key string, entity Entity, expiration ...time.Duration) (bool, error) {
+	if exists, err := dc.Exists(key); err != nil {
+		return false, err
+	} else {
+		if exists {
+			return false, nil
+		} else {
+			return true, dc.Set(key, entity, expiration...)
+		}
+	}
+}
+
+// SetRawNX sets the raw value of key only if it is not exist with optional expiration, return false if the key exists
+func (dc *InMemoryDataCache) SetRawNX(key string, bytes []byte, expiration ...time.Duration) (bool, error) {
+	if exists, err := dc.Exists(key); err != nil {
+		return false, err
+	} else {
+		if exists {
+			return false, nil
+		} else {
+			return true, dc.SetRaw(key, bytes, expiration...)
+		}
+	}
+}
+
+// Add Set the value of a key only if the key does not exist
+func (dc *InMemoryDataCache) Add(key string, entity Entity, expiration time.Duration) (result bool, err error) {
 	if _, fe := dc.Get(nil, key); fe != nil {
-		_ = dc.SetWithExp(key, entity, expiration)
-		return true, nil
+		return true, dc.Set(key, entity, expiration)
 	} else {
 		return false, nil
 	}
 }
 
-// Set object value to a key with expiration
-func (dc *InMemoryDataCache) SetWithExp(key string, entity Entity, expiration time.Duration) (err error) {
-	dc.keys.Set(key, entity)
+// AddRaw sets the raw value of a key only if the key does not exist
+func (dc *InMemoryDataCache) AddRaw(key string, bytes []byte, expiration time.Duration) (result bool, err error) {
+	if _, fe := dc.Get(nil, key); fe != nil {
+		return true, dc.SetRaw(key, bytes, expiration)
+	} else {
+		return false, nil
+	}
+}
+
+// Del Delete keys
+func (dc *InMemoryDataCache) Del(keys ...string) (err error) {
+	for _, key := range keys {
+		dc.keys.Delete(key)
+	}
 	return nil
 }
 
@@ -141,6 +203,12 @@ func (dc *InMemoryDataCache) Rename(key string, newKey string) (err error) {
 	}
 }
 
+// Exists checks if key exists
+func (dc *InMemoryDataCache) Exists(key string) (result bool, err error) {
+	_, exists := dc.keys.Get(key)
+	return exists, nil
+}
+
 // Scan keys from the provided cursor
 func (dc *InMemoryDataCache) Scan(from uint64, match string, count int64) (keys []string, cursor uint64, err error) {
 	rex, _ := regexp.Compile(match)
@@ -160,29 +228,29 @@ func (dc *InMemoryDataCache) Scan(from uint64, match string, count int64) (keys 
 	return
 }
 
-// Check if key exists
-func (dc *InMemoryDataCache) Exists(key string) (result bool, err error) {
-	_, exists := dc.keys.Get(key)
-	return exists, nil
-}
-
 // endregion
 
 // region Hash actions ---------------------------------------------------------------------------------------------
 
-// Get the value of a hash field
+// HGet gets the value of a hash field
 func (dc *InMemoryDataCache) HGet(factory EntityFactory, key, field string) (result Entity, err error) {
 	hKey := fmt.Sprintf("%s@%s", key, field)
 	return dc.Get(factory, hKey)
 }
 
-// Get all the fields in a hash
+// HGetRaw gets the raw value of a hash field
+func (dc *InMemoryDataCache) HGetRaw(key, field string) ([]byte, error) {
+	hKey := fmt.Sprintf("%s@%s", key, field)
+	return dc.GetRaw(hKey)
+}
+
+// HKeys get all the fields in a hash
 func (dc *InMemoryDataCache) HKeys(key string) (fields []string, err error) {
 	keys, _, fe := dc.Scan(0, key, 0)
 	return keys, fe
 }
 
-// Get all the fields and values in a hash
+// HGetAll gets all the fields and values in a hash
 func (dc *InMemoryDataCache) HGetAll(factory EntityFactory, key string) (result map[string]Entity, err error) {
 	result = make(map[string]Entity)
 	keys, _, err := dc.Scan(0, key, 0)
@@ -194,13 +262,57 @@ func (dc *InMemoryDataCache) HGetAll(factory EntityFactory, key string) (result 
 	return
 }
 
-// Set the value of a hash field
+// HGetRawAll gets all the fields and raw values in a hash
+func (dc *InMemoryDataCache) HGetRawAll(key string) (result map[string][]byte, err error) {
+	result = make(map[string][]byte)
+	keys, _, err := dc.Scan(0, key, 0)
+	for _, k := range keys {
+		if bytes, fe := dc.GetRaw(k); fe == nil {
+			result[k] = bytes
+		}
+	}
+	return
+}
+
+// HSet sets the value of a hash field
 func (dc *InMemoryDataCache) HSet(key, field string, entity Entity) (err error) {
 	hKey := fmt.Sprintf("%s@%s", key, field)
 	return dc.Set(hKey, entity)
 }
 
-// Delete one or more hash fields
+// HSetRaw sets the raw value of a hash field
+func (dc *InMemoryDataCache) HSetRaw(key, field string, bytes []byte) (err error) {
+	hKey := fmt.Sprintf("%s@%s", key, field)
+	return dc.SetRaw(hKey, bytes)
+}
+
+// HSetNX Set value of key only if it is not exist with optional expiration, return false if the key exists
+func (dc *InMemoryDataCache) HSetNX(key, field string, entity Entity) (bool, error) {
+	if exists, err := dc.HExists(key, field); err != nil {
+		return false, err
+	} else {
+		if exists {
+			return false, nil
+		} else {
+			return true, dc.HSet(key, field, entity)
+		}
+	}
+}
+
+// HSetRawNX sets the raw value of key only if it is not exist with optional expiration, return false if the key exists
+func (dc *InMemoryDataCache) HSetRawNX(key, field string, bytes []byte) (bool, error) {
+	if exists, err := dc.HExists(key, field); err != nil {
+		return false, err
+	} else {
+		if exists {
+			return false, nil
+		} else {
+			return true, dc.HSetRaw(key, field, bytes)
+		}
+	}
+}
+
+// HDel delete one or more hash fields
 func (dc *InMemoryDataCache) HDel(key string, fields ...string) (err error) {
 	keys := make([]string, 0)
 	for _, field := range fields {
@@ -211,13 +323,19 @@ func (dc *InMemoryDataCache) HDel(key string, fields ...string) (err error) {
 	return dc.Del(keys...)
 }
 
-// Set the value of a key only if the key does not exist
-func (dc *InMemoryDataCache) HSetNX(key, field string, entity Entity) (result bool, err error) {
+// HAdd sets the value of a key only if the key does not exist
+func (dc *InMemoryDataCache) HAdd(key, field string, entity Entity) (result bool, err error) {
 	hKey := fmt.Sprintf("%s@%s", key, field)
-	return dc.SetNX(hKey, entity, 0)
+	return dc.Add(hKey, entity, 0)
 }
 
-// Check if key exists
+// HAddRaw sets the raw value of a key only if the key does not exist
+func (dc *InMemoryDataCache) HAddRaw(key, field string, bytes []byte) (result bool, err error) {
+	hKey := fmt.Sprintf("%s@%s", key, field)
+	return dc.AddRaw(hKey, bytes, 0)
+}
+
+// HExists Check if key exists
 func (dc *InMemoryDataCache) HExists(key, field string) (result bool, err error) {
 	hKey := fmt.Sprintf("%s@%s", key, field)
 	return dc.Exists(hKey)
@@ -227,7 +345,7 @@ func (dc *InMemoryDataCache) HExists(key, field string) (result bool, err error)
 
 // region List actions ---------------------------------------------------------------------------------------------
 
-// Append (add to the right) one or multiple values to a list
+// RPush append (add to the right) one or multiple values to a list
 func (dc *InMemoryDataCache) RPush(key string, value ...Entity) (err error) {
 	// Ensure list exists
 	lst, ok := dc.lists[key]
@@ -243,7 +361,7 @@ func (dc *InMemoryDataCache) RPush(key string, value ...Entity) (err error) {
 	return nil
 }
 
-// Prepend (add to the left) one or multiple values to a list
+// LPush Prepend (add to the left) one or multiple values to a list
 func (dc *InMemoryDataCache) LPush(key string, value ...Entity) (err error) {
 	// Ensure list exists
 	lst, ok := dc.lists[key]
@@ -259,7 +377,7 @@ func (dc *InMemoryDataCache) LPush(key string, value ...Entity) (err error) {
 	return nil
 }
 
-// Remove and get the last element in a list
+// RPop Remove and get the last element in a list
 func (dc *InMemoryDataCache) RPop(factory EntityFactory, key string) (entity Entity, err error) {
 	// Ensure list exists
 	if lst, ok := dc.lists[key]; !ok {
@@ -275,7 +393,7 @@ func (dc *InMemoryDataCache) RPop(factory EntityFactory, key string) (entity Ent
 	return entity, nil
 }
 
-// Remove and get the first element in a list
+// LPop Remove and get the first element in a list
 func (dc *InMemoryDataCache) LPop(factory EntityFactory, key string) (entity Entity, err error) {
 	// Ensure list exists
 	if lst, ok := dc.lists[key]; !ok {
@@ -291,7 +409,7 @@ func (dc *InMemoryDataCache) LPop(factory EntityFactory, key string) (entity Ent
 	return entity, nil
 }
 
-// Remove and get the last element in a list or block until one is available
+// BRPop Remove and get the last element in a list or block until one is available
 func (dc *InMemoryDataCache) BRPop(factory EntityFactory, timeout time.Duration, keys ...string) (key string, value Entity, err error) {
 	select {
 	case _ = <-time.Tick(time.Millisecond):
@@ -315,7 +433,7 @@ func (dc *InMemoryDataCache) brPop(keys ...string) (key string, entity Entity, e
 	return "", nil, false
 }
 
-// Remove and get the first element in a list or block until one is available
+// BLPop Remove and get the first element in a list or block until one is available
 func (dc *InMemoryDataCache) BLPop(factory EntityFactory, timeout time.Duration, keys ...string) (key string, entity Entity, err error) {
 	select {
 	case _ = <-time.Tick(time.Millisecond):
@@ -339,7 +457,7 @@ func (dc *InMemoryDataCache) blPop(keys ...string) (key string, entity Entity, e
 	return "", nil, false
 }
 
-// Get a range of elements from list
+// LRange Get a range of elements from list
 func (dc *InMemoryDataCache) LRange(factory EntityFactory, key string, start, stop int64) (result []Entity, err error) {
 	result = make([]Entity, 0)
 
@@ -363,7 +481,7 @@ func (dc *InMemoryDataCache) LRange(factory EntityFactory, key string, start, st
 	}
 }
 
-// Get the length of a list
+// LLen Get the length of a list
 func (dc *InMemoryDataCache) LLen(key string) (result int64) {
 	// Ensure list exists
 	if lst, ok := dc.lists[key]; !ok {
@@ -371,6 +489,15 @@ func (dc *InMemoryDataCache) LLen(key string) (result int64) {
 	} else {
 		return int64(lst.Len())
 	}
+}
+
+// endregion
+
+// region List actions ---------------------------------------------------------------------------------------------
+
+// ObtainLocker tries to obtain a new lock using a key with the given TTL
+func (dc *InMemoryDataCache) ObtainLocker(key string, ttl time.Duration) (ILocker, error) {
+	return nil, fmt.Errorf("locker not supported in this implementation")
 }
 
 // endregion

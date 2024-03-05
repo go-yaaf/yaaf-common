@@ -1,12 +1,9 @@
-// Copyright 2022. Motty Cohen
-//
-// Entity interface and base entity for all persistent model entities
-//
-
+// Package entity Entity interface and base entity for all persistent model entities
 package entity
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -28,23 +25,6 @@ type JsonDoc struct {
 
 // endregion
 
-// region Timestamp ----------------------------------------------------------------------------------------------------
-
-// Timestamp represents Epoch milliseconds timestamp
-type Timestamp int64
-
-// EpochNowMillis return current time as Epoch time milliseconds with delta in millis
-func EpochNowMillis(delta int64) Timestamp {
-	return Timestamp((time.Now().UnixNano() / 1000000) + delta)
-}
-
-// Now return current time as Epoch time milliseconds with delta in millis
-func Now() Timestamp {
-	return EpochNowMillis(0)
-}
-
-// endregion
-
 // region Entity Interface ---------------------------------------------------------------------------------------------
 
 // Entity is a marker interface for all serialized domain model entities with identity
@@ -58,7 +38,7 @@ type Entity interface {
 	// NAME return the entity name
 	NAME() string
 
-	// KEY return the entity sharding key (tenant/account id)
+	// KEY return the entity sharding key (tenant/account id) based on one of the entity's attributes
 	KEY() string
 }
 
@@ -72,7 +52,6 @@ type EntityFactory func() Entity
 // BaseEntity is a base structure for any concrete Entity
 type BaseEntity struct {
 	Id        string    `json:"id"`        // Unique object Id
-	Key       string    `json:"key"`       // Shard (tenant) key
 	CreatedOn Timestamp `json:"createdOn"` // When the object was created [Epoch milliseconds Timestamp]
 	UpdatedOn Timestamp `json:"updatedOn"` // When the object was last updated [Epoch milliseconds Timestamp]
 }
@@ -85,13 +64,18 @@ func (e BaseEntity) NAME() string { return fmt.Sprintf("%s %s", e.TABLE(), e.Id)
 
 func (e BaseEntity) KEY() string { return "" }
 
+func NewBaseEntity() Entity {
+	return &BaseEntity{CreatedOn: Now(), UpdatedOn: Now()}
+}
+
 // EntityIndex extract table or index name from entity.TABLE()
 func EntityIndex(entity Entity, tenantId string) string {
 
 	table := entity.TABLE()
 
-	// Replace templates: {{tenantId}}
+	// Replace templates: {{tenantId}} or {{accountId}}
 	index := strings.Replace(table, "{{tenantId}}", tenantId, -1)
+	index = strings.Replace(table, "{{accountId}}", tenantId, -1)
 
 	// Replace templates: {{year}}
 	index = strings.Replace(index, "{{year}}", time.Now().Format("2006"), -1)
@@ -104,23 +88,58 @@ func EntityIndex(entity Entity, tenantId string) string {
 
 // endregion
 
+// region Simple Entity ------------------------------------------------------------------------------------------------
+
+// SimpleEntity is a primitive type expressed as an Entity
+type SimpleEntity[T any] struct {
+	Value T `json:"value"` // entity value
+}
+
+func (e SimpleEntity[T]) ID() string { return fmt.Sprintf("%v", e.Value) }
+
+func (e SimpleEntity[T]) TABLE() string { return "" }
+
+func (e SimpleEntity[T]) NAME() string { return fmt.Sprintf("%v", reflect.TypeOf(e.Value).Name()) }
+
+func (e SimpleEntity[T]) KEY() string { return fmt.Sprintf("%v", e.Value) }
+
+func NewSimpleEntity[T any]() Entity {
+	return &SimpleEntity[T]{}
+}
+
+// endregion
+
 // region Entity Ids ---------------------------------------------------------------------------------------------------
 /**
  * Generate new id based on nanoId (faster and smaller than GUID)
  */
 
-// ID return a long string (10 characters) based on Epoch micro-seconds in base 36
+// ID return a long string (alphanumeric) based on Epoch micro-seconds in base 36
 func ID() string {
 	return strconv.FormatUint(uint64(time.Now().UnixMicro()), 36)
 }
 
-// ShortID return a short string (6 characters) based on epoch seconds in base 36
+// IDN return a long string (digits only) based on Epoch micro-seconds
+func IDN() string {
+	return fmt.Sprintf("%d", time.Now().UnixMicro())
+}
+
+// ShortID return a short string (6 characters alphanumeric) based on epoch seconds in base 36
 func ShortID(delta ...int) string {
 	value := uint64(time.Now().Unix())
 	for _, d := range delta {
 		value += uint64(d)
 	}
 	return strconv.FormatUint(value, 36)
+}
+
+// ShortIDN return a short string (digits only) based on epoch seconds
+func ShortIDN(delta ...int) string {
+	value := uint64(time.Now().Unix())
+	for _, d := range delta {
+		value += uint64(d)
+	}
+	return fmt.Sprintf("%d", value)
 }
 
 // NanoID return a long string (6 characters) based on go-nanoid project (smaller and faster than GUID)

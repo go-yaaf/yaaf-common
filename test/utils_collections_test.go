@@ -1,5 +1,3 @@
-// Copyright 2022. Motty Cohen
-//
 // Base configuration utility tests
 
 package test

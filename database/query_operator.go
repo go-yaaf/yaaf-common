@@ -1,7 +1,3 @@
-// Copyright 2022. Motty Cohen
-//
-// Database Query operator
-//
 package database
 
 type QueryOperator string

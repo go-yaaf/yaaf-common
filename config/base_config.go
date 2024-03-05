@@ -1,5 +1,3 @@
-// Copyright 2022. Motty Cohen.
-//
 // Package config
 //
 // Base configuration utility
@@ -13,6 +11,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"sort"
 	"strconv"
@@ -30,6 +29,47 @@ const (
 	CfgWsWriteCompress        = "WS_WRITE_COMPRESS"
 	CfgWsWriteTimeoutSec      = "WS_WRITE_TIMEOUT"
 	CfgWsPongTimeoutSec       = "WS_PONG_TIMEOUT"
+	CfgTopicPartitions        = "TOPIC_PARTITIONS"
+
+	CfgEnableGoRuntimeProfiler = "ENABLE_GO_RUNTIME_PROFILER"
+	CfgGoRuntimeProfilerAddr   = "GO_RUNTIME_PROFILER_ADDR"
+
+	// CfgEnableMessageOrdering is set to true to ensure that messages with the same ordering key are delivered in the order they were published.
+	// This is crucial for use cases where the order of messages is important for correct processing.
+	// Note: The Pub/Sub topic must be configured to support message ordering for this to take effect.
+	// Enabling message ordering may impact the throughput of message publishing, as it requires Pub/Sub to maintain order within each ordering key.
+	CfgEnableMessageOrdering = "ENABLE_MESSAGE_ORDERING"
+
+	// CfgPubSubNumOfGoroutines NumGoroutines specifies the number of goroutines that will be used
+	// to pull messages from the subscription in parallel. Each goroutine
+	// opens a separate StreamingPull stream. A higher number of goroutines
+	// might increase throughput but also increases the system's load.
+	// Defaults to DefaultReceiveSettings.NumGoroutines when set to 0.
+	CfgPubSubNumOfGoroutines = "PUBSUB_NUM_OF_GOROUTINES"
+
+	// CfgPubSubMaxOutstandingMessages defines the maximum number of unprocessed
+	// messages (messages that have been received but not yet acknowledged
+	// or expired). Setting this to a lower number can prevent the consumer
+	// from being overwhelmed by a large volume of incoming messages.
+	// If set to 0, the default is DefaultReceiveSettings.MaxOutstandingMessages.
+	// A negative value indicates no limit.
+	CfgPubSubMaxOutstandingMessages = "PUBSUB_MAX_OUTSTANDING_MESSAGES"
+
+	// CfgPubSubMaxOutstandingBytes is the maximum total size of unprocessed messages.
+	// This setting helps to control memory usage by limiting the total size
+	// of messages that can be held in memory at a time. If set to 0, the
+	// default is DefaultReceiveSettings.MaxOutstandingBytes. A negative
+	// value indicates no limit on the byte size of unprocessed messages.
+	CfgPubSubMaxOutstandingBytes = "PUSUB_MAX_OUTSTANDING_BYTES"
+)
+
+const (
+	DefaultPubSubNumOfGoroutines = 0
+	DefaultPubSubMaxOutstandingMessages
+	DefaultPubSubMaxOutstandingBytes = 0
+	DefaultEnableMessageOrdering     = false
+	DefaultEnableGoRuntimeProfiler   = false
+	DefaultGoRuntimeProfilerAddr     = ":6060"
 )
 
 // region BaseConfig singleton pattern ---------------------------------------------------------------------------------
@@ -45,15 +85,21 @@ type BaseConfig struct {
 func newBaseConfig() *BaseConfig {
 	var bc = BaseConfig{}
 	bc.cfg = map[string]string{
-		CfgLoglevel:               "INFO",
-		CfgHttpReadTimeoutMs:      "3000",
-		CfgHttpWriteTimeoutMs:     "3000",
-		CfgWsKeepAliveSec:         "-1",
-		CfgWsReadBufferSizeBytes:  "1048576",
-		CfgWsWriteBufferSizeBytes: "1048576",
-		CfgWsWriteCompress:        "true",
-		CfgWsPongTimeoutSec:       "5",
-		CfgWsWriteTimeoutSec:      "5",
+		CfgLoglevel:                     "INFO",
+		CfgHttpReadTimeoutMs:            "3000",
+		CfgHttpWriteTimeoutMs:           "3000",
+		CfgWsKeepAliveSec:               "-1",
+		CfgWsReadBufferSizeBytes:        "1048576",
+		CfgWsWriteBufferSizeBytes:       "1048576",
+		CfgWsWriteCompress:              "true",
+		CfgWsPongTimeoutSec:             "5",
+		CfgWsWriteTimeoutSec:            "5",
+		CfgPubSubNumOfGoroutines:        fmt.Sprintf("%d", DefaultPubSubNumOfGoroutines),
+		CfgPubSubMaxOutstandingMessages: fmt.Sprintf("%d", DefaultPubSubMaxOutstandingMessages),
+		CfgPubSubMaxOutstandingBytes:    fmt.Sprintf("%d", DefaultPubSubMaxOutstandingBytes),
+		CfgEnableMessageOrdering:        fmt.Sprintf("%t", DefaultEnableMessageOrdering),
+		CfgEnableGoRuntimeProfiler:      fmt.Sprintf("%t", DefaultEnableGoRuntimeProfiler),
+		CfgGoRuntimeProfilerAddr:        DefaultGoRuntimeProfilerAddr,
 	}
 	return &bc
 }
@@ -148,6 +194,17 @@ func (c *BaseConfig) GetBoolParamValueOrDefault(key string, defaultValue bool) (
 
 // region Configuration accessors methods ------------------------------------------------------------------------------
 
+func (c *BaseConfig) PubSubNumOfGoroutines() int {
+	return c.GetIntParamValueOrDefault(CfgPubSubNumOfGoroutines, DefaultPubSubNumOfGoroutines)
+}
+
+func (c *BaseConfig) PubSubMaxOutstandingMessages() int {
+	return c.GetIntParamValueOrDefault(CfgPubSubMaxOutstandingMessages, DefaultPubSubMaxOutstandingMessages)
+}
+func (c *BaseConfig) PubSubMaxOutstandingBytes() int {
+	return c.GetIntParamValueOrDefault(CfgPubSubMaxOutstandingBytes, DefaultPubSubMaxOutstandingBytes)
+}
+
 // LogLevel gets log level
 func (c *BaseConfig) LogLevel() string {
 	return c.GetStringParamValueOrDefault(CfgLoglevel, "INFO")
@@ -191,6 +248,23 @@ func (c *BaseConfig) WsPongTimeoutSec() int {
 // WsWriteTimeoutSec gets web socket write time out in seconds
 func (c *BaseConfig) WsWriteTimeoutSec() int {
 	return c.GetIntParamValueOrDefault(CfgWsWriteTimeoutSec, 5)
+}
+
+// TopicPartitions gets default number of partitions per topic
+func (c *BaseConfig) TopicPartitions() int {
+	return c.GetIntParamValueOrDefault(CfgTopicPartitions, 1)
+}
+
+func (c *BaseConfig) EnableMessageOrdering() bool {
+	return c.GetBoolParamValueOrDefault(CfgEnableMessageOrdering, DefaultEnableMessageOrdering)
+}
+
+func (c *BaseConfig) EnableGoRuntimeProfiler() bool {
+	return c.GetBoolParamValueOrDefault(CfgEnableGoRuntimeProfiler, DefaultEnableGoRuntimeProfiler)
+}
+
+func (c *BaseConfig) GoRuntimeProfilerAddr() string {
+	return c.GetStringParamValueOrDefault(CfgGoRuntimeProfilerAddr, DefaultGoRuntimeProfilerAddr)
 }
 
 // endregion

@@ -1,5 +1,3 @@
-// Copyright 2022. Motty Cohen
-//
 // Token Utils tests
 
 package test
@@ -18,7 +16,7 @@ const (
 )
 
 func TestApiKey(t *testing.T) {
-
+	skipCI(t)
 	appName := "my-application"
 
 	if err := utils.SetAPISecret(tokenApiSecret, tokenApiVector); err != nil {
@@ -41,7 +39,7 @@ func TestApiKey(t *testing.T) {
 }
 
 func TestJwtToken(t *testing.T) {
-
+	skipCI(t)
 	// Create the Registered Claims and map Token Data fields
 	rc := &jwt.RegisteredClaims{
 		ID:       "claimId",

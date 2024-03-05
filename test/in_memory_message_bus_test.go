@@ -1,5 +1,3 @@
-// Copyright 2022. Motty Cohen
-//
 // Test in memory message queue implementation tests
 package test
 
@@ -8,7 +6,7 @@ import (
 	"github.com/go-yaaf/yaaf-common/entity"
 	. "github.com/go-yaaf/yaaf-common/messaging"
 	"github.com/stretchr/testify/assert"
-	"os"
+	"github.com/stretchr/testify/require"
 	"sync"
 	"testing"
 	"time"
@@ -56,9 +54,7 @@ func getInitializedMessageBus() (IMessageBus, error) {
 }
 
 func TestInMemoryMessageBus_Pop(t *testing.T) {
-	if os.Getenv("CI") != "" {
-		t.Skip("Skipping testing in CI environment")
-	}
+	skipCI(t)
 
 	mq, fe := getInitializedMessageBus()
 	assert.Nil(t, fe, "error initializing Message queue")
@@ -75,9 +71,7 @@ func TestInMemoryMessageBus_Pop(t *testing.T) {
 }
 
 func TestInMemoryMessageBus_PopWithTimeout(t *testing.T) {
-	if os.Getenv("CI") != "" {
-		t.Skip("Skipping testing in CI environment")
-	}
+	skipCI(t)
 
 	mq, fe := getInitializedMessageBus()
 	assert.Nil(t, fe, "error initializing Message queue")
@@ -85,7 +79,7 @@ func TestInMemoryMessageBus_PopWithTimeout(t *testing.T) {
 	// Push message to queue_y after 10 seconds
 	go func() {
 		time.Sleep(time.Second * 5)
-		mq.Push(newHeroMessage("queue_x", &Hero{
+		_ = mq.Push(newHeroMessage("queue_x", &Hero{
 			BaseEntity: entity.BaseEntity{},
 			Key:        100,
 			Name:       "Delayed hero",
@@ -103,9 +97,7 @@ func TestInMemoryMessageBus_PopWithTimeout(t *testing.T) {
 }
 
 func TestInMemoryMessageBus_PubSub(t *testing.T) {
-	if os.Getenv("CI") != "" {
-		t.Skip("Skipping testing in CI environment")
-	}
+	skipCI(t)
 
 	bus, fe := getInitializedMessageBus()
 	assert.Nil(t, fe, "error initializing Message queue")
@@ -117,7 +109,9 @@ func TestInMemoryMessageBus_PubSub(t *testing.T) {
 	go publishMessages(wg, bus, "heroes_1", time.Second)
 	go publishMessages(wg, bus, "heroes_2", time.Second)
 
-	bus.Subscribe(subscriber, NewHeroMessage, "heroes_1")
+	sub, err := bus.Subscribe("subscriber", NewHeroMessage, subscriberCallback, "heroes_1")
+	require.NoError(t, err, "subscription error")
+	require.NotEmptyf(t, sub, "subscription is empty")
 
 	wg.Wait()
 	fmt.Println("done")
@@ -133,7 +127,8 @@ func publishMessages(wg *sync.WaitGroup, bus IMessageBus, topic string, timeout 
 		select {
 		case _ = <-time.Tick(time.Millisecond):
 			hero := list_of_heroes[idx]
-			message := newHeroMessage(topic, hero.(*Hero))
+			//message := newHeroMessage(topic, hero.(*Hero))
+			message := GetMessage[*Hero](topic, hero.(*Hero))
 			_ = bus.Publish(message)
 			if idx == len(list_of_heroes)-1 {
 				idx = 0
@@ -149,7 +144,18 @@ func publishMessages(wg *sync.WaitGroup, bus IMessageBus, topic string, timeout 
 }
 
 // subscriber function callback
-func subscriber(msg IMessage) {
+func subscriberCallback(msg IMessage) bool {
+	if msg == nil {
+		return false
+	}
+	if msg.Payload() == nil {
+		return false
+	}
+
 	hero := msg.Payload().(*Hero)
+	if hero == nil {
+		return false
+	}
 	fmt.Println(msg.Topic(), msg.OpCode(), msg.SessionId(), hero.Id, hero.Name)
+	return true
 }

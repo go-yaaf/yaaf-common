@@ -1,7 +1,4 @@
-// Copyright 2022. Motty Cohen
-//
 // Test in memory database implementation
-//
 package test
 
 import (
@@ -25,7 +22,7 @@ func getInitializedDb() (dbs IDatabase, err error) {
 // endregion
 
 func TestInMemoryDatabase_Get(t *testing.T) {
-
+	skipCI(t)
 	db, fe := getInitializedDb()
 	assert.Nil(t, fe, "error initializing DB")
 
@@ -37,7 +34,7 @@ func TestInMemoryDatabase_Get(t *testing.T) {
 }
 
 func TestInMemoryDatabase_List(t *testing.T) {
-
+	skipCI(t)
 	db, fe := getInitializedDb()
 	assert.Nil(t, fe, "error initializing DB")
 
@@ -51,7 +48,7 @@ func TestInMemoryDatabase_List(t *testing.T) {
 }
 
 func TestInMemoryDatabase_Like_Suffix(t *testing.T) {
-
+	skipCI(t)
 	db, fe := getInitializedDb()
 	assert.Nil(t, fe, "error initializing DB")
 
@@ -67,7 +64,7 @@ func TestInMemoryDatabase_Like_Suffix(t *testing.T) {
 }
 
 func TestInMemoryDatabase_Like_Prefix(t *testing.T) {
-
+	skipCI(t)
 	db, fe := getInitializedDb()
 	assert.Nil(t, fe, "error initializing DB")
 

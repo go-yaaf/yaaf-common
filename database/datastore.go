@@ -1,74 +1,79 @@
-// Copyright 2022. Motty Cohen
-//
-// Database interface for NoSQL Big Data wrapper implementations
-//
 package database
 
 import (
 	. "github.com/go-yaaf/yaaf-common/entity"
+	"io"
 )
 
-// Datastore interface
+// IDatastore interface for NoSQL Big Data wrapper implementations
 type IDatastore interface {
 
-	// Test database connectivity for retries number of time with time interval (in seconds) between retries
+	// Closer includes method Close()
+	io.Closer
+
+	// Ping tests database connectivity for retries number of time with time interval (in seconds) between retries
 	Ping(retries uint, intervalInSeconds uint) error
 
-	// Get single entity by ID
+	// CloneDatastore Returns a clone (copy) of the instance
+	CloneDatastore() (IDatastore, error)
+
+	// Get a single entity by ID
 	Get(factory EntityFactory, entityID string, keys ...string) (result Entity, err error)
 
-	// Get multiple entities by IDs
+	// List gets multiple entities by IDs
 	List(factory EntityFactory, entityIDs []string, keys ...string) (list []Entity, err error)
 
-	// Check if entity exists by ID
+	// Exists checks if entity exists by ID
 	Exists(factory EntityFactory, entityID string, keys ...string) (result bool, err error)
 
-	// Insert new entity
+	// Insert a new entity
 	Insert(entity Entity) (added Entity, err error)
 
-	// Update existing entity
+	// Update an existing entity
 	Update(entity Entity) (updated Entity, err error)
 
-	// Update entity or create it if it does not exist
+	// Upsert update entity or create it if it does not exist
 	Upsert(entity Entity) (updated Entity, err error)
 
 	// Delete entity by id and shard (key)
 	Delete(factory EntityFactory, entityID string, keys ...string) (err error)
 
-	// Insert multiple entities
+	// BulkInsert inserts multiple entities
 	BulkInsert(entities []Entity) (affected int64, err error)
 
-	// Update multiple entities
+	// BulkUpdate updates multiple entities
 	BulkUpdate(entities []Entity) (affected int64, err error)
 
-	// Update or insert multiple entities
+	// BulkUpsert update or insert multiple entities
 	BulkUpsert(entities []Entity) (affected int64, err error)
 
-	// Delete multiple entities by IDs
+	// BulkDelete delete multiple entities by IDs
 	BulkDelete(factory EntityFactory, entityIDs []string, keys ...string) (affected int64, err error)
 
-	// Update single field of the document in a single transaction (eliminates the need to fetch - change - update)
+	// SetField update a single field of the document in a single transaction (eliminates the need to fetch - change - update)
 	SetField(factory EntityFactory, entityID string, field string, value any, keys ...string) (err error)
 
-	// Update some fields of the document in a single transaction (eliminates the need to fetch - change - update)
+	// SetFields update some fields of the document in a single transaction (eliminates the need to fetch - change - update)
 	SetFields(factory EntityFactory, entityID string, fields map[string]any, keys ...string) (err error)
 
-	// Utility struct method to build a query
+	// Query is a factory method for query builder Utility
 	Query(factory EntityFactory) IQuery
 
-	// Close DB and free resources
-	Close()
-
-	// Index Actions ---------------------------------------------------------------------------------------------------
-	// Test if index exists
+	// IndexExists tests if index exists
 	IndexExists(indexName string) (exists bool)
 
-	// Create index by name (without mapping)
+	// CreateIndex creates an index (without mapping)
 	CreateIndex(indexName string) (name string, err error)
 
-	// Create index of entity and add entity field mapping
+	// CreateEntityIndex creates an index of entity and add entity field mapping
 	CreateEntityIndex(factory EntityFactory, key string) (name string, err error)
 
-	// Drop index
+	// ListIndices returns a list of all indices matching the pattern
+	ListIndices(pattern string) (map[string]int, error)
+
+	// DropIndex drops an index
 	DropIndex(indexName string) (ack bool, err error)
+
+	// ExecuteQuery Execute native KQL query
+	ExecuteQuery(query string, args ...any) ([]Json, error)
 }

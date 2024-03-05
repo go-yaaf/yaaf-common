@@ -1,62 +1,58 @@
-// Copyright 2022. Motty Cohen
-//
-// Database Query filter
-//
 package database
 
 import "fmt"
 
 // region QueryFilter Interface ----------------------------------------------------------------------------------------
 
-// Query filter interface
+// QueryFilter Query filter interface
 type QueryFilter interface {
 
-	// Equal
+	// Eq - Equal
 	Eq(value any) QueryFilter
 
-	// Not equal
+	// Neq - Not equal
 	Neq(value any) QueryFilter
 
-	// Like
+	// Like - similar
 	Like(value string) QueryFilter
 
-	// Greater
+	// Gt - Greater than
 	Gt(value any) QueryFilter
 
-	// Greater or equal
+	// Gte - Greater or equal
 	Gte(value any) QueryFilter
 
-	// Less than
+	// Lt - Less than
 	Lt(value any) QueryFilter
 
-	// Less or equal
+	// Lte - Less or equal
 	Lte(value any) QueryFilter
 
-	// In
+	// In - mach one of the values
 	In(values ...any) QueryFilter
 
-	// Not In
+	// NotIn - Not In
 	NotIn(values ...any) QueryFilter
 
-	// Between
+	// Between - equal or greater than the lower boundary and equal or less than the upper boundary
 	Between(value1, value2 any) QueryFilter
 
-	// Include this filter only if condition is true
+	// If - Include this filter only if condition is true
 	If(value bool) QueryFilter
 
-	// Include this filter only if condition is true
+	// IsActive Include this filter only if condition is true
 	IsActive() bool
 
-	// Get the field name
+	// GetField Get the field name
 	GetField() string
 
-	// Get the criteria operator
+	// GetOperator Get the criteria operator
 	GetOperator() QueryOperator
 
-	// Get the criteria values
+	// GetValues Get the criteria values
 	GetValues() []any
 
-	// Get string representation of the value
+	// GetStringValue Get string representation of the value
 	GetStringValue(index int) string
 }
 
@@ -81,103 +77,117 @@ func Filter(field string) QueryFilter {
 	}
 }
 
-// Equal
+// F filter by field (synonym to Filter)
+func F(field string) QueryFilter {
+	return &queryFilter{
+		field:    field,
+		operator: Eq,
+		active:   true,
+	}
+}
+
+// Eq - Equal
 func (q *queryFilter) Eq(value any) QueryFilter {
 	q.operator = Eq
-	q.values = []any{value}
+	q.values = append(q.values, value)
+	q.active = len(fmt.Sprintf("%v", value)) > 0
 	return q
 }
 
-// Not equal
+// Neq - Not equal
 func (q *queryFilter) Neq(value any) QueryFilter {
 	q.operator = Neq
-	q.values = []any{value}
+	q.values = append(q.values, value)
+	q.active = len(fmt.Sprintf("%v", value)) > 0
 	return q
 }
 
-// Like
+// Like - similar
 func (q *queryFilter) Like(value string) QueryFilter {
 	q.operator = Like
-	q.values = []any{value}
+	q.values = append(q.values, value)
+	q.active = len(fmt.Sprintf("%v", value)) > 0
 	return q
 }
 
-// Greater
+// Gt - Greater than
 func (q *queryFilter) Gt(value any) QueryFilter {
 	q.operator = Gt
-	q.values = []any{value}
+	q.values = append(q.values, value)
 	return q
 }
 
-// Greater or equal
+// Gte - Greater or equal
 func (q *queryFilter) Gte(value any) QueryFilter {
 	q.operator = Gte
-	q.values = []any{value}
+	q.values = append(q.values, value)
 	return q
 }
 
-// Less
+// Lt - Less than
 func (q *queryFilter) Lt(value any) QueryFilter {
 	q.operator = Lt
-	q.values = []any{value}
+	q.values = append(q.values, value)
 	return q
 }
 
-// Less or equal
+// Lte - Less or equal
 func (q *queryFilter) Lte(value any) QueryFilter {
 	q.operator = Lte
-	q.values = []any{value}
+	q.values = append(q.values, value)
 	return q
 }
 
-// In
+// In - mach one of the values
 func (q *queryFilter) In(values ...any) QueryFilter {
 	q.operator = In
-	q.values = []any{values}
+	q.values = append(q.values, values...)
+	q.active = len(values) > 0
 	return q
 }
 
-// Not in
+// NotIn - Not in
 func (q *queryFilter) NotIn(values ...any) QueryFilter {
 	q.operator = NotIn
-	q.values = []any{values}
+	q.values = append(q.values, values...)
+	q.active = len(values) > 0
 	return q
 }
 
-// Between
+// Between - equal or greater than the lower boundary and equal or less than the upper boundary
 func (q *queryFilter) Between(value1, value2 any) QueryFilter {
 	q.operator = Between
-	q.values = []any{value1, value2}
+	q.values = append(q.values, value1, value2)
 	return q
 }
 
-// Include this filter only if condition is true
+// If - Include this filter only if condition is true
 func (q *queryFilter) If(value bool) QueryFilter {
 	q.active = value
 	return q
 }
 
-// Is the filter active?
+// IsActive Is the filter active?
 func (q *queryFilter) IsActive() bool {
 	return q.active
 }
 
-// Get filtered field name
+// GetField Get filtered field name
 func (q *queryFilter) GetField() string {
 	return q.field
 }
 
-// Get the criteria operator
+// GetOperator Get the criteria operator
 func (q *queryFilter) GetOperator() QueryOperator {
 	return q.operator
 }
 
-// Get values
+// GetValues Get values
 func (q *queryFilter) GetValues() []any {
 	return q.values
 }
 
-// Get string representation of the value
+// GetStringValue Get string representation of the value
 func (q *queryFilter) GetStringValue(index int) string {
 	if len(q.values) > index {
 		return fmt.Sprintf("%v", q.values[index])

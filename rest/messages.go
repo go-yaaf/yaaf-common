@@ -1,5 +1,3 @@
-// Copyright 2022. Shield-IoT Ltd.
-//
 // Common REST messages
 //
 
@@ -23,6 +21,13 @@ func (res *BaseRestResponse) SetError(err error) {
 	}
 }
 
+// NewErrorResponse response with error
+func NewErrorResponse(err error) (res *BaseRestResponse) {
+	res = &BaseRestResponse{}
+	res.SetError(err)
+	return res
+}
+
 // endregion
 
 // region ActionResponse -----------------------------------------------------------------------------------------------
@@ -39,33 +44,19 @@ func NewActionResponse(key, data string) (er *ActionResponse) {
 	return &ActionResponse{Key: key, Data: data}
 }
 
-// NewActionResponseError with error
-func NewActionResponseError(err error) (res *ActionResponse) {
-	res = &ActionResponse{}
-	res.SetError(err)
-	return res
-}
-
 // endregion
 
 // region EntityResponse -----------------------------------------------------------------------------------------------
 
 // EntityResponse message is returned for any create/update action on entity
-type EntityResponse struct {
+type EntityResponse[T Entity] struct {
 	BaseRestResponse
-	Entity Entity `json:"entity"` // The entity
+	Entity T `json:"entity"` // The entity
 }
 
 // NewEntityResponse factory method
-func NewEntityResponse(entity Entity) (er *EntityResponse) {
-	return &EntityResponse{Entity: entity}
-}
-
-// NewEntityResponseError with error
-func NewEntityResponseError(err error) (res *EntityResponse) {
-	res = &EntityResponse{}
-	res.SetError(err)
-	return res
+func NewEntityResponse[T Entity](entity T) (er *EntityResponse[T]) {
+	return &EntityResponse[T]{Entity: entity}
 }
 
 // endregion
@@ -73,39 +64,32 @@ func NewEntityResponseError(err error) (res *EntityResponse) {
 // region EntityResponse -----------------------------------------------------------------------------------------------
 
 // EntitiesResponse message is returned for any action returning multiple entities
-type EntitiesResponse struct {
+type EntitiesResponse[T Entity] struct {
 	BaseRestResponse
-	Page     int      `json:"page"`     // Current page (Bulk) number
-	PageSize int      `json:"pageSize"` // Size of page (items in bulk)
-	Pages    int      `json:"pages"`    // Total number of pages
-	Total    int      `json:"total"`    // Total number of items in the query
-	List     []Entity `json:"list"`     // List of objects in the current result set
+	Page  int `json:"page"`  // Current page (Bulk) number
+	Size  int `json:"size"`  // Size of page (items in bulk)
+	Pages int `json:"pages"` // Total number of pages
+	Total int `json:"total"` // Total number of items in the query
+	List  []T `json:"list"`  // List of objects in the current result set
 }
 
 // NewEntitiesResponse factory method
-func NewEntitiesResponse(entities []Entity, page, pageSize, total int) *EntitiesResponse {
+func NewEntitiesResponse[T Entity](entities []T, page, size, total int) *EntitiesResponse[T] {
 
-	if pageSize == 0 {
-		pageSize = 1
+	if size == 0 {
+		size = 1
 	}
 	rem := 0
-	if total%pageSize > 0 {
+	if total%size > 0 {
 		rem = 1
 	}
-	return &EntitiesResponse{
-		Page:     page,
-		PageSize: pageSize,
-		Total:    total,
-		Pages:    (total / pageSize) + rem,
-		List:     entities,
+	return &EntitiesResponse[T]{
+		Page:  page,
+		Size:  size,
+		Total: total,
+		Pages: (total / size) + rem,
+		List:  entities,
 	}
-}
-
-// NewEntitiesResponseError with error
-func NewEntitiesResponseError(err error) *EntitiesResponse {
-	res := &EntitiesResponse{}
-	res.SetError(err)
-	return res
 }
 
 // endregion

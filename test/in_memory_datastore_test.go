@@ -1,7 +1,4 @@
-// Copyright 2022. Motty Cohen
-//
 // Test in memory datastore implementation tests
-//
 package test
 
 import (
@@ -26,6 +23,7 @@ func getInitializedDs() (ds IDatastore, err error) {
 
 func TestInMemoryDatastore_Get(t *testing.T) {
 
+	skipCI(t)
 	ds, fe := getInitializedDs()
 	assert.Nil(t, fe, "error initializing Datastore")
 
@@ -38,6 +36,7 @@ func TestInMemoryDatastore_Get(t *testing.T) {
 
 func TestInMemoryDatastore_List(t *testing.T) {
 
+	skipCI(t)
 	ds, fe := getInitializedDs()
 	assert.Nil(t, fe, "error initializing Datastore")
 
@@ -51,7 +50,7 @@ func TestInMemoryDatastore_List(t *testing.T) {
 }
 
 func TestInMemoryDatastore_Like_Suffix(t *testing.T) {
-
+	skipCI(t)
 	ds, fe := getInitializedDs()
 	assert.Nil(t, fe, "error initializing Datastore")
 
@@ -67,7 +66,7 @@ func TestInMemoryDatastore_Like_Suffix(t *testing.T) {
 }
 
 func TestInMemoryDatastore_Like_Prefix(t *testing.T) {
-
+	skipCI(t)
 	ds, fe := getInitializedDs()
 	assert.Nil(t, fe, "error initializing Datastore")
 

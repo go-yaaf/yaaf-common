@@ -1,7 +1,3 @@
-// Copyright 2022. Motty Cohen
-//
-// In-memory datastore implementation of IDatabase (used for testing)
-//
 package database
 
 import (
@@ -9,13 +5,13 @@ import (
 	. "github.com/go-yaaf/yaaf-common/entity"
 )
 
-// Database table interface
+// ITable is a database table interface
 type ITable interface {
 
 	// Get single entity by ID
 	Get(entityID string) (entity Entity, err error)
 
-	// Check if entity exists by ID
+	// Exists checks if entity exists by ID
 	Exists(entityID string) (result bool, err error)
 
 	// Insert entity
@@ -24,23 +20,24 @@ type ITable interface {
 	// Update entity
 	Update(entity Entity) (added Entity, err error)
 
-	// Update entity or insert if not found
+	// Upsert update entity or insert if not found
 	Upsert(entity Entity) (added Entity, err error)
 
 	// Delete entity
 	Delete(entityID string) (err error)
 
-	// Get access to the underlying data structure
+	// Table get access to the underlying data structure
 	Table() (result map[string]Entity)
 }
 
 // In memory table implementation --------------------------------------------------------------------------------------
 
-// Represent a table in the DB
+// InMemoryTable represents a table in the DB
 type InMemoryTable struct {
 	table map[string]Entity
 }
 
+// NewInMemTable factory method
 func NewInMemTable() ITable {
 	return &InMemoryTable{table: make(map[string]Entity)}
 }
@@ -54,7 +51,7 @@ func (tbl *InMemoryTable) Get(entityID string) (entity Entity, err error) {
 	}
 }
 
-// Check if entity exists by ID
+// Exists checks if entity exists by ID
 func (tbl *InMemoryTable) Exists(entityID string) (result bool, err error) {
 	_, ok := tbl.table[entityID]
 	return ok, nil
@@ -82,7 +79,7 @@ func (tbl *InMemoryTable) Update(entity Entity) (added Entity, err error) {
 	}
 }
 
-// Update entity or insert if not found
+// Upsert update entity or insert if not found
 func (tbl *InMemoryTable) Upsert(entity Entity) (added Entity, err error) {
 	entityID := fmt.Sprintf("%v", entity.ID())
 	tbl.table[entityID] = entity
@@ -99,7 +96,7 @@ func (tbl *InMemoryTable) Delete(entityID string) (err error) {
 	}
 }
 
-// Get access to the underlying data structure
+// Table get access to the underlying data structure
 func (tbl *InMemoryTable) Table() (result map[string]Entity) {
 	return tbl.table
 }
