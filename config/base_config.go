@@ -34,6 +34,8 @@ const (
 	CfgEnableGoRuntimeProfiler = "ENABLE_GO_RUNTIME_PROFILER"
 	CfgGoRuntimeProfilerAddr   = "GO_RUNTIME_PROFILER_ADDR"
 
+	CfgStreamingUri = "STREAMING_URI"
+
 	// CfgEnableMessageOrdering is set to true to ensure that messages with the same ordering key are delivered in the order they were published.
 	// This is crucial for use cases where the order of messages is important for correct processing.
 	// Note: The Pub/Sub topic must be configured to support message ordering for this to take effect.
@@ -119,6 +121,7 @@ func newBaseConfig() *BaseConfig {
 		CfgGcpRegion:                    DefaultGcpRegion,
 		CfgGcpZone:                      DefaultGcpZone,
 		CfgPubSubLiteUri:                DefaultPubSubLiteUri,
+		CfgStreamingUri:                 "",
 	}
 	return &bc
 }
@@ -212,6 +215,10 @@ func (c *BaseConfig) GetBoolParamValueOrDefault(key string, defaultValue bool) (
 // endregion
 
 // region Configuration accessors methods ------------------------------------------------------------------------------
+// StreamingUri returns the streaming middleware URI
+func (c *BaseConfig) StreamingUri() string {
+	return c.GetStringParamValueOrDefault(CfgStreamingUri, "")
+}
 
 func (c *BaseConfig) PubSubNumOfGoroutines() int {
 	return c.GetIntParamValueOrDefault(CfgPubSubNumOfGoroutines, DefaultPubSubNumOfGoroutines)
