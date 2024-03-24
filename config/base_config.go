@@ -70,6 +70,8 @@ const (
 	CfgGcpRegion = "GCP_REGION"
 	// CfgGcpZone specifies GCP zone
 	CfgGcpZone = "GCP_ZONE"
+
+	CfgDbConnectionName = "DB_CONNECTION_NAME"
 )
 
 const (
@@ -117,6 +119,7 @@ func newBaseConfig() *BaseConfig {
 		CfgGcpRegion:                    DefaultGcpRegion,
 		CfgGcpZone:                      DefaultGcpZone,
 		CfgStreamingUri:                 "",
+		CfgDbConnectionName:             "",
 	}
 	return &bc
 }
@@ -211,6 +214,10 @@ func (c *BaseConfig) GetBoolParamValueOrDefault(key string, defaultValue bool) (
 
 // region Configuration accessors methods ------------------------------------------------------------------------------
 // StreamingUri returns the streaming middleware URI
+func (c *BaseConfig) DbConnectionName() string {
+	return c.GetStringParamValueOrDefault(CfgDbConnectionName, "")
+}
+
 func (c *BaseConfig) StreamingUri() string {
 	return c.GetStringParamValueOrDefault(CfgStreamingUri, "")
 }

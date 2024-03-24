@@ -16,11 +16,13 @@ func PrintBanner(banner string) {
 	allConfigVars := Get().GetAllVars()
 	for _, key := range Get().GetAllKeysSorted() {
 		// test if valid URI
-		val, err := obfuscateCredentials(allConfigVars[key])
-		if err == nil {
-			fmt.Printf("%s: %s\n", key, val)
-		} else {
-			fmt.Printf("%s: %s\n", key, allConfigVars[key])
+		if allConfigVars[key] != "" {
+			val, err := obfuscateCredentials(allConfigVars[key])
+			if err == nil {
+				fmt.Printf("%s: %s\n", key, val)
+			} else {
+				fmt.Printf("%s: %s\n", key, allConfigVars[key])
+			}
 		}
 	}
 }
