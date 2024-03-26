@@ -72,6 +72,8 @@ const (
 	CfgGcpZone = "GCP_ZONE"
 
 	CfgRdsInstanceName = "RDS_INSTANCE_NAME"
+
+	CfgMaxDbConnections = "MAX_DB_CONNECTIONS"
 )
 
 const (
@@ -85,6 +87,8 @@ const (
 	DefaultGcpProject = "shieldiot-staging"
 	DefaultGcpRegion  = "europe-west3"
 	DefaultGcpZone    = "europe-west3-a"
+
+	DefaultMaxDbConnections = 10
 )
 
 // region BaseConfig singleton pattern ---------------------------------------------------------------------------------
@@ -120,6 +124,7 @@ func newBaseConfig() *BaseConfig {
 		CfgGcpZone:                      DefaultGcpZone,
 		CfgStreamingUri:                 "",
 		CfgRdsInstanceName:              "",
+		CfgMaxDbConnections:             fmt.Sprintf("%d", DefaultMaxDbConnections),
 	}
 	return &bc
 }
@@ -224,6 +229,10 @@ func (c *BaseConfig) StreamingUri() string {
 
 func (c *BaseConfig) PubSubNumOfGoroutines() int {
 	return c.GetIntParamValueOrDefault(CfgPubSubNumOfGoroutines, DefaultPubSubNumOfGoroutines)
+}
+
+func (c *BaseConfig) MaxDbConnections() int {
+	return c.GetIntParamValueOrDefault(CfgMaxDbConnections, DefaultMaxDbConnections)
 }
 
 func (c *BaseConfig) PubSubMaxOutstandingMessages() int {
