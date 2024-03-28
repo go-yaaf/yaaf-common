@@ -20,6 +20,7 @@ import (
 )
 
 const (
+	CfgHostName               = "HOSTNAME"
 	CfgLoglevel               = "LOG_LEVEL"
 	CfgHttpReadTimeoutMs      = "HTTP_READ_TIMEOUT_MS"
 	CfgHttpWriteTimeoutMs     = "HTTP_WRITE_TIMEOUT_MS"
@@ -104,6 +105,7 @@ type BaseConfig struct {
 func newBaseConfig() *BaseConfig {
 	var bc = BaseConfig{}
 	bc.cfg = map[string]string{
+		CfgHostName:                     "",
 		CfgLoglevel:                     "INFO",
 		CfgHttpReadTimeoutMs:            "3000",
 		CfgHttpWriteTimeoutMs:           "3000",
@@ -218,7 +220,11 @@ func (c *BaseConfig) GetBoolParamValueOrDefault(key string, defaultValue bool) (
 // endregion
 
 // region Configuration accessors methods ------------------------------------------------------------------------------
-// StreamingUri returns the streaming middleware URI
+
+func (c *BaseConfig) HostName() string {
+	return c.GetStringParamValueOrDefault(CfgHostName, "")
+}
+
 func (c *BaseConfig) RdsInstanceName() string {
 	return c.GetStringParamValueOrDefault(CfgRdsInstanceName, "")
 }
