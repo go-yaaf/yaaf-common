@@ -12,6 +12,7 @@ package config
 
 import (
 	"fmt"
+	"github.com/go-yaaf/yaaf-common/entity"
 	"os"
 	"sort"
 	"strconv"
@@ -98,7 +99,8 @@ var initOnce sync.Once
 var baseCfg *BaseConfig
 
 type BaseConfig struct {
-	cfg map[string]string
+	cfg       map[string]string
+	startTime entity.Timestamp
 }
 
 // Create new
@@ -128,6 +130,7 @@ func newBaseConfig() *BaseConfig {
 		CfgRdsInstanceName:              "",
 		CfgMaxDbConnections:             fmt.Sprintf("%d", DefaultMaxDbConnections),
 	}
+	bc.startTime = entity.Now()
 	return &bc
 }
 
@@ -220,6 +223,11 @@ func (c *BaseConfig) GetBoolParamValueOrDefault(key string, defaultValue bool) (
 // endregion
 
 // region Configuration accessors methods ------------------------------------------------------------------------------
+
+// StartTime returns the start time of the service
+func (c *BaseConfig) StartTime() (result entity.Timestamp) {
+	return c.startTime
+}
 
 func (c *BaseConfig) HostName() string {
 	return c.GetStringParamValueOrDefault(CfgHostName, "")
