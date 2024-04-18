@@ -4,48 +4,48 @@
  * Based on https://github.com/ReneKroon/ttlcache
  */
 
-package cache
+package cache2
 
 import (
 	"container/heap"
 )
 
-func newPriorityQueue[K comparable, T any]() *priorityQueue[K, T] {
-	queue := &priorityQueue[K, T]{}
+func newPriorityQueue() *priorityQueue2 {
+	queue := &priorityQueue2{}
 	heap.Init(queue)
 	return queue
 }
 
-type priorityQueue[K comparable, T any] struct {
-	items []*cachedItem[K, T]
+type priorityQueue2 struct {
+	items []*cachedItem2
 }
 
-func (pq *priorityQueue[K, T]) update(item *cachedItem[K, T]) {
+func (pq *priorityQueue2) update(item *cachedItem2) {
 	heap.Fix(pq, item.queueIndex)
 }
 
-func (pq *priorityQueue[K, T]) push(item *cachedItem[K, T]) {
+func (pq *priorityQueue2) push(item *cachedItem2) {
 	heap.Push(pq, item)
 }
 
-func (pq *priorityQueue[K, T]) pop() *cachedItem[K, T] {
+func (pq *priorityQueue2) pop() *cachedItem2 {
 	if pq.Len() == 0 {
 		return nil
 	}
-	return heap.Pop(pq).(*cachedItem[K, T])
+	return heap.Pop(pq).(*cachedItem2)
 }
 
-func (pq *priorityQueue[K, T]) remove(item *cachedItem[K, T]) {
+func (pq *priorityQueue2) remove(item *cachedItem2) {
 	heap.Remove(pq, item.queueIndex)
 }
 
-func (pq priorityQueue[K, T]) Len() int {
+func (pq priorityQueue2) Len() int {
 	length := len(pq.items)
 	return length
 }
 
 // Less will consider items with time.Time default value (epoch start) as more than set items.
-func (pq priorityQueue[K, T]) Less(i, j int) bool {
+func (pq priorityQueue2) Less(i, j int) bool {
 	if pq.items[i].expireAt.IsZero() {
 		return false
 	}
@@ -55,19 +55,19 @@ func (pq priorityQueue[K, T]) Less(i, j int) bool {
 	return pq.items[i].expireAt.Before(pq.items[j].expireAt)
 }
 
-func (pq priorityQueue[K, T]) Swap(i, j int) {
+func (pq priorityQueue2) Swap(i, j int) {
 	pq.items[i], pq.items[j] = pq.items[j], pq.items[i]
 	pq.items[i].queueIndex = i
 	pq.items[j].queueIndex = j
 }
 
-func (pq *priorityQueue[K, T]) Push(x any) {
-	item := x.(*cachedItem[K, T])
+func (pq *priorityQueue2) Push(x any) {
+	item := x.(*cachedItem2)
 	item.queueIndex = len(pq.items)
 	pq.items = append(pq.items, item)
 }
 
-func (pq *priorityQueue[K, T]) Pop() any {
+func (pq *priorityQueue2) Pop() any {
 	old := pq.items
 	n := len(old)
 	item := old[n-1]

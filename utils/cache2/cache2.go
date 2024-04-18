@@ -12,28 +12,29 @@
  * Based on https://github.com/ReneKroon/ttlcache
  */
 
-package cache
+package cache2
 
 import (
+	"fmt"
 	"sync"
 	"time"
 )
 
 // CheckExpireCallback is used as a callback for an external check on cachedItem expiration
-type checkExpireCallback[K comparable, T any] func(key K, value T) bool
+type checkExpireCallback func(key string, value any) bool
 
 // ExpireCallback is used as a callback on cachedItem expiration or when notifying of an cachedItem new to the cache
-type expireCallback[K comparable, T any] func(key K, value T)
+type expireCallback func(key string, value any)
 
-// Cache is a synchronized map of items that can auto-expire once stale
-type Cache[K comparable, T any] struct {
+// Cache2 is a synchronized map of items that can auto-expire once stale
+type Cache2 struct {
 	mutex                  sync.Mutex
 	ttl                    time.Duration
-	items                  map[K]*cachedItem[K, T]
-	expireCallback         expireCallback[K, T]
-	checkExpireCallback    checkExpireCallback[K, T]
-	newItemCallback        expireCallback[K, T]
-	priorityQueue          *priorityQueue[K, T]
+	items                  map[string]*cachedItem2
+	expireCallback         expireCallback
+	checkExpireCallback    checkExpireCallback
+	newItemCallback        expireCallback
+	priorityQueue          *priorityQueue2
 	expirationNotification chan bool
 	expirationTime         time.Time
 	skipTTLExtension       bool
@@ -41,7 +42,7 @@ type Cache[K comparable, T any] struct {
 	isShutDown             bool
 }
 
-func (cache *Cache[K, T]) getItem(key K) (*cachedItem[K, T], bool, bool) {
+func (cache *Cache2) getItem(key string) (*cachedItem2, bool, bool) {
 	item, exists := cache.items[key]
 	if !exists || item.expired() {
 		return nil, false, false
@@ -65,7 +66,7 @@ func (cache *Cache[K, T]) getItem(key K) (*cachedItem[K, T], bool, bool) {
 	return item, exists, expirationNotification
 }
 
-func (cache *Cache[K, T]) startExpirationProcessing() {
+func (cache *Cache2) startExpirationProcessing() {
 	timer := time.NewTimer(time.Hour)
 	for {
 		var sleepTime time.Duration
@@ -141,7 +142,7 @@ func (cache *Cache[K, T]) startExpirationProcessing() {
 
 // Close calls Purge, and then stops the goroutine that does ttl checking, for a clean shutdown.
 // The cache is no longer cleaning up after the first call to Close, repeated calls are safe though.
-func (cache *Cache[K, T]) Close() {
+func (cache *Cache2) Close() {
 
 	cache.mutex.Lock()
 	if !cache.isShutDown {
@@ -158,12 +159,12 @@ func (cache *Cache[K, T]) Close() {
 }
 
 // Set is a thread-safe way to add new items to the map
-func (cache *Cache[K, T]) Set(key K, data T) {
+func (cache *Cache2) Set(key string, data any) {
 	cache.SetWithTTL(key, data, ItemExpireWithGlobalTTL)
 }
 
 // SetWithTTL is a thread-safe way to add new items to the map with individual ttl
-func (cache *Cache[K, T]) SetWithTTL(key K, data T, ttl time.Duration) {
+func (cache *Cache2) SetWithTTL(key string, data any, ttl time.Duration) {
 	cache.mutex.Lock()
 	item, exists, _ := cache.getItem(key)
 
@@ -171,7 +172,7 @@ func (cache *Cache[K, T]) SetWithTTL(key K, data T, ttl time.Duration) {
 		item.data = data
 		item.ttl = ttl
 	} else {
-		item = newItem[K, T](key, data, ttl)
+		item = newItem(key, data, ttl)
 		cache.items[key] = item
 	}
 
@@ -197,11 +198,11 @@ func (cache *Cache[K, T]) SetWithTTL(key K, data T, ttl time.Duration) {
 
 // Get is a thread-safe way to lookup items
 // Every lookup, also touches the cachedItem, hence extending it's life
-func (cache *Cache[K, T]) Get(key K) (T, bool) {
+func (cache *Cache2) Get(key string) (any, bool) {
 	cache.mutex.Lock()
 	item, exists, triggerExpirationNotification := cache.getItem(key)
 
-	var dataToReturn T
+	var dataToReturn any
 	if exists {
 		dataToReturn = item.data
 	}
@@ -212,7 +213,7 @@ func (cache *Cache[K, T]) Get(key K) (T, bool) {
 	return dataToReturn, exists
 }
 
-func (cache *Cache[K, T]) Remove(key K) bool {
+func (cache *Cache2) Remove(key string) bool {
 	cache.mutex.Lock()
 	object, exists := cache.items[key]
 	if !exists {
@@ -227,14 +228,14 @@ func (cache *Cache[K, T]) Remove(key K) bool {
 }
 
 // Count returns the number of items in the cache
-func (cache *Cache[K, T]) Count() int {
+func (cache *Cache2) Count() int {
 	cache.mutex.Lock()
 	length := len(cache.items)
 	cache.mutex.Unlock()
 	return length
 }
 
-func (cache *Cache[K, T]) SetTTL(ttl time.Duration) {
+func (cache *Cache2) SetTTL(ttl time.Duration) {
 	cache.mutex.Lock()
 	cache.ttl = ttl
 	cache.mutex.Unlock()
@@ -242,44 +243,44 @@ func (cache *Cache[K, T]) SetTTL(ttl time.Duration) {
 }
 
 // SetExpirationCallback sets a callback that will be called when an cachedItem expires
-func (cache *Cache[K, T]) SetExpirationCallback(callback expireCallback[K, T]) {
+func (cache *Cache2) SetExpirationCallback(callback expireCallback) {
 	cache.expireCallback = callback
 }
 
 // SetCheckExpirationCallback sets a callback that will be called when an cachedItem is about to expire
 // in order to allow external code to decide whether the cachedItem expires or remains for another TTL cycle
-func (cache *Cache[K, T]) SetCheckExpirationCallback(callback checkExpireCallback[K, T]) {
+func (cache *Cache2) SetCheckExpirationCallback(callback checkExpireCallback) {
 	cache.checkExpireCallback = callback
 }
 
 // SetNewItemCallback sets a callback that will be called when a new cachedItem is added to the cache
-func (cache *Cache[K, T]) SetNewItemCallback(callback expireCallback[K, T]) {
+func (cache *Cache2) SetNewItemCallback(callback expireCallback) {
 	cache.newItemCallback = callback
 }
 
 // SkipTtlExtensionOnHit allows the user to change the cache behaviour. When this flag is set to true it will
 // no longer extend TTL of items when they are retrieved using Get, or when their expiration condition is evaluated
 // using SetCheckExpirationCallback.
-func (cache *Cache[K, T]) SkipTtlExtensionOnHit(value bool) {
+func (cache *Cache2) SkipTtlExtensionOnHit(value bool) {
 	cache.skipTTLExtension = value
 }
 
 // Purge will remove all entries
-func (cache *Cache[K, T]) Purge() {
+func (cache *Cache2) Purge() {
 	cache.mutex.Lock()
-	cache.items = make(map[K]*cachedItem[K, T])
-	cache.priorityQueue = newPriorityQueue[K, T]()
+	cache.items = make(map[string]*cachedItem2)
+	cache.priorityQueue = newPriorityQueue()
 	cache.mutex.Unlock()
 }
 
-// NewTtlCache is a helper to create instance of the Cache struct
-func NewTtlCache[K comparable, T any]() *Cache[K, T] {
+// NewTtlCache2 is a helper to create instance of the Cache struct
+func NewTtlCache2() *Cache2 {
 
 	shutdownChan := make(chan chan struct{})
 
-	cache := &Cache[K, T]{
-		items:                  make(map[K]*cachedItem[K, T]),
-		priorityQueue:          newPriorityQueue[K, T](),
+	cache := &Cache2{
+		items:                  make(map[string]*cachedItem2),
+		priorityQueue:          newPriorityQueue(),
 		expirationNotification: make(chan bool),
 		expirationTime:         time.Now(),
 		shutdownSignal:         shutdownChan,
@@ -297,27 +298,31 @@ func min(duration time.Duration, second time.Duration) time.Duration {
 }
 
 // Load returns key value.
-func (cache *Cache[K, T]) Load(key K) (T, bool) {
-	return cache.Get(key)
+func (cache *Cache2) Load(key any) (any, bool) {
+	strKey := fmt.Sprintf("%v", key)
+	return cache.Get(strKey)
 }
 
 // Store sets the key value.
-func (cache *Cache[K, T]) Store(key K, value T) {
-	cache.Set(key, value)
+func (cache *Cache2) Store(key any, value any) {
+	strKey := fmt.Sprintf("%v", key)
+	cache.Set(strKey, value)
 }
 
 // StoreWithTTL sets the key value with TTL overrides the default.
-func (cache *Cache[K, T]) StoreWithTTL(key K, value T, ttl time.Duration) {
-	cache.SetWithTTL(key, value, ttl)
+func (cache *Cache2) StoreWithTTL(key any, value any, ttl time.Duration) {
+	strKey := fmt.Sprintf("%v", key)
+	cache.SetWithTTL(strKey, value, ttl)
 }
 
 // Delete deletes the key value.
-func (cache *Cache[K, T]) Delete(key K) {
-	cache.Remove(key)
+func (cache *Cache2) Delete(key any) {
+	strKey := fmt.Sprintf("%v", key)
+	cache.Remove(strKey)
 }
 
-// Range iterates over all items in the cache
-func (cache *Cache[K, T]) Range(cb func(k K, v T) bool) {
+// Iterate over all items in the cache
+func (cache *Cache2) Range(cb func(k, v any) bool) {
 
 	for _, val := range cache.items {
 		if cb(val.key, val.data) == false {

@@ -1,6 +1,6 @@
-// Package cache Cache item implementation
+// Package cache2 Cache item old implementation
 // Based on https://github.com/ReneKroon/ttlcache
-package cache
+package cache2
 
 import (
 	"time"
@@ -14,8 +14,8 @@ const (
 	ItemExpireWithGlobalTTL time.Duration = 0
 )
 
-func newItem[K any, T any](key K, data T, ttl time.Duration) *cachedItem[K, T] {
-	item := &cachedItem[K, T]{
+func newItem(key string, data any, ttl time.Duration) *cachedItem2 {
+	item := &cachedItem2{
 		data: data,
 		ttl:  ttl,
 		key:  key,
@@ -25,23 +25,23 @@ func newItem[K any, T any](key K, data T, ttl time.Duration) *cachedItem[K, T] {
 	return item
 }
 
-type cachedItem[K any, T any] struct {
-	key        K
-	data       T
+type cachedItem2 struct {
+	key        string
+	data       any
 	ttl        time.Duration
 	expireAt   time.Time
 	queueIndex int
 }
 
 // Reset the cachedItem expiration time
-func (item *cachedItem[K, T]) touch() {
+func (item *cachedItem2) touch() {
 	if item.ttl > 0 {
 		item.expireAt = time.Now().Add(item.ttl)
 	}
 }
 
 // Verify if the cachedItem is expired
-func (item *cachedItem[K, T]) expired() bool {
+func (item *cachedItem2) expired() bool {
 	if item.ttl <= 0 {
 		return false
 	}

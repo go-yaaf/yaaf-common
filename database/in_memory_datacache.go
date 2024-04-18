@@ -18,7 +18,7 @@ import (
 
 // InMemoryDataCache represent in memory data cache
 type InMemoryDataCache struct {
-	keys   *cache.Cache
+	keys   *cache.Cache[string, any]
 	lists  map[string]*list.List
 	queues map[string]collections.Queue
 
@@ -32,7 +32,7 @@ type InMemoryDataCache struct {
 // NewInMemoryDataCache is a factory method for DB store
 func NewInMemoryDataCache() (dc IDataCache, err error) {
 	return &InMemoryDataCache{
-		keys:   cache.NewTtlCache(),
+		keys:   cache.NewTtlCache[string, any](),
 		lists:  make(map[string]*list.List),
 		queues: make(map[string]collections.Queue),
 	}, nil
@@ -214,7 +214,7 @@ func (dc *InMemoryDataCache) Scan(from uint64, match string, count int64) (keys 
 	rex, _ := regexp.Compile(match)
 
 	keys = make([]string, 0)
-	cb := func(k, v any) bool {
+	cb := func(k string, v any) bool {
 		if rex != nil {
 			if rex.MatchString(fmt.Sprintf("%v", k)) {
 				keys = append(keys, fmt.Sprintf("%v", k))
