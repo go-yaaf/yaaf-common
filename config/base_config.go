@@ -21,22 +21,27 @@ import (
 )
 
 const (
-	CfgHostName               = "HOSTNAME"
-	CfgLoglevel               = "LOG_LEVEL"
-	CfgHttpReadTimeoutMs      = "HTTP_READ_TIMEOUT_MS"
-	CfgHttpWriteTimeoutMs     = "HTTP_WRITE_TIMEOUT_MS"
-	CfgWsKeepAliveSec         = "WS_KEEP_ALIVE_SEC"
-	CfgWsReadBufferSizeBytes  = "WS_READ_BUFFER_SIZE_BYTES"
-	CfgWsWriteBufferSizeBytes = "WS_WRITE_BUFFER_SIZE_BYTES"
-	CfgWsWriteCompress        = "WS_WRITE_COMPRESS"
-	CfgWsWriteTimeoutSec      = "WS_WRITE_TIMEOUT"
-	CfgWsPongTimeoutSec       = "WS_PONG_TIMEOUT"
-	CfgTopicPartitions        = "TOPIC_PARTITIONS"
+	CfgPulseDeployment         = "PULSE_DEPLOYMENT"           // Pulse deployment name
+	CfgHostName                = "HOSTNAME"                   // Host name
+	CfgLoglevel                = "LOG_LEVEL"                  // Log level
+	CfgLogJsonFormat           = "LOG_JSON_FORMAT"            // Enable Json log format
+	CfgHttpReadTimeoutMs       = "HTTP_READ_TIMEOUT_MS"       // HTTP read timeout (in milliseconds)
+	CfgHttpWriteTimeoutMs      = "HTTP_WRITE_TIMEOUT_MS"      // HTTP write timeout (in milliseconds)
+	CfgWsKeepAliveSec          = "WS_KEEP_ALIVE_SEC"          // Web socket keep-alive period (in seconds)
+	CfgWsReadBufferSizeBytes   = "WS_READ_BUFFER_SIZE_BYTES"  // Web socket read buffer size (in bytes)
+	CfgWsWriteBufferSizeBytes  = "WS_WRITE_BUFFER_SIZE_BYTES" // Web socket write buffer size (in bytes)
+	CfgWsWriteCompress         = "WS_WRITE_COMPRESS"          // Web socket enable compression
+	CfgWsWriteTimeoutSec       = "WS_WRITE_TIMEOUT"           // Web socket write timeout (in seconds)
+	CfgWsPongTimeoutSec        = "WS_PONG_TIMEOUT"            // Web socket pong response timeout (in seconds)
+	CfgTopicPartitions         = "TOPIC_PARTITIONS"           // Number of partitions per topic
+	CfgEnableGoRuntimeProfiler = "ENABLE_GO_RUNTIME_PROFILER" // Enable / Disable runtime profiling
+	CfgGoRuntimeProfilerAddr   = "GO_RUNTIME_PROFILER_ADDR"   // Go runtime profiler address
 
-	CfgEnableGoRuntimeProfiler = "ENABLE_GO_RUNTIME_PROFILER"
-	CfgGoRuntimeProfilerAddr   = "GO_RUNTIME_PROFILER_ADDR"
-
-	CfgStreamingUri = "STREAMING_URI"
+	CfgDatabaseUri  = "DATABASE_URI"  // Configuration database URI
+	CfgDatastoreUri = "DATASTORE_URI" // Big data store URI
+	CfgMessagingUri = "MESSAGING_URI" // Real-time Messaging middleware URI
+	CfgDataCacheUri = "DATACACHE_URI" // Distributed cache middleware URI
+	CfgStreamingUri = "STREAMING_URI" // Streaming middleware URI
 
 	// CfgEnableMessageOrdering is set to true to ensure that messages with the same ordering key are delivered in the order they were published.
 	// This is crucial for use cases where the order of messages is important for correct processing.
@@ -66,13 +71,6 @@ const (
 	// value indicates no limit on the byte size of unprocessed messages.
 	CfgPubSubMaxOutstandingBytes = "PUSUB_MAX_OUTSTANDING_BYTES"
 
-	// CfgGcpProject specifies GCP project name
-	CfgGcpProject = "GCP_PROJECT"
-	// CfgGcpRegion specifies GCP region
-	CfgGcpRegion = "GCP_REGION"
-	// CfgGcpZone specifies GCP zone
-	CfgGcpZone = "GCP_ZONE"
-
 	CfgRdsInstanceName = "RDS_INSTANCE_NAME"
 
 	CfgMaxDbConnections = "MAX_DB_CONNECTIONS"
@@ -85,12 +83,7 @@ const (
 	DefaultEnableMessageOrdering     = false
 	DefaultEnableGoRuntimeProfiler   = false
 	DefaultGoRuntimeProfilerAddr     = ":6060"
-
-	DefaultGcpProject = "shieldiot-staging"
-	DefaultGcpRegion  = "europe-west3"
-	DefaultGcpZone    = "europe-west3-a"
-
-	DefaultMaxDbConnections = 10
+	DefaultMaxDbConnections          = 10
 )
 
 // region BaseConfig singleton pattern ---------------------------------------------------------------------------------
@@ -107,8 +100,10 @@ type BaseConfig struct {
 func newBaseConfig() *BaseConfig {
 	var bc = BaseConfig{}
 	bc.cfg = map[string]string{
+		CfgPulseDeployment:              "",
 		CfgHostName:                     "",
 		CfgLoglevel:                     "INFO",
+		CfgLogJsonFormat:                "false",
 		CfgHttpReadTimeoutMs:            "3000",
 		CfgHttpWriteTimeoutMs:           "3000",
 		CfgWsKeepAliveSec:               "-1",
@@ -123,9 +118,10 @@ func newBaseConfig() *BaseConfig {
 		CfgEnableMessageOrdering:        fmt.Sprintf("%t", DefaultEnableMessageOrdering),
 		CfgEnableGoRuntimeProfiler:      fmt.Sprintf("%t", DefaultEnableGoRuntimeProfiler),
 		CfgGoRuntimeProfilerAddr:        DefaultGoRuntimeProfilerAddr,
-		CfgGcpProject:                   DefaultGcpProject,
-		CfgGcpRegion:                    DefaultGcpRegion,
-		CfgGcpZone:                      DefaultGcpZone,
+		CfgDatabaseUri:                  "",
+		CfgDatastoreUri:                 "",
+		CfgMessagingUri:                 "",
+		CfgDataCacheUri:                 "",
 		CfgStreamingUri:                 "",
 		CfgRdsInstanceName:              "",
 		CfgMaxDbConnections:             fmt.Sprintf("%d", DefaultMaxDbConnections),
@@ -229,16 +225,19 @@ func (c *BaseConfig) StartTime() (result entity.Timestamp) {
 	return c.startTime
 }
 
+// PulseDeployment fetch pulse deployment name
+func (c *BaseConfig) PulseDeployment() string {
+	return c.GetStringParamValueOrDefault(CfgPulseDeployment, "")
+}
+
+// HostName fetch current host (machine) name
 func (c *BaseConfig) HostName() string {
 	return c.GetStringParamValueOrDefault(CfgHostName, "")
 }
 
+// RdsInstanceName fetch RDS instance
 func (c *BaseConfig) RdsInstanceName() string {
 	return c.GetStringParamValueOrDefault(CfgRdsInstanceName, "")
-}
-
-func (c *BaseConfig) StreamingUri() string {
-	return c.GetStringParamValueOrDefault(CfgStreamingUri, "")
 }
 
 func (c *BaseConfig) PubSubNumOfGoroutines() int {
@@ -252,6 +251,7 @@ func (c *BaseConfig) MaxDbConnections() int {
 func (c *BaseConfig) PubSubMaxOutstandingMessages() int {
 	return c.GetIntParamValueOrDefault(CfgPubSubMaxOutstandingMessages, DefaultPubSubMaxOutstandingMessages)
 }
+
 func (c *BaseConfig) PubSubMaxOutstandingBytes() int {
 	return c.GetIntParamValueOrDefault(CfgPubSubMaxOutstandingBytes, DefaultPubSubMaxOutstandingBytes)
 }
@@ -259,6 +259,11 @@ func (c *BaseConfig) PubSubMaxOutstandingBytes() int {
 // LogLevel gets log level
 func (c *BaseConfig) LogLevel() string {
 	return c.GetStringParamValueOrDefault(CfgLoglevel, "INFO")
+}
+
+// EnableLogJsonFormat returns json log format flag
+func (c *BaseConfig) EnableLogJsonFormat() bool {
+	return c.GetBoolParamValueOrDefault(CfgLogJsonFormat, false)
 }
 
 // HttpReadTimeoutMs gets HTTP read time out in milliseconds
@@ -318,16 +323,29 @@ func (c *BaseConfig) GoRuntimeProfilerAddr() string {
 	return c.GetStringParamValueOrDefault(CfgGoRuntimeProfilerAddr, DefaultGoRuntimeProfilerAddr)
 }
 
-func (c *BaseConfig) GcpProject() string {
-	return c.GetStringParamValueOrDefault(CfgGcpProject, DefaultGcpProject)
+// DatabaseUri returns the database URI
+func (c *BaseConfig) DatabaseUri() string {
+	return c.GetStringParamValueOrDefault(CfgDatabaseUri, "")
 }
 
-func (c *BaseConfig) GcpRegion() string {
-	return c.GetStringParamValueOrDefault(CfgGcpRegion, DefaultGcpRegion)
+// DatastoreUri returns the big data store URI
+func (c *BaseConfig) DatastoreUri() string {
+	return c.GetStringParamValueOrDefault(CfgDatastoreUri, "")
 }
 
-func (c *BaseConfig) GcpZone() string {
-	return c.GetStringParamValueOrDefault(CfgGcpZone, DefaultGcpZone)
+// DataCacheUri returns the distributed cache middleware URI
+func (c *BaseConfig) DataCacheUri() string {
+	return c.GetStringParamValueOrDefault(CfgDataCacheUri, "")
+}
+
+// MessagingUri returns the real-time messaging middleware URI
+func (c *BaseConfig) MessagingUri() string {
+	return c.GetStringParamValueOrDefault(CfgMessagingUri, "")
+}
+
+// StreamingUri returns the streaming middleware URI
+func (c *BaseConfig) StreamingUri() string {
+	return c.GetStringParamValueOrDefault(CfgStreamingUri, "")
 }
 
 // endregion
