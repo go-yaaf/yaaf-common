@@ -62,3 +62,17 @@ func (c *ConcurrentStringMap[T]) KeysAndValues() (keys []string, values []T) {
 	c.Unlock()
 	return keys, values
 }
+
+// Delete remove item from map
+func (c *ConcurrentStringMap[T]) Delete(key string) {
+	c.RLock()
+	delete(c.m, key)
+	c.RUnlock()
+}
+
+// DeleteAll remove all items from the map
+func (c *ConcurrentStringMap[T]) DeleteAll() {
+	c.RLock()
+	c.m = make(map[string]T)
+	c.RUnlock()
+}
