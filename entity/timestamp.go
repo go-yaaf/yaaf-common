@@ -192,3 +192,19 @@ func (tf *TimeDataPoint[V]) String(format string) string {
 }
 
 // endregion
+
+// region TimeSeries ---------------------------------------------------------------------------------------------------
+
+// TimeSeries is a set of data points over time
+type TimeSeries[T any] struct {
+	Name   string             `json:"name"`   // Name of the time series
+	Range  TimeFrame          `json:"range"`  // Range of the series (from ... to)
+	Values []TimeDataPoint[T] `json:"values"` // Series data points
+}
+
+func (ts *TimeSeries[T]) TABLE() string { return "" }
+func (ts *TimeSeries[T]) NAME() string  { return ts.Name }
+func (ts *TimeSeries[T]) KEY() string   { return "" }
+func (ts *TimeSeries[T]) ID() string    { return ts.Name }
+
+// endregion
