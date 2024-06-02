@@ -202,9 +202,9 @@ type TimeSeries[T any] struct {
 	Values []TimeDataPoint[T] `json:"values"` // Series data points
 }
 
+func (ts *TimeSeries[T]) ID() string    { return ts.Name }
 func (ts *TimeSeries[T]) TABLE() string { return "" }
 func (ts *TimeSeries[T]) NAME() string  { return ts.Name }
 func (ts *TimeSeries[T]) KEY() string   { return "" }
-func (ts *TimeSeries[T]) ID() string    { return ts.Name }
 
 // endregion
