@@ -207,6 +207,35 @@ func (t *timeUtils) GetSeries(end Timestamp, interval time.Duration) (series []T
 	return series
 }
 
+// GetSeries2 creates a time series from the base time to the end time with the given interval
+// This is fix  for GetSeries function which misses "last slot" due to incorrect "for"
+// loop completion condition. For example, if we need series from day 01 to day 06,
+// it will return series from day 01 to day 05 ( see line "eot := to + 1", it should be rather
+// eot := to + step, or loop completion condition should be "ts =< to "). Since GetSeries function
+// is widely used, to avoid regressions, I've created GetSeries2 until further clarifications
+func (t *timeUtils) GetSeries2(end Timestamp, interval time.Duration) (series []Timestamp) {
+
+	if interval == 0 {
+		return series
+	}
+
+	from := int64(t.baseTime)
+	to := int64(end)
+	step := int64(interval / time.Millisecond)
+
+	if from < to {
+		eot := to + step
+		for ts := from; ts < eot; ts += step {
+			series = append(series, Timestamp(ts))
+		}
+	} else {
+		for ts := from; ts > to; ts -= step {
+			series = append(series, Timestamp(ts))
+		}
+	}
+	return series
+}
+
 // GetSeriesMap creates a time series from the base time to the end time with the given interval as a map
 func (t *timeUtils) GetSeriesMap(end Timestamp, interval time.Duration) map[Timestamp]int {
 
