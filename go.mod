@@ -6,7 +6,7 @@ go 1.20
 retract v1.0.1
 
 require (
-	github.com/golang-jwt/jwt/v4 v4.4.3
+	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/uuid v1.3.0
 	github.com/jaevor/go-nanoid v1.2.0
 	github.com/prometheus/client_golang v1.13.0

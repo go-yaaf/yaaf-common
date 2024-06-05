@@ -4,22 +4,23 @@ package test
 
 import (
 	"fmt"
-	"github.com/go-yaaf/yaaf-common/utils"
-	"github.com/golang-jwt/jwt/v4"
 	"testing"
+
+	"github.com/golang-jwt/jwt/v5"
+
+	"github.com/go-yaaf/yaaf-common/utils"
 )
 
 const (
-	tokenApiSecret  = "thisTokenSecretKeyMustBe32Length"
-	tokenApiVector  = "thisIsTokenInitializingVectorN32"
-	tokenSigningKey = "TheJWTSigningKeyMustBe32InLength"
+	tokenApiSecret = "thisTokenSecretKeyMustBe32Length"
+	tokenApiVector = "thisIsTokenInitializingVectorN32"
 )
 
 func TestApiKey(t *testing.T) {
 	skipCI(t)
 	appName := "my-application"
 
-	if err := utils.SetAPISecret(tokenApiSecret, tokenApiVector); err != nil {
+	if err := utils.SetSecret([]byte(tokenApiSecret), []byte(tokenApiVector)); err != nil {
 		t.Fail()
 	}
 
@@ -48,7 +49,7 @@ func TestJwtToken(t *testing.T) {
 		Audience: []string{},
 	}
 
-	if err := utils.SetJWTSecret(tokenSigningKey); err != nil {
+	if err := utils.SetSecret([]byte(tokenApiSecret), []byte(tokenApiVector)); err != nil {
 		t.Fail()
 	}
 
