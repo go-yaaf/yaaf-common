@@ -109,6 +109,34 @@ func NewSimpleEntity[T any]() Entity {
 
 // endregion
 
+// region Simple Entity ------------------------------------------------------------------------------------------------
+
+// Entities is a primitive/complex type array expressed as an Entity
+type Entities[T any] struct {
+	Values []T `json:"values"` // entity list
+}
+
+func (e *Entities[T]) ID() string { return "" }
+
+func (e *Entities[T]) TABLE() string { return "" }
+
+func (e *Entities[T]) NAME() string { return "" }
+
+func (e *Entities[T]) KEY() string { return "" }
+
+func NewEntities[T any]() Entity {
+	return &Entities[T]{
+		Values: make([]T, 0),
+	}
+}
+
+func (e *Entities[T]) Add(item T) int {
+	e.Values = append(e.Values, item)
+	return len(e.Values)
+}
+
+// endregion
+
 // region Entity Ids ---------------------------------------------------------------------------------------------------
 /**
  * Generate new id based on nanoId (faster and smaller than GUID)
