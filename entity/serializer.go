@@ -41,3 +41,27 @@ func Unmarshal(data []byte, v any) error {
 //func UnmarshalFromString(data string, v any) error {
 //	return fastjson.UnmarshalFromString(data, v)
 //}
+
+// JsonMarshal convert any type to a map of string->any
+func JsonMarshal(v any) (Json, error) {
+	bytes, err := json.Marshal(&v)
+	if err != nil {
+		return nil, err
+	}
+
+	result := Json{}
+	if er := Unmarshal(bytes, &result); er != nil {
+		return nil, er
+	} else {
+		return result, nil
+	}
+}
+
+// JsonUnmarshal convert map of string->any to entity
+func JsonUnmarshal(data Json, v any) error {
+	bytes, err := json.Marshal(&data)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(bytes, v)
+}

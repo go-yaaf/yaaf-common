@@ -58,3 +58,20 @@ func TestFastJson(t *testing.T) {
 
 	fmt.Printf("Done \n\n")
 }
+
+func TestMarshalJson(t *testing.T) {
+	skipCI(t)
+
+	hero := NewHero1("spider-man", 234, "Spider Man")
+
+	jdoc, err := entity.JsonMarshal(hero)
+	require.Nil(t, err)
+
+	// Test Unmarshal
+	expected := NewHero()
+	err = entity.JsonUnmarshal(jdoc, expected)
+	require.Nil(t, err)
+	fmt.Println(expected.NAME())
+
+	fmt.Printf("Done \n\n")
+}
