@@ -1,14 +1,14 @@
 // Utility functions for metrics monitoring (using Prometheus)
+
 //
 
 package metrics
 
+/**
 import (
 	"fmt"
 	"github.com/go-yaaf/yaaf-common/utils"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"net/http"
 )
 
 const (
@@ -105,8 +105,4 @@ func UpdateConnectedClientsGauge(isConnected bool) {
 		gauges[gaugeConnectedClients].Dec()
 	}
 }
-
-// MetricsScrapingHandler returns Prometheus handler as http handler
-func MetricsScrapingHandler() http.Handler {
-	return promhttp.Handler()
-}
+**/
