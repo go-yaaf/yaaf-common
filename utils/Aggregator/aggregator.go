@@ -113,6 +113,7 @@ func (agg *Aggregator[T]) startBulkTimeoutProcess() {
 				bulk := make([]T, 0)
 				bulk = append(bulk, agg.items...)
 				if agg.timeoutCallback != nil {
+					agg.items = make([]T, 0)
 					agg.timeoutCallback(bulk)
 				}
 			}
