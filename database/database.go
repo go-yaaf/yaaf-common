@@ -72,7 +72,7 @@ type IDatabase interface {
 	ExecuteSQL(sql string, args ...any) (affected int64, err error)
 
 	// ExecuteQuery Execute native SQL query
-	ExecuteQuery(sql string, args ...any) ([]Json, error)
+	ExecuteQuery(source, sql string, args ...any) ([]Json, error)
 
 	// DropTable Drop table and indexes
 	DropTable(table string) (err error)

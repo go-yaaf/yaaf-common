@@ -329,7 +329,7 @@ func (dbs *InMemoryDatabase) ExecuteSQL(sql string, args ...any) (affected int64
 }
 
 // ExecuteQuery Execute native SQL query
-func (dbs *InMemoryDatabase) ExecuteQuery(sql string, args ...any) ([]Json, error) {
+func (dbs *InMemoryDatabase) ExecuteQuery(source, sql string, args ...any) ([]Json, error) {
 	return nil, fmt.Errorf(NOT_SUPPORTED)
 }
 
