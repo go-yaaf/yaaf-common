@@ -75,5 +75,5 @@ type IDatastore interface {
 	DropIndex(indexName string) (ack bool, err error)
 
 	// ExecuteQuery Execute native KQL query
-	ExecuteQuery(query string, args ...any) ([]Json, error)
+	ExecuteQuery(source string, query string, args ...any) ([]Json, error)
 }

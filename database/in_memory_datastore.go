@@ -360,7 +360,7 @@ func (dbs *InMemoryDatastore) DropIndex(indexName string) (ack bool, err error) 
 }
 
 // ExecuteQuery Execute native KQL query
-func (dbs *InMemoryDatastore) ExecuteQuery(query string, args ...any) ([]Json, error) {
+func (dbs *InMemoryDatastore) ExecuteQuery(source string, query string, args ...any) ([]Json, error) {
 	return nil, fmt.Errorf("not yet implemented")
 }
 
