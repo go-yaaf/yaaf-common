@@ -2,17 +2,18 @@ package test
 
 import (
 	"fmt"
-	"github.com/go-yaaf/yaaf-common/entity"
-	aggregator "github.com/go-yaaf/yaaf-common/utils/Aggregator"
-	"golang.org/x/exp/rand"
+	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/go-yaaf/yaaf-common/entity"
+	. "github.com/go-yaaf/yaaf-common/utils/Aggregator"
 )
 
 func TestAggregator(t *testing.T) {
 	skipCI(t)
 
-	agg := aggregator.NewAggregator[entity.Entity](10, 10*time.Second)
+	agg := NewAggregator[entity.Entity](10, 10*time.Second)
 
 	bc := func(bulk []entity.Entity) {
 		fmt.Println("---------------- BULK ----------------")
@@ -30,8 +31,6 @@ func TestAggregator(t *testing.T) {
 
 	agg.SetBulkCallback(bc)
 	agg.SetTimeoutCallback(tc)
-
-	rand.Seed(uint64(time.Now().UnixNano()))
 
 	for i := 0; i < 100; i++ {
 
