@@ -5,8 +5,9 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"net"
-	"net/textproto"
+	"mime"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -187,39 +188,98 @@ func (c *smtpMailClient) send(m *smtpMailMessage) (retError error) {
 		msg.SetBody(m.mime, m.body)
 	}
 
+	// Complete attachments info
+	for _, attachment := range m.attachments {
+		if len(attachment.Base64Content) == 0 {
+			msg.Attach(attachment.FileName)
+		} else {
+			f := func(w io.Writer) error {
+				data, _ := base64.StdEncoding.DecodeString(attachment.Base64Content)
+				_, err := io.Copy(w, bytes.NewReader(data))
+				return err
+			}
+			fileName := filepath.Base(attachment.FileName)
+			msg.Attach(fileName, gomail.SetCopyFunc(f))
+		}
+	}
+
+	//f := func(w io.Writer) error {
+	//	data, _ := base64.StdEncoding.DecodeString(m.attachments[0].Base64Content)
+	//	_, err := io.Copy(w, bytes.NewReader(data))
+	//	return err
+	//}
+	//if len(m.attachments) > 0 {
+	//	msg.Attach("event_image.jpg", gomail.SetCopyFunc(f))
+	//}
+
+	d := gomail.NewDialer(c.host, c.port, c.user, c.password)
+	return d.DialAndSend(msg)
+
+	/*
+		if err := d.DialAndSend(msg); err != nil {
+			switch e := err.(type) {
+			case *net.OpError:
+				{
+					netErr := err.(*net.OpError)
+					switch netErr.Err.(type) {
+					case *net.DNSError:
+						retError = netErr.Err
+					default:
+						if netErr.Error() == "i/o timeout" {
+							retError = netErr.Err
+						}
+					}
+				}
+			case *textproto.Error:
+				{
+					retError = err
+				}
+			default:
+				retError = e
+			}
+		}
+		return
+	*/
+}
+
+func (c *smtpMailClient) attach(msg *gomail.Message, att MailMessageAttachment) (retError error) {
+
+	if len(att.Base64Content) == 0 {
+		if err := c.attachPath(&att); err != nil {
+			return err
+		}
+	}
+
 	f := func(w io.Writer) error {
-		data, _ := base64.StdEncoding.DecodeString(m.attachments[0].Base64Content)
+		data, _ := base64.StdEncoding.DecodeString(att.Base64Content)
 		_, err := io.Copy(w, bytes.NewReader(data))
 		return err
 	}
-	if len(m.attachments) > 0 {
-		msg.Attach("event_image.jpg", gomail.SetCopyFunc(f))
+	msg.Attach(att.FileName, gomail.SetCopyFunc(f))
+	return nil
+}
+
+func (c *smtpMailClient) attachPath(att *MailMessageAttachment) error {
+
+	file, err := os.Open(att.FileName)
+	if err != nil {
+		return err
 	}
+	defer func() {
+		_ = file.Close()
+	}()
 
-	d := gomail.NewDialer(c.host, c.port, c.user, c.password)
-
-	if err := d.DialAndSend(msg); err != nil {
-		// test for specific error
-		switch e := err.(type) {
-		case *net.OpError:
-			{
-				netErr := err.(*net.OpError)
-				switch netErr.Err.(type) {
-				case *net.DNSError:
-					retError = netErr.Err
-				default:
-					if netErr.Error() == "i/o timeout" {
-						retError = netErr.Err
-					}
-				}
-			}
-		case *textproto.Error:
-			{
-				retError = err
-			}
-		default:
-			retError = e
+	content, er := io.ReadAll(file)
+	if er != nil {
+		return err
+	}
+	att.Base64Content = base64.StdEncoding.EncodeToString(content)
+	if len(att.ContentType) == 0 {
+		ext := filepath.Ext(att.FileName)
+		att.ContentType = mime.TypeByExtension(ext)
+		if len(att.ContentType) == 0 {
+			att.ContentType = "application/octet-stream"
 		}
 	}
-	return
+	return nil
 }

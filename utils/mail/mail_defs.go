@@ -35,8 +35,13 @@ type IMailClient interface {
 
 // MailMessageAttachment represents message attachment
 type MailMessageAttachment struct {
-	FileName      string
-	ContentType   string
+	// The full file path to attach
+	FileName string
+
+	// MIME type, ignore this field, it will be set automatically
+	ContentType string
+
+	// Base64 content of the file (ignore this field)
 	Base64Content string
 }
 
