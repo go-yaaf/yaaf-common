@@ -1,9 +1,10 @@
 package files
 
 import (
+	"fmt"
 	"net/url"
 	"os"
-	"regexp"
+	"path/filepath"
 	"strings"
 )
 
@@ -39,37 +40,31 @@ func (f *LocalFileStore) List(filter string) ([]IFile, error) {
 func (f *LocalFileStore) Apply(filter string, action func(string)) error {
 
 	dirPath := f.uri
+	schema := ""
+	if strings.HasPrefix(dirPath, "file://") {
+		schema = "file://"
+	}
+
 	if uri, err := url.Parse(dirPath); err == nil {
 		dirPath = uri.Path
 	}
 
-	rgx, er := regexp.Compile(filter)
-	if er != nil {
-		if len(filter) > 0 {
-			return er
+	// Walk the directory
+	err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
 		}
-	}
+		// Check if it's a file (not a directory)
+		if !info.IsDir() {
+			filePath := fmt.Sprintf("%s%s", schema, path)
 
-	list, err := os.ReadDir(dirPath)
-	if err != nil {
-		return err
-	}
-	for _, v := range list {
-		if v.IsDir() {
-			continue
-		}
-		if fi, er := v.Info(); er == nil {
-			filePath := CombineUri(f.uri, fi.Name())
-			if rgx == nil {
+			if filePath > filter {
 				action(filePath)
-			} else {
-				if rgx.MatchString(filePath) {
-					action(filePath)
-				}
 			}
 		}
-	}
-	return nil
+		return nil
+	})
+	return err
 }
 
 // Exists test for resource existence
