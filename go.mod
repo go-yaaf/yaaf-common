@@ -1,6 +1,6 @@
 module github.com/go-yaaf/yaaf-common
 
-go 1.20
+go 1.22
 
 // Version not ready yet
 retract v1.0.1
