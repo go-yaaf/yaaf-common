@@ -2,9 +2,6 @@ module github.com/go-yaaf/yaaf-common
 
 go 1.20
 
-// Version not ready yet
-retract v1.0.1
-
 require (
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/uuid v1.6.0
