@@ -88,6 +88,30 @@ func EntityIndex(entity Entity, tenantId string) string {
 
 // endregion
 
+// region Base Entity Ex -----------------------------------------------------------------------------------------------
+
+// BaseEntityEx is an extended base Entity with custom attributes
+type BaseEntityEx struct {
+	Id        string    `json:"id"`        // Unique object Id
+	CreatedOn Timestamp `json:"createdOn"` // When the object was created [Epoch milliseconds Timestamp]
+	UpdatedOn Timestamp `json:"updatedOn"` // When the object was last updated [Epoch milliseconds Timestamp]
+	Props     Json      `json:"props"`     // List of custom properties
+}
+
+func (e *BaseEntityEx) ID() string { return e.Id }
+
+func (e *BaseEntityEx) TABLE() string { return "" }
+
+func (e *BaseEntityEx) NAME() string { return fmt.Sprintf("%s %s", e.TABLE(), e.Id) }
+
+func (e *BaseEntityEx) KEY() string { return "" }
+
+func NewBaseEntityEx() Entity {
+	return &BaseEntityEx{CreatedOn: Now(), UpdatedOn: Now(), Props: Json{}}
+}
+
+// endregion
+
 // region Simple Entity ------------------------------------------------------------------------------------------------
 
 // SimpleEntity is a primitive type expressed as an Entity
@@ -109,7 +133,7 @@ func NewSimpleEntity[T any]() Entity {
 
 // endregion
 
-// region Simple Entity ------------------------------------------------------------------------------------------------
+// region Entities -----------------------------------------------------------------------------------------------------
 
 // Entities is a primitive/complex type array expressed as an Entity
 type Entities[T any] struct {
