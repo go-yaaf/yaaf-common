@@ -78,3 +78,25 @@ func TestInMemoryDatabase_Like_Prefix(t *testing.T) {
 
 	return
 }
+
+func TestInMemoryDatabase_IsEmpty(t *testing.T) {
+	skipCI(t)
+	db, fe := getInitializedDb()
+	assert.Nil(t, fe, "error initializing DB")
+
+	// Add hero with null and one with empty string
+	h1 := NewHero()
+	h1.(*Hero).Id = "40"
+	h1.(*Hero).Key = 40
+	_, _ = db.Insert(h1)
+	_, _ = db.Insert(NewHero1("41", 41, ""))
+
+	heroes, total, fe := db.Query(NewHero).Filter(F("name").IsEmpty()).Find()
+
+	assert.Equal(t, 2, total, "total should be 2")
+	assert.Nil(t, fe, "error")
+	assert.NotNilf(t, heroes, "heroes is nil")
+	assert.Equal(t, 2, len(heroes), "count should be 4")
+
+	return
+}

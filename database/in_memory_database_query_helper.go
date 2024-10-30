@@ -24,6 +24,7 @@ func init() {
 	operators[NotIn] = nin
 	operators[Between] = between
 	operators[Contains] = contains
+	operators[Empty] = isEmpty
 
 }
 
@@ -224,6 +225,20 @@ func between(raw map[string]any, filter QueryFilter) bool {
 		return false
 	} else {
 		return n1 <= t0 && t0 <= n2
+	}
+}
+
+// isEmpty - field has no value
+func isEmpty(raw map[string]any, filter QueryFilter) bool {
+	entityVal, ok := raw[filter.GetField()]
+	if !ok {
+		return false
+	}
+	if entityVal == nil {
+		return true
+	} else {
+		v1 := fmt.Sprintf("%v", entityVal)
+		return len(v1) == 0
 	}
 }
 

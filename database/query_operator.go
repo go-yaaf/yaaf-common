@@ -14,4 +14,5 @@ const (
 	NotIn                  = "-"
 	Between                = "#"
 	Contains               = "@"
+	Empty                  = "^"
 )

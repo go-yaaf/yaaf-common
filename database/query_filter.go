@@ -37,6 +37,9 @@ type QueryFilter interface {
 	// Between - equal or greater than the lower boundary and equal or less than the upper boundary
 	Between(value1, value2 any) QueryFilter
 
+	// IsEmpty - field is null or empty
+	IsEmpty() QueryFilter
+
 	// If - Include this filter only if condition is true
 	If(value bool) QueryFilter
 
@@ -164,6 +167,13 @@ func (q *queryFilter) Between(value1, value2 any) QueryFilter {
 // If - Include this filter only if condition is true
 func (q *queryFilter) If(value bool) QueryFilter {
 	q.active = value
+	return q
+}
+
+// IsEmpty - Field does not include value (null or empty)
+func (q *queryFilter) IsEmpty() QueryFilter {
+	q.operator = Empty
+	q.active = true
 	return q
 }
 
