@@ -207,4 +207,17 @@ func (ts *TimeSeries[T]) TABLE() string { return "" }
 func (ts *TimeSeries[T]) NAME() string  { return ts.Name }
 func (ts *TimeSeries[T]) KEY() string   { return "" }
 
+func (ts *TimeSeries[T]) SetDataPoint(t Timestamp, val T) bool {
+	if len(ts.Values) == 0 {
+		return false
+	}
+	for i := range ts.Values {
+		if ts.Values[i].Timestamp == t {
+			ts.Values[i].Value = val
+			return true
+		}
+	}
+	return false
+}
+
 // endregion
