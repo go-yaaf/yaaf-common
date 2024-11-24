@@ -12,12 +12,13 @@ package config
 
 import (
 	"fmt"
-	"github.com/go-yaaf/yaaf-common/entity"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/go-yaaf/yaaf-common/entity"
 )
 
 const (
@@ -71,6 +72,14 @@ const (
 	// value indicates no limit on the byte size of unprocessed messages.
 	CfgPubSubMaxOutstandingBytes = "PUSUB_MAX_OUTSTANDING_BYTES"
 
+	// CfgPubSubAckDeadline defines the acknowledgment (ack) deadline for messages in GCP Pub/Sub.
+	// This setting specifies the maximum amount of time the subscriber has to acknowledge a received message
+	// before it becomes eligible for re-delivery. It is typically configured in seconds. If not explicitly
+	// specified in the configuration settings, it will default to 10 seconds. This helps ensure that
+	// messages are not re-delivered prematurely if processing takes longer than the default deadline.
+	// Example environment variable: PUBSUB_ACK_DEADLINE=30 (for a 30-second deadline).
+	CfgPubSubAckDeadline = "PUBSUB_ACK_DEADLINE"
+
 	CfgRdsInstanceName = "RDS_INSTANCE_NAME"
 
 	CfgMaxDbConnections = "MAX_DB_CONNECTIONS"
@@ -84,6 +93,7 @@ const (
 	DefaultEnableGoRuntimeProfiler   = false
 	DefaultGoRuntimeProfilerAddr     = ":6060"
 	DefaultMaxDbConnections          = 10
+	DefaultPubSubAckDeadline         = 10
 )
 
 // region BaseConfig singleton pattern ---------------------------------------------------------------------------------
@@ -125,6 +135,7 @@ func newBaseConfig() *BaseConfig {
 		CfgStreamingUri:                 "",
 		CfgRdsInstanceName:              "",
 		CfgMaxDbConnections:             fmt.Sprintf("%d", DefaultMaxDbConnections),
+		CfgPubSubAckDeadline:            strconv.Itoa(DefaultPubSubAckDeadline),
 	}
 	bc.startTime = entity.Now()
 	return &bc
@@ -346,6 +357,12 @@ func (c *BaseConfig) MessagingUri() string {
 // StreamingUri returns the streaming middleware URI
 func (c *BaseConfig) StreamingUri() string {
 	return c.GetStringParamValueOrDefault(CfgStreamingUri, "")
+}
+
+// PubSubAckDeadline returns the configured Pub/Sub acknowledgment deadline in seconds,
+// or the default value of 10 seconds if not explicitly set.
+func (c *BaseConfig) PubSubAckDeadline() int {
+	return c.GetIntParamValueOrDefault(CfgPubSubAckDeadline, DefaultPubSubAckDeadline)
 }
 
 // endregion
