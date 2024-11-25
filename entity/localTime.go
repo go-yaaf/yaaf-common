@@ -14,6 +14,40 @@ import (
 // LocalTime represents the time (year, month, day, hour, minute, second) as number in the following format: YYYYMMDDhhmmss
 type LocalTime int64
 
+// LocalTimestamp converts LocalTime to Timestamp
+func LocalTimestamp(lt ...LocalTime) Timestamp {
+	if len(lt) > 0 {
+		return Timestamp(lt[0])
+	}
+	utc := time.Now().UTC()
+	result := utc.Year() * 10000000000
+	result += int(utc.Month()) * 100000000
+	result += utc.Day() * 1000000
+	result += utc.Hour() * 10000
+	result += utc.Minute() * 100
+	result += utc.Second()
+
+	return Timestamp(result)
+}
+
+// FromTime convert time to LocalTime
+func FromTime(t time.Time) LocalTime {
+	utc := t.UTC()
+	result := utc.Year() * 10000000000
+	result += int(utc.Month()) * 100000000
+	result += utc.Day() * 1000000
+	result += utc.Hour() * 10000
+	result += utc.Minute() * 100
+	result += utc.Second()
+
+	return LocalTime(result)
+}
+
+// FromTimestamp convert Timestamp to LocalTime
+func FromTimestamp(ts Timestamp) LocalTime {
+	return FromTime(ts.Time())
+}
+
 // LocalNow return current time as YYYYMMDDhhmmss
 func LocalNow() LocalTime {
 	utc := time.Now().UTC()
@@ -153,6 +187,11 @@ func ConvertISO8601Format(format string) string {
 	} else {
 		return buff.String()
 	}
+}
+
+// Timestamp converts local time to Timestamp
+func (lt *LocalTime) Timestamp() Timestamp {
+	return Timestamp(*lt)
 }
 
 // endregion
