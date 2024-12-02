@@ -84,3 +84,7 @@ func (f *LocalFileStore) Delete(uri string) (err error) {
 		return NewLocalFile(CombineUri(f.uri, uri)).Delete()
 	}
 }
+
+func (f *LocalFileStore) Close() error {
+	return nil
+}

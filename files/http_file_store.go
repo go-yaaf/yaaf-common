@@ -36,3 +36,8 @@ func (f *HttpFileStore) Exists(uri string) (result bool) {
 func (f *HttpFileStore) Delete(uri string) (err error) {
 	return NewHttpFile(uri).Delete()
 }
+
+// URI returns the resource URI with schema
+func (f *HttpFileStore) Close() error {
+	return nil
+}

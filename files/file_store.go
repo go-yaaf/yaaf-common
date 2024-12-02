@@ -25,6 +25,9 @@ type IFileStore interface {
 
 	// Delete resource
 	Delete(uri string) (err error)
+
+	// Release assosiated resources, if any
+	Close() error
 }
 
 // CombineUri creates a URI from segments
