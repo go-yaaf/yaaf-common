@@ -37,6 +37,9 @@ type QueryFilter interface {
 	// Between - equal or greater than the lower boundary and equal or less than the upper boundary
 	Between(value1, value2 any) QueryFilter
 
+	// Contains - a field of type array contains the provided value
+	Contains(value any) QueryFilter
+
 	// IsEmpty - field is null or empty
 	IsEmpty() QueryFilter
 
@@ -161,6 +164,13 @@ func (q *queryFilter) NotIn(values ...any) QueryFilter {
 func (q *queryFilter) Between(value1, value2 any) QueryFilter {
 	q.operator = Between
 	q.values = append(q.values, value1, value2)
+	return q
+}
+
+// Contains - a field of type array contains the provided value
+func (q *queryFilter) Contains(value any) QueryFilter {
+	q.operator = Contains
+	q.values = append(q.values, value)
 	return q
 }
 
