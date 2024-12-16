@@ -66,6 +66,12 @@ type QueryFilter interface {
 
 	// GetStringValue Get string representation of the value
 	GetStringValue(index int) string
+
+	// GetSubQuery gets the underlying sub-query
+	GetSubQuery() IQuery
+
+	// GetSubQueryField gets the underlying sub-query field
+	GetSubQueryField() string
 }
 
 // endregion
@@ -238,6 +244,16 @@ func (q *queryFilter) GetStringValue(index int) string {
 	} else {
 		return ""
 	}
+}
+
+// GetSubQuery gets the underlying sub-query
+func (q *queryFilter) GetSubQuery() IQuery {
+	return q.subQuery
+}
+
+// GetSubQueryField gets the underlying sub-query field
+func (q *queryFilter) GetSubQueryField() string {
+	return q.subQueryField
 }
 
 // endregion
