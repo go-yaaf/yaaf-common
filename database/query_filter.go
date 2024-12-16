@@ -28,11 +28,17 @@ type QueryFilter interface {
 	// Lte - Less or equal
 	Lte(value any) QueryFilter
 
-	// In - mach one of the values
+	// In - match one of the values
 	In(values ...any) QueryFilter
 
 	// NotIn - Not In
 	NotIn(values ...any) QueryFilter
+
+	// InSubQuery - match one of the values in the result of the sub query
+	InSubQuery(field string, subQuery IQuery) QueryFilter
+
+	// NotInSubQuery - exclude any record matching one of the values in the result of the sub query
+	NotInSubQuery(field string, subQuery IQuery) QueryFilter
 
 	// Between - equal or greater than the lower boundary and equal or less than the upper boundary
 	Between(value1, value2 any) QueryFilter
@@ -68,10 +74,12 @@ type QueryFilter interface {
 
 // Query filter
 type queryFilter struct {
-	field    string
-	operator QueryOperator
-	values   []any
-	active   bool
+	field         string
+	operator      QueryOperator
+	values        []any
+	active        bool
+	subQuery      IQuery
+	subQueryField string
 }
 
 // Filter by field
@@ -157,6 +165,22 @@ func (q *queryFilter) NotIn(values ...any) QueryFilter {
 	q.operator = NotIn
 	q.values = append(q.values, values...)
 	q.active = len(values) > 0
+	return q
+}
+
+// InSubQuery - match one of the values in the result of the sub query
+func (q *queryFilter) InSubQuery(field string, subQuery IQuery) QueryFilter {
+	q.operator = InSQ
+	q.subQuery = subQuery
+	q.subQueryField = field
+	return q
+}
+
+// NotInSubQuery - exclude any record matching one of the values in the result of the sub query
+func (q *queryFilter) NotInSubQuery(field string, subQuery IQuery) QueryFilter {
+	q.operator = NotInSQ
+	q.subQuery = subQuery
+	q.subQueryField = field
 	return q
 }
 

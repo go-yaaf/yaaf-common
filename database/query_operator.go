@@ -12,6 +12,8 @@ const (
 	Lte                    = "<="
 	In                     = "*"
 	NotIn                  = "-"
+	InSQ                   = "*s"
+	NotInSQ                = "-s"
 	Between                = "#"
 	Contains               = "@"
 	Empty                  = "^"
