@@ -44,6 +44,10 @@ const (
 	CfgDataCacheUri = "DATACACHE_URI" // Distributed cache middleware URI
 	CfgStreamingUri = "STREAMING_URI" // Streaming middleware URI
 
+	CfgBigQueryUri            = "BIG_QUERY_URI"    // BigQuery URI in form of "bq://project-id:dataset-id"
+	CfgBigQueryBatchSize      = "BQ_BATCH_SIZE"    // Holds BQ batch size for bulk operations
+	CfgBigQueryBatchTimeouSec = "BQ_BATCH_TIMEOUT" // Holds BQ ime out in seconds for bulk operations
+
 	// CfgEnableMessageOrdering is set to true to ensure that messages with the same ordering key are delivered in the order they were published.
 	// This is crucial for use cases where the order of messages is important for correct processing.
 	// Note: The Pub/Sub topic must be configured to support message ordering for this to take effect.
@@ -94,6 +98,9 @@ const (
 	DefaultGoRuntimeProfilerAddr     = ":6060"
 	DefaultMaxDbConnections          = 10
 	DefaultPubSubAckDeadline         = 10
+
+	DefaultBqBatchSize       = 5000
+	DefaultBqBatchTimeoutSec = 20
 )
 
 // region BaseConfig singleton pattern ---------------------------------------------------------------------------------
@@ -136,6 +143,10 @@ func newBaseConfig() *BaseConfig {
 		CfgRdsInstanceName:              "",
 		CfgMaxDbConnections:             fmt.Sprintf("%d", DefaultMaxDbConnections),
 		CfgPubSubAckDeadline:            strconv.Itoa(DefaultPubSubAckDeadline),
+
+		CfgBigQueryUri:            "",
+		CfgBigQueryBatchSize:      fmt.Sprintf("%d", DefaultBqBatchSize),
+		CfgBigQueryBatchTimeouSec: fmt.Sprintf("%d", DefaultBqBatchTimeoutSec),
 	}
 	bc.startTime = entity.Now()
 	return &bc
@@ -363,6 +374,16 @@ func (c *BaseConfig) StreamingUri() string {
 // or the default value of 10 seconds if not explicitly set.
 func (c *BaseConfig) PubSubAckDeadline() int {
 	return c.GetIntParamValueOrDefault(CfgPubSubAckDeadline, DefaultPubSubAckDeadline)
+}
+
+func (c *BaseConfig) BigQueryUri() string {
+	return c.GetStringParamValueOrDefault(CfgBigQueryUri, "")
+}
+func (c *BaseConfig) BigQueryBatchSize() int {
+	return c.GetIntParamValueOrDefault(CfgBigQueryBatchSize, DefaultBqBatchSize)
+}
+func (c *BaseConfig) CfgBigQueryBatchTimeouSec() int {
+	return c.GetIntParamValueOrDefault(CfgBigQueryBatchTimeouSec, DefaultBqBatchTimeoutSec)
 }
 
 // endregion
