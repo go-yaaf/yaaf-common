@@ -1,8 +1,9 @@
 package database
 
 import (
-	. "github.com/go-yaaf/yaaf-common/entity"
 	"io"
+
+	. "github.com/go-yaaf/yaaf-common/entity"
 )
 
 // IDatabase Database interface
@@ -62,6 +63,11 @@ type IDatabase interface {
 
 	// Query Utility struct method to build a query
 	Query(factory EntityFactory) IQuery
+
+	// descriptive comment will follow. for now: it returns an implementation of
+	// composed interface IAdvancedQuery, which is composition of IQuery and IQueryAnalytic
+	// and is intended to work with sharded tables ( via EntitySharded )
+	QueryAdvanced(factory EntityShardedFactory) IAdvancedQuery
 
 	// DDL Actions -----------------------------------------------------------------------------------------------------
 

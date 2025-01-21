@@ -305,6 +305,10 @@ func (dbs *InMemoryDatabase) Query(factory EntityFactory) IQuery {
 	}
 }
 
+func (dbs *InMemoryDatabase) QueryAdvanced(factory EntityShardedFactory) IAdvancedQuery {
+	panic("InMemoryDatabase: IAdvancedQuery is not implemented/supported")
+}
+
 // endregion
 
 // region Database DDL and DML -----------------------------------------------------------------------------------------
