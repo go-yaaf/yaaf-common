@@ -3,20 +3,20 @@ package entity
 type EntitySharded interface {
 	Entity
 	ShardKey() string
+	SetShardKey(string)
 }
 
 type EntityShardedFactory func(shardKey string) EntitySharded
 
 type BaseEntitySharded struct {
+	BaseEntity
 	shardKey string
 }
 
-func (e *BaseEntitySharded) ID() string { return "" }
+func (b *BaseEntitySharded) ShardKey() string {
+	return b.shardKey
+}
 
-func (e *BaseEntitySharded) TABLE() string { return "" }
-
-func (e *BaseEntitySharded) NAME() string { return "" }
-
-func (e *BaseEntitySharded) KEY() string { return "" }
-
-func (e *BaseEntitySharded) ShardKey() string { return e.shardKey }
+func (b *BaseEntitySharded) SetShardKey(sk string) {
+	b.shardKey = sk
+}
