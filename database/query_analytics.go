@@ -13,7 +13,7 @@ type IQueryAnalytic interface {
 	Avg(fieldName string) IQueryAnalytic
 	GroupBy(fieldName string) IQueryAnalytic
 	GroupByTimePeriod(fieldName string, period time.Duration) IQueryAnalytic
-	Compute() (out []e.EntitySharded, err error)
+	Compute() (out []e.Entity, err error)
 }
 
 type IAdvancedQuery interface {
