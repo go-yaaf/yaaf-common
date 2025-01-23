@@ -1,8 +1,6 @@
 package database
 
 import (
-	"time"
-
 	e "github.com/go-yaaf/yaaf-common/entity"
 )
 
@@ -11,8 +9,7 @@ type IQueryAnalytic interface {
 	Min(fieldName string) IQueryAnalytic
 	Max(fieldName string) IQueryAnalytic
 	Avg(fieldName string) IQueryAnalytic
-	GroupBy(fieldName string) IQueryAnalytic
-	GroupByTimePeriod(fieldName string, period time.Duration) IQueryAnalytic
+	GroupBy(fieldName string, timePeriod e.TimePeriodCode) IQueryAnalytic
 	Compute() (out []e.Entity, err error)
 }
 
