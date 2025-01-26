@@ -4,18 +4,18 @@ import (
 	e "github.com/go-yaaf/yaaf-common/entity"
 )
 
-type IQueryAnalytic interface {
-	Sum(fieldName string) IQueryAnalytic
-	Min(fieldName string) IQueryAnalytic
-	Max(fieldName string) IQueryAnalytic
-	Avg(fieldName string) IQueryAnalytic
-	CountAll(fieldName string) IQueryAnalytic
-	CountUnique(fieldName string) IQueryAnalytic
-	GroupBy(fieldName string, timePeriod e.TimePeriodCode) IQueryAnalytic
+type IAnalyticQuery interface {
+	Sum(fieldName string) IAnalyticQuery
+	Min(fieldName string) IAnalyticQuery
+	Max(fieldName string) IAnalyticQuery
+	Avg(fieldName string) IAnalyticQuery
+	CountAll(fieldName string) IAnalyticQuery
+	CountUnique(fieldName string) IAnalyticQuery
+	GroupBy(fieldName string, timePeriod e.TimePeriodCode) IAnalyticQuery
 	Compute() (out []e.Entity, err error)
 }
 
 type IAdvancedQuery interface {
 	IQuery
-	IQueryAnalytic
+	IAnalyticQuery
 }
