@@ -67,7 +67,7 @@ type IDatabase interface {
 	// descriptive comment will follow. for now: it returns an implementation of
 	// composed interface IAdvancedQuery, which is composition of IQuery and IAnalyticQuery
 	// and is intended to work with sharded tables ( KEY() method is used to resolve sharded table name)
-	QueryAdvanced(factory EntityFactory) IAdvancedQuery
+	AdvancedQuery(factory EntityFactory) IAdvancedQuery
 
 	// DDL Actions -----------------------------------------------------------------------------------------------------
 

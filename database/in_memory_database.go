@@ -305,7 +305,7 @@ func (dbs *InMemoryDatabase) Query(factory EntityFactory) IQuery {
 	}
 }
 
-func (dbs *InMemoryDatabase) QueryAdvanced(factory EntityFactory) IAdvancedQuery {
+func (dbs *InMemoryDatabase) AdvancedQuery(factory EntityFactory) IAdvancedQuery {
 	panic("InMemoryDatabase: IAdvancedQuery is not implemented/supported")
 }
 
