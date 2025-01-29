@@ -64,6 +64,17 @@ func (e *BaseEntity) NAME() string { return fmt.Sprintf("%s %s", e.TABLE(), e.Id
 
 func (e *BaseEntity) KEY() string { return "" }
 
+// For use as base entity for analytical entities
+type BaseAnalyticEntity struct {
+}
+
+func (e *BaseAnalyticEntity) ID() string { return "" }
+
+func (e *BaseAnalyticEntity) TABLE() string { return "" }
+
+func (e *BaseAnalyticEntity) NAME() string { return "" }
+
+func (e *BaseAnalyticEntity) KEY() string { return "" }
 func NewBaseEntity() Entity {
 	return &BaseEntity{CreatedOn: Now(), UpdatedOn: Now()}
 }
