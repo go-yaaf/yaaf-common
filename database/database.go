@@ -64,7 +64,7 @@ type IDatabase interface {
 	// Query Utility struct method to build a query
 	Query(factory EntityFactory) IQuery
 
-	// descriptive comment will follow. for now: it returns an implementation of
+	// AdvancedQuery returns an implementation of
 	// composed interface IAdvancedQuery, which is composition of IQuery and IAnalyticQuery
 	// and is intended to work with sharded tables ( KEY() method is used to resolve sharded table name)
 	AdvancedQuery(factory EntityFactory) IAdvancedQuery
