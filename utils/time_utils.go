@@ -9,8 +9,8 @@ import (
 	. "github.com/go-yaaf/yaaf-common/entity"
 )
 
-// timeUtils internal helper
-type timeUtils struct {
+// TimeUtilsStruct internal helper
+type TimeUtilsStruct struct {
 	baseTime Timestamp
 	SECOND   uint64
 	MINUTE   uint64
@@ -19,17 +19,17 @@ type timeUtils struct {
 }
 
 // TimeUtils is a factory method
-func TimeUtils(ts Timestamp) *timeUtils {
-	return &timeUtils{baseTime: ts, SECOND: 1000, MINUTE: 60 * 1000, HOUR: 60 * 60 * 1000, DAY: 24 * 60 * 60 * 1000}
+func TimeUtils(ts Timestamp) *TimeUtilsStruct {
+	return &TimeUtilsStruct{baseTime: ts, SECOND: 1000, MINUTE: 60 * 1000, HOUR: 60 * 60 * 1000, DAY: 24 * 60 * 60 * 1000}
 }
 
 // Get returns the current timestamp
-func (t *timeUtils) Get() Timestamp {
+func (t *TimeUtilsStruct) Get() Timestamp {
 	return t.baseTime
 }
 
 // ConvertISO8601Format converts ISO6801 datetime format to Go RFC3339 format (used by Go)
-func (t *timeUtils) ConvertISO8601Format(format string) string {
+func (t *TimeUtilsStruct) ConvertISO8601Format(format string) string {
 
 	data := struct {
 		V1  string
@@ -112,7 +112,7 @@ func (t *timeUtils) ConvertISO8601Format(format string) string {
 }
 
 // Format converts Epoch milliseconds timestamp to readable string, if format is empty, the default layout (RFC3339) is used
-func (t *timeUtils) Format(format string) string {
+func (t *TimeUtilsStruct) Format(format string) string {
 	if len(format) == 0 {
 		return time.UnixMilli(int64(t.baseTime)).Format(time.RFC3339)
 	} else {
@@ -122,7 +122,7 @@ func (t *timeUtils) Format(format string) string {
 }
 
 // SetInterval create periodic time triggered function call
-func (t *timeUtils) SetInterval(someFunc func(), milliseconds int, async bool) chan bool {
+func (t *TimeUtilsStruct) SetInterval(someFunc func(), milliseconds int, async bool) chan bool {
 
 	// How often to fire the passed in function
 	// in milliseconds
@@ -131,7 +131,7 @@ func (t *timeUtils) SetInterval(someFunc func(), milliseconds int, async bool) c
 	// Setup the ticket and the channel to signal
 	// the ending of the interval
 	ticker := time.NewTicker(interval)
-	clear := make(chan bool)
+	clearChan := make(chan bool)
 
 	// Put the selection in a go routine
 	// so that the for loop is none blocking
@@ -146,7 +146,7 @@ func (t *timeUtils) SetInterval(someFunc func(), milliseconds int, async bool) c
 					// This will block
 					someFunc()
 				}
-			case <-clear:
+			case <-clearChan:
 				ticker.Stop()
 				return
 			}
@@ -155,7 +155,7 @@ func (t *timeUtils) SetInterval(someFunc func(), milliseconds int, async bool) c
 
 	// We return the channel so we can pass in
 	// a value to it to clear the interval
-	return clear
+	return clearChan
 }
 
 // LowerBound return the floor value of the timestamp to the lowest time duration
@@ -163,7 +163,7 @@ func (t *timeUtils) SetInterval(someFunc func(), milliseconds int, async bool) c
 // * time.Minute - get the lower bound by minute
 // * time.Hour - get the lower bound by hour
 // * time.Hour * 24 - get the lower bound by day
-func (t *timeUtils) LowerBound(duration time.Duration) *timeUtils {
+func (t *TimeUtilsStruct) LowerBound(duration time.Duration) *TimeUtilsStruct {
 	tm := int64(t.baseTime) * int64(time.Millisecond)
 	rem := tm - (tm % int64(duration))
 	t.baseTime = Timestamp(rem / int64(time.Millisecond))
@@ -175,7 +175,7 @@ func (t *timeUtils) LowerBound(duration time.Duration) *timeUtils {
 // * time.Minute - get the upper bound by minute
 // * time.Hour - get the upper bound by hour
 // * time.Hour * 24 - get the upper bound by day
-func (t *timeUtils) UpperBound(duration time.Duration) *timeUtils {
+func (t *TimeUtilsStruct) UpperBound(duration time.Duration) *TimeUtilsStruct {
 	tm := int64(t.baseTime) * int64(time.Millisecond)
 	rem := tm - (tm % int64(duration)) + int64(duration)
 	t.baseTime = Timestamp(rem / int64(time.Millisecond))
@@ -183,19 +183,18 @@ func (t *timeUtils) UpperBound(duration time.Duration) *timeUtils {
 }
 
 // GetSeries creates a time series from the base time to the end time with the given interval
-func (t *timeUtils) GetSeries(end Timestamp, interval time.Duration) (series []Timestamp) {
+func (t *TimeUtilsStruct) GetSeries(end Timestamp, interval time.Duration) (series []Timestamp) {
 
 	if interval == 0 {
 		return series
 	}
 
 	from := int64(t.baseTime)
-	// Add 1 to include the last slot
 	to := int64(end)
 	step := int64(interval / time.Millisecond)
 
 	if from < to {
-		eot := to + 1
+		eot := to + step
 		for ts := from; ts < eot; ts += step {
 			series = append(series, Timestamp(ts))
 		}
@@ -207,13 +206,13 @@ func (t *timeUtils) GetSeries(end Timestamp, interval time.Duration) (series []T
 	return series
 }
 
-// GetSeries2 creates a time series from the base time to the end time with the given interval
+// GetSeries2 [Obsolete - since GetSeries was fixed] creates a time series from the base time to the end time with the given interval
 // This is fix  for GetSeries function which misses "last slot" due to incorrect "for"
 // loop completion condition. For example, if we need series from day 01 to day 06,
 // it will return series from day 01 to day 05 ( see line "eot := to + 1", it should be rather
 // eot := to + step, or loop completion condition should be "ts =< to "). Since GetSeries function
 // is widely used, to avoid regressions, I've created GetSeries2 until further clarifications
-func (t *timeUtils) GetSeries2(end Timestamp, interval time.Duration) (series []Timestamp) {
+func (t *TimeUtilsStruct) GetSeries2(end Timestamp, interval time.Duration) (series []Timestamp) {
 
 	if interval == 0 {
 		return series
@@ -237,7 +236,7 @@ func (t *timeUtils) GetSeries2(end Timestamp, interval time.Duration) (series []
 }
 
 // GetSeriesMap creates a time series from the base time to the end time with the given interval as a map
-func (t *timeUtils) GetSeriesMap(end Timestamp, interval time.Duration) map[Timestamp]int {
+func (t *TimeUtilsStruct) GetSeriesMap(end Timestamp, interval time.Duration) map[Timestamp]int {
 
 	series := make(map[Timestamp]int)
 	if interval == 0 {
@@ -261,7 +260,7 @@ func (t *timeUtils) GetSeriesMap(end Timestamp, interval time.Duration) map[Time
 }
 
 // GetTimeFrames creates time frames from the base time to the end time with the given interval with delay between slots
-func (t *timeUtils) GetTimeFrames(end Timestamp, interval time.Duration) (series []TimeFrame) {
+func (t *TimeUtilsStruct) GetTimeFrames(end Timestamp, interval time.Duration) (series []TimeFrame) {
 
 	if interval == 0 {
 		return series
@@ -296,7 +295,7 @@ func (t *timeUtils) GetTimeFrames(end Timestamp, interval time.Duration) (series
 }
 
 // GetTimeFramesMap creates time frames from the base time to the end time with the given interval as a map
-func (t *timeUtils) GetTimeFramesMap(end Timestamp, interval time.Duration) map[Timestamp]TimeFrame {
+func (t *TimeUtilsStruct) GetTimeFramesMap(end Timestamp, interval time.Duration) map[Timestamp]TimeFrame {
 
 	frames := make(map[Timestamp]TimeFrame)
 	if interval == 0 {
@@ -330,3 +329,113 @@ func (t *timeUtils) GetTimeFramesMap(end Timestamp, interval time.Duration) map[
 	}
 	return frames
 }
+
+// region Time related math functions ----------------------------------------------------------------------------------
+
+// DayRange create the boundaries of a day (start to end)
+func (t *TimeUtilsStruct) DayRange() TimeFrame {
+	current := t.baseTime.Time()
+	sod := time.Date(current.Year(), current.Month(), current.Day(), 0, 0, 0, 0, current.Location())
+	eod := time.Date(current.Year(), current.Month(), current.Day(), 23, 59, 59, 999, current.Location())
+	return TimeFrame{
+		From: NewTimestamp(sod),
+		To:   NewTimestamp(eod),
+	}
+}
+
+// MonthRange gets the local timestamp boundaries of a month
+func (t *TimeUtilsStruct) MonthRange() TimeFrame {
+	current := t.baseTime.Time()
+	som := time.Date(current.Year(), current.Month(), 1, 0, 0, 0, 0, current.Location())
+	firstDayOfNextMonth := som.AddDate(0, 1, 0)
+	eom := firstDayOfNextMonth.Add(-time.Second)
+
+	return TimeFrame{
+		From: NewTimestamp(som),
+		To:   NewTimestamp(eom),
+	}
+}
+
+// endregion
+
+// region General time utils functions ---------------------------------------------------------------------------------
+
+// CalculateInterval returns the preferred time interval based on the time period
+func CalculateInterval(from, to Timestamp) (rFrom, rTo Timestamp, interval time.Duration) {
+
+	tuf := TimeUtils(from)
+	tut := TimeUtils(to)
+
+	delta := int64(to) - int64(from)
+	if delta < 0 {
+		delta = delta * (-1)
+	}
+
+	// If the period is 1 hour or less, the interval is minutes
+	if delta <= int64(tuf.HOUR) {
+		rFrom = tuf.LowerBound(time.Minute).Get()
+		rTo = tut.LowerBound(time.Minute).Get()
+		return rFrom, rTo, time.Minute
+	}
+
+	// If the period is 2 days or less, the interval is hours
+	if delta <= int64(tuf.DAY)*2 {
+		rFrom = tuf.LowerBound(time.Hour).Get()
+		rTo = tut.LowerBound(time.Hour).Get()
+		return rFrom, rTo, time.Hour
+	}
+
+	// If the period is 30 days or less, the interval is days
+	if delta <= int64(tuf.DAY)*30 {
+		rFrom = tuf.LowerBound(time.Hour * 24).Get()
+		rTo = tut.LowerBound(time.Hour * 24).Get()
+		return rFrom, rTo, time.Hour * 24
+	}
+
+	// If the period is 60 days or less, the interval is week
+	if delta <= int64(tuf.DAY)*60 {
+		rFrom = tuf.LowerBound(time.Hour * 24 * 7).Get()
+		rTo = tut.LowerBound(time.Hour * 24 * 7).Get()
+		return rFrom, rTo, time.Hour * 24 * 7
+	}
+
+	// If none of the above, the interval is month
+	rFrom = tuf.LowerBound(time.Hour * 24 * 30).Get()
+	rTo = tut.LowerBound(time.Hour * 24 * 30).Get()
+	return rFrom, rTo, time.Hour * 24 * 30
+
+}
+
+// CreateTimeSeries creates a blank time series for the provided time period based on the time interval
+func CreateTimeSeries[T any](name string, from, to Timestamp, interval time.Duration, initValue T) (series Entity) {
+
+	intervalMs := int64(interval) / int64(time.Millisecond)
+
+	period := TimeFrame{From: from, To: to}
+	result := &TimeSeries[T]{Name: name, Range: period, Values: make([]TimeDataPoint[T], 0)}
+
+	// truncate to the next interval
+	start := int64(period.From)
+	mod := start % intervalMs
+	start = start - mod
+	if mod > 0 {
+		start = start + intervalMs
+	}
+
+	for ts := start; ts <= int64(period.To); ts += intervalMs {
+		tdp := TimeDataPoint[T]{Timestamp: Timestamp(ts), Value: initValue}
+		result.Values = append(result.Values, tdp)
+	}
+	return result
+}
+
+// HistogramTimeSeries converts histogram to a sorted and consecutive time series
+func HistogramTimeSeries(name string, from, to Timestamp, interval time.Duration, hist map[Timestamp]Tuple[int64, float64]) (series Entity) {
+	timeSeries := CreateTimeSeries[float64](name, from, to, interval, 0)
+	for ts, val := range hist {
+		timeSeries.(*TimeSeries[float64]).SetDataPoint(ts, val.Value)
+	}
+	return timeSeries
+}
+
+// endregion

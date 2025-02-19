@@ -23,6 +23,11 @@ func Now() Timestamp {
 	return EpochNowMillis(0)
 }
 
+// NewTimestamp create timestamp from the provided time object
+func NewTimestamp(t time.Time) Timestamp {
+	return Timestamp(t.UnixNano() / 1000000)
+}
+
 // Add time and return a new timestamp
 func (ts *Timestamp) Add(delta time.Duration) Timestamp {
 	return Timestamp(int64(*ts) + delta.Milliseconds())
