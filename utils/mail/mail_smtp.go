@@ -22,6 +22,7 @@ type smtpMailMessage struct {
 	from        string
 	to          []string
 	cc          []string
+	bcc         []string
 	subject     string
 	body        string
 	html        string
@@ -46,6 +47,12 @@ func (m *smtpMailMessage) To(to []string) IMailMessage {
 // Cc Set cc list mail addresses
 func (m *smtpMailMessage) Cc(cc []string) IMailMessage {
 	m.cc = cc
+	return m
+}
+
+// Bcc Set Bcc list mail addresses
+func (m *smtpMailMessage) Bcc(bcc []string) IMailMessage {
+	m.bcc = bcc
 	return m
 }
 
@@ -102,6 +109,7 @@ func (c *smtpMailClient) CreateTextMessage() IMailMessage {
 		client: c,
 		to:     make([]string, 0),
 		cc:     make([]string, 0),
+		bcc:    make([]string, 0),
 		mime:   "text/plain",
 	}
 }
@@ -112,6 +120,7 @@ func (c *smtpMailClient) CreateHtmlMessage() IMailMessage {
 		client: c,
 		to:     make([]string, 0),
 		cc:     make([]string, 0),
+		bcc:    make([]string, 0),
 		mime:   "text/html",
 	}
 }
@@ -122,6 +131,7 @@ func (c *smtpMailClient) CreateJsonMessage() IMailMessage {
 		client: c,
 		to:     make([]string, 0),
 		cc:     make([]string, 0),
+		bcc:    make([]string, 0),
 		mime:   "application/json",
 	}
 }
@@ -132,6 +142,7 @@ func (c *smtpMailClient) CreateTemplateMessage(template TemplateName, variables 
 		client:    c,
 		to:        make([]string, 0),
 		cc:        make([]string, 0),
+		bcc:       make([]string, 0),
 		template:  template,
 		variables: variables,
 	}
@@ -146,6 +157,9 @@ func (c *smtpMailClient) buildMessage(m *smtpMailMessage) string {
 	}
 	if len(m.cc) > 0 {
 		message += fmt.Sprintf("Cc: %s\r\n", strings.Join(m.cc, ";"))
+	}
+	if len(m.bcc) > 0 {
+		message += fmt.Sprintf("Bcc: %s\r\n", strings.Join(m.bcc, ";"))
 	}
 
 	message += fmt.Sprintf("Subject: %s\r\n", m.subject)
@@ -180,6 +194,7 @@ func (c *smtpMailClient) send(m *smtpMailMessage) (retError error) {
 	msg.SetHeader("From", m.from)
 	msg.SetHeader("To", m.to...)
 	msg.SetHeader("Cc", m.cc...)
+	msg.SetHeader("Bcc", m.bcc...)
 	msg.SetHeader("Subject", m.subject)
 
 	if m.mime == "text/html" {

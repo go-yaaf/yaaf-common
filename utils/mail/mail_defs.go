@@ -50,6 +50,7 @@ type IMailMessage interface {
 	From(from string) IMailMessage
 	To(to []string) IMailMessage
 	Cc(cc []string) IMailMessage
+	Bcc(bcc []string) IMailMessage
 	Subject(subject string) IMailMessage
 	Body(body string) IMailMessage
 	HtmlBody(html string) IMailMessage
