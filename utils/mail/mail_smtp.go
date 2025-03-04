@@ -80,6 +80,40 @@ func (m *smtpMailMessage) Attachments(attachments []MailMessageAttachment) IMail
 	return m
 }
 
+// AddTo adds mail address to the To recipients list
+func (m *smtpMailMessage) AddTo(to ...string) IMailMessage {
+	m.to = append(m.to, to...)
+	return m
+}
+
+// AddCc adds mail address to the CC list
+func (m *smtpMailMessage) AddCc(cc ...string) IMailMessage {
+	m.cc = append(m.cc, cc...)
+	return m
+}
+
+// AddBcc adds mail address to the BCC list
+func (m *smtpMailMessage) AddBcc(bcc ...string) IMailMessage {
+	m.bcc = append(m.bcc, bcc...)
+	return m
+}
+
+// AddAttachments add attachment to the list
+func (m *smtpMailMessage) AddAttachments(attachments ...MailMessageAttachment) IMailMessage {
+	m.attachments = append(m.attachments, attachments...)
+	return m
+}
+
+// Attach add list of file paths as attachments
+func (m *smtpMailMessage) Attach(paths ...string) IMailMessage {
+	for _, path := range paths {
+		if att, err := getAttachment(path); err == nil {
+			m.AddAttachments(att)
+		}
+	}
+	return m
+}
+
 // Send mail message
 func (m *smtpMailMessage) Send() error {
 	return m.client.send(m)
@@ -205,11 +239,11 @@ func (c *smtpMailClient) send(m *smtpMailMessage) (retError error) {
 
 	// Complete attachments info
 	for _, attachment := range m.attachments {
-		if len(attachment.Base64Content) == 0 {
+		if len(attachment.Content) == 0 {
 			msg.Attach(attachment.FileName)
 		} else {
 			f := func(w io.Writer) error {
-				data, _ := base64.StdEncoding.DecodeString(attachment.Base64Content)
+				data, _ := base64.StdEncoding.DecodeString(attachment.Content)
 				_, err := io.Copy(w, bytes.NewReader(data))
 				return err
 			}
@@ -259,14 +293,14 @@ func (c *smtpMailClient) send(m *smtpMailMessage) (retError error) {
 
 func (c *smtpMailClient) attach(msg *gomail.Message, att MailMessageAttachment) (retError error) {
 
-	if len(att.Base64Content) == 0 {
+	if len(att.Content) == 0 {
 		if err := c.attachPath(&att); err != nil {
 			return err
 		}
 	}
 
 	f := func(w io.Writer) error {
-		data, _ := base64.StdEncoding.DecodeString(att.Base64Content)
+		data, _ := base64.StdEncoding.DecodeString(att.Content)
 		_, err := io.Copy(w, bytes.NewReader(data))
 		return err
 	}
@@ -288,7 +322,7 @@ func (c *smtpMailClient) attachPath(att *MailMessageAttachment) error {
 	if er != nil {
 		return err
 	}
-	att.Base64Content = base64.StdEncoding.EncodeToString(content)
+	att.Content = base64.StdEncoding.EncodeToString(content)
 	if len(att.ContentType) == 0 {
 		ext := filepath.Ext(att.FileName)
 		att.ContentType = mime.TypeByExtension(ext)

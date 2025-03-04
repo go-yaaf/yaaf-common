@@ -1,28 +1,42 @@
 package mail
 
 import (
+	"encoding/base64"
 	"fmt"
+	"io"
+	"mime"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
 type TemplateName string
 
-// MailConfig Configure mail client parameters
-type MailConfig struct {
+// region MailAddress Object --------------------------------------------------------------------------------------------
 
-	// Mail relay URI (type://host:port)
-	MailRelayUri string
-
-	// Mail Relay User
-	MailRelayUser string
-
-	// Mail Relay Password
-	MailRelayPassword string
-
-	// Flag to use TLS encrypted connection
-	UseTLS bool
+type mailAddress struct {
+	Email string
+	Name  string
 }
+
+// Parse mail address from the format: name <user@mail.com>
+func parseMailAddress(addr string) mailAddress {
+
+	if strings.Contains(addr, "<") {
+		parts := strings.Split(addr, "<")
+		name := strings.TrimSpace(parts[0])
+		email := strings.ReplaceAll(parts[1], ">", "")
+		email = strings.TrimSpace(email)
+		return mailAddress{Email: email, Name: name}
+	} else {
+		return mailAddress{Email: addr, Name: ""}
+	}
+}
+
+// endregion
+
+// region IMailClient Interface ----------------------------------------------------------------------------------------
 
 // IMailClient Mail client interface
 type IMailClient interface {
@@ -33,17 +47,23 @@ type IMailClient interface {
 	CreateTemplateMessage(template TemplateName, variables map[string]string) IMailMessage
 }
 
+// endregion
+
+// region Mail message attachment structure ----------------------------------------------------------------------------
+
 // MailMessageAttachment represents message attachment
 type MailMessageAttachment struct {
-	// The full file path to attach
-	FileName string
+	// File name or the full file path (in case the file content is not provided) to attach
+	FileName string `json:"fileName"`
 
-	// MIME type, ignore this field, it will be set automatically
-	ContentType string
+	// Base64 content of the file
+	Content string `json:"content"`
 
-	// Base64 content of the file (ignore this field)
-	Base64Content string
+	// MIME type, if the content is provided as base64 in the Content field, it should include the suffix: ;base64
+	ContentType string `json:"contentType"`
 }
+
+// endregion
 
 // IMailMessage Mail message interface
 type IMailMessage interface {
@@ -55,6 +75,13 @@ type IMailMessage interface {
 	Body(body string) IMailMessage
 	HtmlBody(html string) IMailMessage
 	Attachments(attachments []MailMessageAttachment) IMailMessage
+
+	AddTo(to ...string) IMailMessage
+	AddCc(cc ...string) IMailMessage
+	AddBcc(bcc ...string) IMailMessage
+	AddAttachments(attachments ...MailMessageAttachment) IMailMessage
+	Attach(paths ...string) IMailMessage
+
 	Send() error
 }
 
@@ -74,26 +101,37 @@ func NewMailClient(config MailConfig) (IMailClient, error) {
 
 	if scheme == "smtp" {
 		return newSmtpMailClient(uri.Hostname(), uri.Port(), config.MailRelayUser, config.MailRelayPassword, config.UseTLS), nil
+	} else if scheme == "http" || scheme == "https" {
+		return newHttpMailClient(config.MailRelayUri, config.MailRelayUser, config.Headers), nil
 	} else {
 		return nil, fmt.Errorf("unsupported mail type: %s", scheme)
 	}
 }
 
-type mailAddress struct {
-	Email string
-	Name  string
-}
+// Get Attachment from file path
+func getAttachment(path string) (MailMessageAttachment, error) {
+	result := MailMessageAttachment{}
 
-// Parse mail address from the format: name <user@mail.com>
-func parseMailAddress(addr string) mailAddress {
-
-	if strings.Contains(addr, "<") {
-		parts := strings.Split(addr, "<")
-		name := strings.TrimSpace(parts[0])
-		email := strings.ReplaceAll(parts[1], ">", "")
-		email = strings.TrimSpace(email)
-		return mailAddress{Email: email, Name: name}
-	} else {
-		return mailAddress{Email: addr, Name: ""}
+	file, err := os.Open(path)
+	if err != nil {
+		return result, err
 	}
+	defer func() {
+		_ = file.Close()
+	}()
+
+	content, er := io.ReadAll(file)
+	if er != nil {
+		return result, err
+	}
+
+	result.Content = base64.StdEncoding.EncodeToString(content)
+	ext := filepath.Ext(path)
+	contentType := mime.TypeByExtension(ext)
+	if len(contentType) == 0 {
+		contentType = "application/octet-stream"
+	}
+	result.ContentType = fmt.Sprintf("%s;base64", contentType)
+	result.FileName = filepath.Base(path)
+	return result, nil
 }
