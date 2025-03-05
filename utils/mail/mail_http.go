@@ -151,7 +151,13 @@ func (m *httpMailMessage) buildMessage() ([]byte, error) {
 	message["cc"] = m.cc
 	message["bcc"] = m.bcc
 	message["subject"] = m.subject
-	message["body"] = m.body
+
+	if len(m.body) > 0 {
+		message["body"] = m.body
+	} else if len(m.html) > 0 {
+		message["body"] = m.html
+	}
+
 	message["attachments"] = m.attachments
 	return json.Marshal(message)
 }

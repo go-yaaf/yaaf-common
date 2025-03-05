@@ -232,9 +232,17 @@ func (c *smtpMailClient) send(m *smtpMailMessage) (retError error) {
 	msg.SetHeader("Subject", m.subject)
 
 	if m.mime == "text/html" {
-		msg.SetBody(m.mime, m.html)
+		if len(m.html) > 0 {
+			msg.SetBody(m.mime, m.html)
+		} else {
+			msg.SetBody(m.mime, m.body)
+		}
 	} else {
-		msg.SetBody(m.mime, m.body)
+		if len(m.body) > 0 {
+			msg.SetBody(m.mime, m.body)
+		} else {
+			msg.SetBody(m.mime, m.html)
+		}
 	}
 
 	// Complete attachments info
