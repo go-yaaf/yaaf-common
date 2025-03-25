@@ -85,3 +85,16 @@ func printFrames(period time.Duration, interval time.Duration, format string) {
 		fmt.Println(i, f.String(format))
 	}
 }
+
+func TestFluentTimestamp(t *testing.T) {
+	skipCI(t)
+	format := "YYYY-MM-DD HH:mm:ss.sss"
+	seven := entity.Now().StartOfDay().Add(time.Hour * 7)
+	fmt.Println("Seven    ", seven.String(format))
+
+	sevenPm := entity.Now().StartOfDay().Add(time.Hour * 19)
+	s := utils.TimeUtils(seven).GetSeries(sevenPm, time.Minute*30)
+	for i, m := range s {
+		fmt.Println(i, m, utils.TimeUtils(m).Format(format))
+	}
+}

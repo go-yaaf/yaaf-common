@@ -29,52 +29,52 @@ func NewTimestamp(t time.Time) Timestamp {
 }
 
 // Add time and return a new timestamp
-func (ts *Timestamp) Add(delta time.Duration) Timestamp {
-	return Timestamp(int64(*ts) + delta.Milliseconds())
+func (ts Timestamp) Add(delta time.Duration) Timestamp {
+	return Timestamp(int64(ts) + delta.Milliseconds())
 }
 
 // Time returns the Go primitive  time.Time object
-func (ts *Timestamp) Time() (result time.Time) {
-	return time.UnixMilli(int64(*ts))
+func (ts Timestamp) Time() (result time.Time) {
+	return time.UnixMilli(int64(ts))
 }
 
 // StartOfHour Get the start of the current hour
-func (ts *Timestamp) StartOfHour() Timestamp {
+func (ts Timestamp) StartOfHour() Timestamp {
 	t := ts.Time()
 	sod := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location())
 	return Timestamp(sod.UnixNano() / 1000000)
 }
 
 // EndOfHour Get the start of the current hour
-func (ts *Timestamp) EndOfHour() Timestamp {
+func (ts Timestamp) EndOfHour() Timestamp {
 	t := ts.Time()
 	eod := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 59, 59, 9.99e+8, t.Location())
 	return Timestamp(eod.UnixNano() / 1000000)
 }
 
 // StartOfDay Get the start of the current day
-func (ts *Timestamp) StartOfDay() Timestamp {
+func (ts Timestamp) StartOfDay() Timestamp {
 	t := ts.Time()
 	sod := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 	return Timestamp(sod.UnixNano() / 1000000)
 }
 
 // EndOfDay Get the start of the current day
-func (ts *Timestamp) EndOfDay() Timestamp {
+func (ts Timestamp) EndOfDay() Timestamp {
 	t := ts.Time()
 	eod := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 9.99e+8, t.Location())
 	return Timestamp(eod.UnixNano() / 1000000)
 }
 
 // StartOfMonth Get the start of the current month
-func (ts *Timestamp) StartOfMonth() Timestamp {
+func (ts Timestamp) StartOfMonth() Timestamp {
 	t := ts.Time()
 	som := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 	return Timestamp(som.UnixNano() / 1000000)
 }
 
 // EndOfMonth Get the end of the current month
-func (ts *Timestamp) EndOfMonth() Timestamp {
+func (ts Timestamp) EndOfMonth() Timestamp {
 	t := ts.Time()
 	som := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 	firstDayOfNextMonth := som.AddDate(0, 1, 0)
@@ -85,7 +85,7 @@ func (ts *Timestamp) EndOfMonth() Timestamp {
 // Convert ISO6801 datetime format to Go RFC3339 format (used by Go)
 // @param format ISO 8601 format
 // @return RFC3339 format (using magic date sample: Jan 02 3:04:05 2006 -0700)
-func (ts *Timestamp) convertISO8601Format(format string) string {
+func (ts Timestamp) convertISO8601Format(format string) string {
 
 	data := struct {
 		V1  string
@@ -168,7 +168,7 @@ func (ts *Timestamp) convertISO8601Format(format string) string {
 }
 
 // String convert Epoch milliseconds timestamp to readable string
-func (ts *Timestamp) String(format string) string {
+func (ts Timestamp) String(format string) string {
 	if len(format) == 0 {
 		return ts.Time().Format(time.RFC3339)
 	} else {
@@ -178,7 +178,7 @@ func (ts *Timestamp) String(format string) string {
 }
 
 // LocalString convert Epoch milliseconds timestamp with timezone (IANA) to readable string
-func (ts *Timestamp) LocalString(format string, tz string) string {
+func (ts Timestamp) LocalString(format string, tz string) string {
 
 	loc, err := time.LoadLocation(tz)
 	if err != nil {
