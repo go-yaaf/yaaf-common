@@ -16,6 +16,9 @@ type QueryFilter interface {
 	// Like - similar
 	Like(value string) QueryFilter
 
+	// NotLike - not similar
+	NotLike(value string) QueryFilter
+
 	// Gt - Greater than
 	Gt(value any) QueryFilter
 
@@ -45,6 +48,9 @@ type QueryFilter interface {
 
 	// Contains - a field of type array contains the provided value
 	Contains(value any) QueryFilter
+
+	// NotContains - a field of type array does not contain the provided value
+	NotContains(value any) QueryFilter
 
 	// IsEmpty - field is null or empty
 	IsEmpty() QueryFilter
@@ -130,6 +136,14 @@ func (q *queryFilter) Like(value string) QueryFilter {
 	return q
 }
 
+// NotLike - not similar
+func (q *queryFilter) NotLike(value string) QueryFilter {
+	q.operator = NotLike
+	q.values = append(q.values, value)
+	q.active = len(fmt.Sprintf("%v", value)) > 0
+	return q
+}
+
 // Gt - Greater than
 func (q *queryFilter) Gt(value any) QueryFilter {
 	q.operator = Gt
@@ -200,6 +214,13 @@ func (q *queryFilter) Between(value1, value2 any) QueryFilter {
 // Contains - a field of type array contains the provided value
 func (q *queryFilter) Contains(value any) QueryFilter {
 	q.operator = Contains
+	q.values = append(q.values, value)
+	return q
+}
+
+// NotContains - a field of type array does not contain the provided value
+func (q *queryFilter) NotContains(value any) QueryFilter {
+	q.operator = NotContains
 	q.values = append(q.values, value)
 	return q
 }

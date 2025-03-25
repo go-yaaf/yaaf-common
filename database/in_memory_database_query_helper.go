@@ -16,6 +16,7 @@ func init() {
 	operators[Eq] = eq
 	operators[Neq] = neq
 	operators[Like] = like
+	operators[NotLike] = notLike
 	operators[Gt] = gt
 	operators[Gte] = gte
 	operators[Lt] = lt
@@ -24,6 +25,7 @@ func init() {
 	operators[NotIn] = nin
 	operators[Between] = between
 	operators[Contains] = contains
+	operators[NotContains] = notContains
 	operators[Empty] = isEmpty
 
 }
@@ -78,6 +80,11 @@ func like(raw map[string]any, filter QueryFilter) bool {
 	} else {
 		return strings.Contains(v1, v2)
 	}
+}
+
+// notKike
+func notLike(raw map[string]any, filter QueryFilter) bool {
+	return !like(raw, filter)
 }
 
 // Greater than
@@ -203,6 +210,11 @@ func contains(raw map[string]any, filter QueryFilter) bool {
 		return collections.Include(arr, v1)
 	}
 	return false
+}
+
+// array field does not contain the tested value
+func notContains(raw map[string]any, filter QueryFilter) bool {
+	return !contains(raw, filter)
 }
 
 // between (the expected value is comma-separated list of 2 values
