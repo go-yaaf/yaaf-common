@@ -106,6 +106,7 @@ type BaseEntityEx struct {
 	Id        string    `json:"id"`        // Unique object Id
 	CreatedOn Timestamp `json:"createdOn"` // When the object was created [Epoch milliseconds Timestamp]
 	UpdatedOn Timestamp `json:"updatedOn"` // When the object was last updated [Epoch milliseconds Timestamp]
+	Flag      int64     `json:"flag"`      // Entity status flag (e.g. -1 = deleted)
 	Props     Json      `json:"props"`     // List of custom properties
 }
 
