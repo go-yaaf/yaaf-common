@@ -61,7 +61,7 @@ func NewEntityResponse[T Entity](entity T) (er *EntityResponse[T]) {
 
 // endregion
 
-// region EntityResponse -----------------------------------------------------------------------------------------------
+// region EntitiesResponse ---------------------------------------------------------------------------------------------
 
 // EntitiesResponse message is returned for any action returning multiple entities
 type EntitiesResponse[T Entity] struct {
@@ -89,6 +89,36 @@ func NewEntitiesResponse[T Entity](entities []T, page, size, total int) *Entitie
 		Total: total,
 		Pages: (total / size) + rem,
 		List:  entities,
+	}
+}
+
+// endregion
+
+// region EntityResponse -----------------------------------------------------------------------------------------------
+
+// EntityRequest message is returned for any create/update action on entity
+type EntityRequest[T Entity] struct {
+	Entity T `json:"entity"` // The entity
+}
+
+// NewEntityRequest factory method
+func NewEntityRequest[T Entity](entity T) (er *EntityRequest[T]) {
+	return &EntityRequest[T]{Entity: entity}
+}
+
+// endregion
+
+// region EntitiesRequest ---------------------------------------------------------------------------------------------
+
+// EntitiesRequest message is returned for any action returning multiple entities
+type EntitiesRequest[T Entity] struct {
+	List []T `json:"list"` // List of objects in the current result set
+}
+
+// NewEntitiesRequest factory method
+func NewEntitiesRequest[T Entity](entities []T, page, size, total int) *EntitiesRequest[T] {
+	return &EntitiesRequest[T]{
+		List: entities,
 	}
 }
 
