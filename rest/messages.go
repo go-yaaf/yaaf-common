@@ -21,10 +21,25 @@ func (res *BaseRestResponse) SetError(err error) {
 	}
 }
 
+// SetErrorWithCode sets an error message with customized code (must be negative)
+func (res *BaseRestResponse) SetErrorWithCode(code int, err error) {
+	if err != nil {
+		res.Code = code
+		res.Error = err.Error()
+	}
+}
+
 // NewErrorResponse response with error
 func NewErrorResponse(err error) (res *BaseRestResponse) {
 	res = &BaseRestResponse{}
 	res.SetError(err)
+	return res
+}
+
+// NewErrorResponseWithCode response with error and customized code
+func NewErrorResponseWithCode(code int, err error) (res *BaseRestResponse) {
+	res = &BaseRestResponse{}
+	res.SetErrorWithCode(code, err)
 	return res
 }
 
