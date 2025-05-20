@@ -1,11 +1,24 @@
 package entity
 
-// Error model extends the standard error interface with code
-type Error struct {
-	Code int    `json:"code"` // Error Code
-	Text string `json:"text"` // Error Text
+type Error interface {
+	Error() string
+	Code() int
 }
 
-func (e Error) Error() string {
-	return e.Text
+// errorStruct model implements Error interface
+type errorStruct struct {
+	code int    // Error Code
+	text string // Error Text
+}
+
+func (e *errorStruct) Error() string {
+	return e.text
+}
+
+func (e *errorStruct) Code() int {
+	return e.code
+}
+
+func NewError(code int, text string) Error {
+	return &errorStruct{code, text}
 }
