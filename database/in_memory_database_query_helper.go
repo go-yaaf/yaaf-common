@@ -27,7 +27,8 @@ func init() {
 	operators[Contains] = contains
 	operators[NotContains] = notContains
 	operators[Empty] = isEmpty
-
+	operators[True] = isTrue
+	operators[False] = isFalse
 }
 
 // FilterFunction signature of a filter function
@@ -251,6 +252,34 @@ func isEmpty(raw map[string]any, filter QueryFilter) bool {
 	} else {
 		v1 := fmt.Sprintf("%v", entityVal)
 		return len(v1) == 0
+	}
+}
+
+// isTrue - boolean field is true
+func isTrue(raw map[string]any, filter QueryFilter) bool {
+	entityVal, ok := raw[filter.GetField()]
+	if !ok {
+		return false
+	}
+	if entityVal == nil {
+		return false
+	} else {
+		v1 := fmt.Sprintf("%v", entityVal)
+		return v1 == "true"
+	}
+}
+
+// isFalse - boolean field is false
+func isFalse(raw map[string]any, filter QueryFilter) bool {
+	entityVal, ok := raw[filter.GetField()]
+	if !ok {
+		return false
+	}
+	if entityVal == nil {
+		return true
+	} else {
+		v1 := fmt.Sprintf("%v", entityVal)
+		return v1 == "false"
 	}
 }
 

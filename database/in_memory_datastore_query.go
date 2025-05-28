@@ -330,7 +330,7 @@ func (s *inMemoryDatastoreQuery) SetFields(fields map[string]any, keys ...string
 		}
 	}
 
-	if result, err := s.db.BulkUpdate(changeList); fe != nil {
+	if result, err := s.db.BulkUpdate(changeList); err != nil {
 		return 0, err
 	} else {
 		return result, nil

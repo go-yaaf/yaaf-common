@@ -19,4 +19,6 @@ const (
 	Contains                  = "@"
 	NotContains               = "!@"
 	Empty                     = "^"
+	True                      = "t"
+	False                     = "f"
 )

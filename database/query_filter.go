@@ -55,6 +55,12 @@ type QueryFilter interface {
 	// IsEmpty - field is null or empty
 	IsEmpty() QueryFilter
 
+	// IsTrue - boolean field is true
+	IsTrue() QueryFilter
+
+	// IsFalse - boolean field is null or false
+	IsFalse() QueryFilter
+
 	// If - Include this filter only if condition is true
 	If(value bool) QueryFilter
 
@@ -234,6 +240,20 @@ func (q *queryFilter) If(value bool) QueryFilter {
 // IsEmpty - Field does not include value (null or empty)
 func (q *queryFilter) IsEmpty() QueryFilter {
 	q.operator = Empty
+	q.active = true
+	return q
+}
+
+// IsTrue - boolean field is true
+func (q *queryFilter) IsTrue() QueryFilter {
+	q.operator = True
+	q.active = true
+	return q
+}
+
+// IsFalse - boolean field is null or false
+func (q *queryFilter) IsFalse() QueryFilter {
+	q.operator = False
 	q.active = true
 	return q
 }
