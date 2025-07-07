@@ -53,10 +53,10 @@ type QueryFilter interface {
 	NotContains(value any) QueryFilter
 
 	// WithFlag - a field of type integer representing bit flags include a flag or set of flags
-	WithFlag(value int64) QueryFilter
+	WithFlag(value int) QueryFilter
 
 	// WithNoFlag - a field of type integer representing bit flags does not include a flag or set of flags
-	WithNoFlag(value int64) QueryFilter
+	WithNoFlag(value int) QueryFilter
 
 	// IsEmpty - field is null or empty
 	IsEmpty() QueryFilter
@@ -238,14 +238,14 @@ func (q *queryFilter) NotContains(value any) QueryFilter {
 }
 
 // WithFlag - a field of type integer representing bit flags include a flag or set of flags
-func (q *queryFilter) WithFlag(value int64) QueryFilter {
+func (q *queryFilter) WithFlag(value int) QueryFilter {
 	q.operator = WithFlag
 	q.values = append(q.values, value)
 	return q
 }
 
 // WithNoFlag - a field of type integer representing bit flags does not include a flag or set of flags
-func (q *queryFilter) WithNoFlag(value int64) QueryFilter {
+func (q *queryFilter) WithNoFlag(value int) QueryFilter {
 	q.operator = WithNoFlag
 	q.values = append(q.values, value)
 	return q
