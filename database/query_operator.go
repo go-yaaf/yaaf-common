@@ -21,4 +21,6 @@ const (
 	Empty                     = "^"
 	True                      = "t"
 	False                     = "f"
+	WithFlag                  = "&"
+	WithNoFlag                = "!&"
 )

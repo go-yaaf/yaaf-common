@@ -383,7 +383,7 @@ func (dc *InMemoryDataCache) RPop(factory EntityFactory, key string) (entity Ent
 	if lst, ok := dc.lists[key]; !ok {
 		return nil, fmt.Errorf("list %s not exists", key)
 	} else {
-		if e := lst.Back(); e != nil {
+		if e := lst.Back(); e == nil {
 			return nil, fmt.Errorf("end of list")
 		} else {
 			entity = e.Value.(Entity)
@@ -399,7 +399,7 @@ func (dc *InMemoryDataCache) LPop(factory EntityFactory, key string) (entity Ent
 	if lst, ok := dc.lists[key]; !ok {
 		return nil, fmt.Errorf("list %s not exists", key)
 	} else {
-		if e := lst.Front(); e != nil {
+		if e := lst.Front(); e == nil {
 			return nil, fmt.Errorf("end of list")
 		} else {
 			entity = e.Value.(Entity)

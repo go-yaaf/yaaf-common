@@ -29,6 +29,8 @@ func init() {
 	operators[Empty] = isEmpty
 	operators[True] = isTrue
 	operators[False] = isFalse
+	operators[WithFlag] = withFlag
+	operators[WithNoFlag] = withNoFlag
 }
 
 // FilterFunction signature of a filter function
@@ -280,6 +282,44 @@ func isFalse(raw map[string]any, filter QueryFilter) bool {
 	} else {
 		v1 := fmt.Sprintf("%v", entityVal)
 		return v1 == "false"
+	}
+}
+
+// withFlag - a field of type integer representing bit flags include a flag or set of flags
+func withFlag(raw map[string]any, filter QueryFilter) bool {
+	entityVal, ok := raw[filter.GetField()]
+	if !ok {
+		return false
+	}
+	v1 := fmt.Sprintf("%v", entityVal)
+	v2 := filter.GetStringValue(0)
+
+	n1, e1 := strconv.Atoi(v1)
+	n2, e2 := strconv.Atoi(v2)
+
+	if e1 != nil || e2 != nil {
+		return false
+	} else {
+		return (n1 & n2) == n2
+	}
+}
+
+// withNoFlag - a field of type integer representing bit flags does not include a flag or set of flags
+func withNoFlag(raw map[string]any, filter QueryFilter) bool {
+	entityVal, ok := raw[filter.GetField()]
+	if !ok {
+		return false
+	}
+	v1 := fmt.Sprintf("%v", entityVal)
+	v2 := filter.GetStringValue(0)
+
+	n1, e1 := strconv.Atoi(v1)
+	n2, e2 := strconv.Atoi(v2)
+
+	if e1 != nil || e2 != nil {
+		return false
+	} else {
+		return (n1 & n2) == 0
 	}
 }
 
