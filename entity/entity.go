@@ -2,6 +2,7 @@
 package entity
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -231,5 +232,20 @@ const (
 	UpdateEntity EntityAction = 2
 	DeleteEntity EntityAction = 3
 )
+
+// endregion
+
+// region Clone Entity -------------------------------------------------------------------------------------------------
+
+// CloneEntity deep clone entity
+func CloneEntity[T any](src T) (T, error) {
+	var dst T
+	data, err := json.Marshal(src)
+	if err != nil {
+		return dst, err
+	}
+	err = json.Unmarshal(data, &dst)
+	return dst, err
+}
 
 // endregion
