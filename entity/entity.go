@@ -238,8 +238,8 @@ const (
 // region Clone Entity -------------------------------------------------------------------------------------------------
 
 // CloneEntity deep clone entity
-func CloneEntity[T any](src T) (T, error) {
-	var dst T
+func CloneEntity(ef EntityFactory, src Entity) (Entity, error) {
+	dst := ef()
 	data, err := json.Marshal(src)
 	if err != nil {
 		return dst, err
