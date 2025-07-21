@@ -36,3 +36,16 @@ func (lt LookupTable[T]) Delete(key string) {
 func (lt LookupTable[T]) Len() int {
 	return len(lt)
 }
+
+// Clear removes all entries from the table.
+func (lt LookupTable[T]) Clear() {
+	for k := range lt {
+		delete(lt, k)
+	}
+}
+
+// Contains returns true if the given key exists in the table.
+func (lt LookupTable[T]) Contains(key string) bool {
+	_, ok := lt[key]
+	return ok
+}
