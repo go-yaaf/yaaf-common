@@ -26,3 +26,13 @@ func (lt LookupTable[T]) Values() []T {
 	}
 	return vals
 }
+
+// Delete removes the entry for the given key, if it exists.
+func (lt LookupTable[T]) Delete(key string) {
+	delete(lt, key)
+}
+
+// Len returns the number of elements in the table.
+func (lt LookupTable[T]) Len() int {
+	return len(lt)
+}
