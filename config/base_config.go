@@ -382,7 +382,7 @@ func (c *BaseConfig) BigQueryUri() string {
 func (c *BaseConfig) BigQueryBatchSize() int {
 	return c.GetIntParamValueOrDefault(CfgBigQueryBatchSize, DefaultBqBatchSize)
 }
-func (c *BaseConfig) CfgBigQueryBatchTimeouSec() int {
+func (c *BaseConfig) CfgBigQueryBatchTimeoutSec() int {
 	return c.GetIntParamValueOrDefault(CfgBigQueryBatchTimeouSec, DefaultBqBatchTimeoutSec)
 }
 
