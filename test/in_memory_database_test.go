@@ -2,8 +2,11 @@
 package test
 
 import (
+	"fmt"
 	. "github.com/go-yaaf/yaaf-common/database"
 	"github.com/stretchr/testify/assert"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -97,6 +100,49 @@ func TestInMemoryDatabase_IsEmpty(t *testing.T) {
 	assert.Nil(t, fe, "error")
 	assert.NotNilf(t, heroes, "heroes is nil")
 	assert.Equal(t, 2, len(heroes), "count should be 4")
+
+	return
+}
+
+func TestInMemoryDatabase_Backup(t *testing.T) {
+	skipCI(t)
+	db, fe := getInitializedDb()
+	assert.Nil(t, fe, "error initializing DB")
+
+	inMemDb, ok := db.(*InMemoryDatabase)
+	if !ok {
+		fmt.Printf("Not in-memory database\n")
+	}
+
+	path, err := os.Getwd()
+	assert.Nil(t, err, "error getting working directory")
+
+	path = filepath.Join(path, "backup.json")
+	//path = filepath.Join(path, "backup.bin")
+
+	err = inMemDb.Backup(path)
+	assert.Nil(t, err, "error backup directory")
+
+	return
+}
+
+func TestInMemoryDatabase_Restore(t *testing.T) {
+	skipCI(t)
+
+	db, fe := NewInMemoryDatabase()
+	assert.Nil(t, fe, "error initializing DB")
+
+	inMemDb, ok := db.(*InMemoryDatabase)
+	if !ok {
+		fmt.Printf("Not in-memory database\n")
+	}
+
+	path, err := os.Getwd()
+	assert.Nil(t, err, "error getting working directory")
+
+	path = filepath.Join(path, "backup.json")
+	err = inMemDb.Restore(path)
+	assert.Nil(t, err, "error backup directory")
 
 	return
 }

@@ -357,6 +357,8 @@ func (dbs *InMemoryDatabase) PurgeTable(table string) (err error) {
 
 // region Backup and Restore Database ----------------------------------------------------------------
 
+// TODO: Restore is not working properly since table holds Entity interface pointers
+
 // Backup database to a file
 // @param path - file path to back up
 func (dbs *InMemoryDatabase) Backup(path string) error {
@@ -433,7 +435,9 @@ func (dbs *InMemoryDatabase) restoreJson(path string) error {
 	}
 
 	dec := json.NewDecoder(file)
-	err = dec.Decode(&dbs.Db)
+
+	dst := make(map[string]*InMemoryTable)
+	err = dec.Decode(&dst)
 	_ = file.Close()
 	return err
 }
