@@ -135,7 +135,7 @@ func (s *inMemoryDatabaseQuery) Find(keys ...string) (out []Entity, total int64,
 	ent := s.factory()
 	table := tableName(ent.TABLE(), keys...)
 
-	tbl, ok := s.db.db[table]
+	tbl, ok := s.db.Db[table]
 	if !ok {
 		return nil, 0, fmt.Errorf(TABLE_NOT_EXISTS)
 	}
@@ -174,7 +174,7 @@ func (s *inMemoryDatabaseQuery) Count(keys ...string) (total int64, err error) {
 	ent := s.factory()
 	table := tableName(ent.TABLE(), keys...)
 
-	tbl, ok := s.db.db[table]
+	tbl, ok := s.db.Db[table]
 	if !ok {
 		return 0, fmt.Errorf(TABLE_NOT_EXISTS)
 	}

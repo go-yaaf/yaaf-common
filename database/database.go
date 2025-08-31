@@ -66,12 +66,12 @@ type IDatabase interface {
 
 	// AdvancedQuery returns an implementation of
 	// composed interface IAdvancedQuery, which is composition of IQuery and IAnalyticQuery
-	// and is intended to work with sharded tables ( KEY() method is used to resolve sharded table name)
+	// and is intended to work with sharded tables ( KEY() method is used to resolve sharded DbTable name)
 	AdvancedQuery(factory EntityFactory) IAdvancedQuery
 
 	// DDL Actions -----------------------------------------------------------------------------------------------------
 
-	// ExecuteDDL Execute DDL - create table and indexes
+	// ExecuteDDL Execute DDL - create DbTable and indexes
 	ExecuteDDL(ddl map[string][]string) (err error)
 
 	// ExecuteSQL Execute SQL - execute SQL command
@@ -80,9 +80,9 @@ type IDatabase interface {
 	// ExecuteQuery Execute native SQL query
 	ExecuteQuery(source, sql string, args ...any) ([]Json, error)
 
-	// DropTable Drop table and indexes
+	// DropTable Drop DbTable and indexes
 	DropTable(table string) (err error)
 
-	// PurgeTable Fast delete table content (truncate)
+	// PurgeTable Fast delete DbTable content (truncate)
 	PurgeTable(table string) (err error)
 }

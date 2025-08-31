@@ -20,7 +20,7 @@ const (
 
 // region Database store definitions -----------------------------------------------------------------------------------
 
-// InMemoryDatastore Represent a db with tables
+// InMemoryDatastore Represent a Db with tables
 type InMemoryDatastore struct {
 	db map[string]ITable
 }
@@ -320,7 +320,7 @@ func (dbs *InMemoryDatastore) IndexExists(indexName string) (exists bool) {
 func (dbs *InMemoryDatastore) CreateIndex(indexName string) (name string, err error) {
 	// Create index
 	if _, ok := dbs.db[indexName]; !ok {
-		dbs.db[indexName] = &InMemoryTable{table: make(map[string]Entity)}
+		dbs.db[indexName] = &InMemoryTable{DbTable: make(map[string]Entity)}
 	}
 	return indexName, nil
 }

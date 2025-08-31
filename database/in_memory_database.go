@@ -17,17 +17,17 @@ import (
 const (
 	NOT_IMPLEMENTED  = "not implemented"
 	NOT_SUPPORTED    = "not supported"
-	TABLE_NOT_EXISTS = "table does not exist"
+	TABLE_NOT_EXISTS = "DbTable does not exist"
 )
 
 // region Database store definitions -----------------------------------------------------------------------------------
 
 // InMemoryDatabase represents in memory database with tables
 type InMemoryDatabase struct {
-	db map[string]ITable
+	Db map[string]ITable `json:"db"` // Database
 }
 
-// Resolve table name from entity class name and shard keys
+// Resolve DbTable name from entity class name and shard keys
 func tableName(table string, keys ...string) (tblName string) {
 
 	tblName = table
@@ -61,7 +61,7 @@ func tableName(table string, keys ...string) (tblName string) {
 
 // NewInMemoryDatabase Factory method for database
 func NewInMemoryDatabase() (dbs IDatabase, err error) {
-	return &InMemoryDatabase{db: make(map[string]ITable)}, nil
+	return &InMemoryDatabase{Db: make(map[string]ITable)}, nil
 }
 
 // Ping Test database connectivity
@@ -91,7 +91,7 @@ func (dbs *InMemoryDatabase) Get(factory EntityFactory, entityID string, keys ..
 
 	entity := factory()
 	table := tableName(entity.TABLE(), keys...)
-	if tbl, ok := dbs.db[table]; ok {
+	if tbl, ok := dbs.Db[table]; ok {
 		return tbl.Get(entityID)
 	} else {
 		return nil, fmt.Errorf(TABLE_NOT_EXISTS)
@@ -106,7 +106,7 @@ func (dbs *InMemoryDatabase) List(factory EntityFactory, entityIDs []string, key
 
 	list = make([]Entity, 0)
 
-	if tbl, ok := dbs.db[table]; ok {
+	if tbl, ok := dbs.Db[table]; ok {
 		for _, id := range entityIDs {
 			if ent, err := tbl.Get(id); err == nil {
 				list = append(list, ent)
@@ -124,7 +124,7 @@ func (dbs *InMemoryDatabase) Exists(factory EntityFactory, entityID string, keys
 	entity := factory()
 	table := tableName(entity.TABLE(), keys...)
 
-	if tbl, ok := dbs.db[table]; ok {
+	if tbl, ok := dbs.Db[table]; ok {
 		return tbl.Exists(entityID)
 	} else {
 		return false, fmt.Errorf(TABLE_NOT_EXISTS)
@@ -136,26 +136,26 @@ func (dbs *InMemoryDatabase) Insert(entity Entity) (added Entity, err error) {
 
 	table := tableName(entity.TABLE(), entity.KEY())
 
-	if _, ok := dbs.db[table]; !ok {
-		dbs.db[table] = NewInMemTable()
+	if _, ok := dbs.Db[table]; !ok {
+		dbs.Db[table] = NewInMemTable()
 	}
-	return dbs.db[table].Insert(entity)
+	return dbs.Db[table].Insert(entity)
 }
 
 // Update existing entity in the data store
 func (dbs *InMemoryDatabase) Update(entity Entity) (updated Entity, err error) {
 	table := tableName(entity.TABLE(), entity.KEY())
 
-	if _, ok := dbs.db[table]; !ok {
-		dbs.db[table] = NewInMemTable()
+	if _, ok := dbs.Db[table]; !ok {
+		dbs.Db[table] = NewInMemTable()
 	}
-	return dbs.db[table].Update(entity)
+	return dbs.Db[table].Update(entity)
 }
 
 // Upsert updates existing entity in the data store or add it if it does not exist
 func (dbs *InMemoryDatabase) Upsert(entity Entity) (updated Entity, err error) {
 	table := tableName(entity.TABLE(), entity.KEY())
-	if tbl, ok := dbs.db[table]; ok {
+	if tbl, ok := dbs.Db[table]; ok {
 		return tbl.Upsert(entity)
 	} else {
 		return nil, fmt.Errorf(TABLE_NOT_EXISTS)
@@ -168,7 +168,7 @@ func (dbs *InMemoryDatabase) Delete(factory EntityFactory, entityID string, keys
 	entity := factory()
 
 	table := tableName(entity.TABLE(), keys...)
-	if tbl, ok := dbs.db[table]; ok {
+	if tbl, ok := dbs.Db[table]; ok {
 		return tbl.Delete(entityID)
 	} else {
 		return fmt.Errorf(TABLE_NOT_EXISTS)
@@ -317,15 +317,15 @@ func (dbs *InMemoryDatabase) AdvancedQuery(factory EntityFactory) IAdvancedQuery
 
 // region Database DDL and DML -----------------------------------------------------------------------------------------
 
-// ExecuteDDL create table and indexes
-// The ddl parameter is a map of strings (table names) to array of strings (list of fields to index)
+// ExecuteDDL create DbTable and indexes
+// The ddl parameter is a map of strings (DbTable names) to array of strings (list of fields to index)
 func (dbs *InMemoryDatabase) ExecuteDDL(ddl map[string][]string) (err error) {
 
 	for table, fields := range ddl {
-		logger.Debug("Creating table: %s with fields indexes: %s", table, strings.Join(fields, ","))
+		logger.Debug("Creating DbTable: %s with fields indexes: %s", table, strings.Join(fields, ","))
 
-		if _, ok := dbs.db[table]; !ok {
-			dbs.db[table] = &InMemoryTable{table: make(map[string]Entity)}
+		if _, ok := dbs.Db[table]; !ok {
+			dbs.Db[table] = &InMemoryTable{DbTable: make(map[string]Entity)}
 		}
 	}
 	return nil
@@ -341,15 +341,15 @@ func (dbs *InMemoryDatabase) ExecuteQuery(source, sql string, args ...any) ([]Js
 	return nil, fmt.Errorf(NOT_SUPPORTED)
 }
 
-// DropTable drop a table and its related indexes
+// DropTable drop a DbTable and its related indexes
 func (dbs *InMemoryDatabase) DropTable(table string) (err error) {
-	delete(dbs.db, table)
+	delete(dbs.Db, table)
 	return nil
 }
 
-// PurgeTable fast delete table content (truncate)
+// PurgeTable fast delete DbTable content (truncate)
 func (dbs *InMemoryDatabase) PurgeTable(table string) (err error) {
-	delete(dbs.db, table)
+	delete(dbs.Db, table)
 	return nil
 }
 
@@ -396,7 +396,7 @@ func (dbs *InMemoryDatabase) backupJson(path string) error {
 	enc := json.NewEncoder(file)
 	enc.SetIndent("", "  ")
 
-	err = enc.Encode(dbs.db)
+	err = enc.Encode(dbs.Db)
 	_ = file.Close()
 	return err
 }
@@ -418,7 +418,7 @@ func (dbs *InMemoryDatabase) backupBinary(path string) error {
 	}
 
 	enc := gob.NewEncoder(file)
-	err = enc.Encode(dbs.db)
+	err = enc.Encode(dbs.Db)
 	_ = file.Close()
 	return err
 }
@@ -433,7 +433,7 @@ func (dbs *InMemoryDatabase) restoreJson(path string) error {
 	}
 
 	dec := json.NewDecoder(file)
-	err = dec.Decode(&dbs.db)
+	err = dec.Decode(&dbs.Db)
 	_ = file.Close()
 	return err
 }
@@ -448,7 +448,7 @@ func (dbs *InMemoryDatabase) restoreBinary(path string) error {
 	}
 
 	dec := gob.NewDecoder(file)
-	err = dec.Decode(&dbs.db)
+	err = dec.Decode(&dbs.Db)
 	_ = file.Close()
 	return err
 }
