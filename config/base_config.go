@@ -87,6 +87,8 @@ const (
 	CfgRdsInstanceName = "RDS_INSTANCE_NAME"
 
 	CfgMaxDbConnections = "MAX_DB_CONNECTIONS"
+
+	CfgUnderTest = "UNDER_TEST"
 )
 
 const (
@@ -101,6 +103,8 @@ const (
 
 	DefaultBqBatchSize       = 5000
 	DefaultBqBatchTimeoutSec = 20
+
+	DefaultUnderTest = false
 )
 
 // region BaseConfig singleton pattern ---------------------------------------------------------------------------------
@@ -147,6 +151,8 @@ func newBaseConfig() *BaseConfig {
 		CfgBigQueryUri:            "",
 		CfgBigQueryBatchSize:      fmt.Sprintf("%d", DefaultBqBatchSize),
 		CfgBigQueryBatchTimeouSec: fmt.Sprintf("%d", DefaultBqBatchTimeoutSec),
+
+		CfgUnderTest: "false",
 	}
 	bc.startTime = entity.Now()
 	return &bc
@@ -382,8 +388,12 @@ func (c *BaseConfig) BigQueryUri() string {
 func (c *BaseConfig) BigQueryBatchSize() int {
 	return c.GetIntParamValueOrDefault(CfgBigQueryBatchSize, DefaultBqBatchSize)
 }
-func (c *BaseConfig) CfgBigQueryBatchTimeouSec() int {
+func (c *BaseConfig) CfgBigQueryBatchTimeoutSec() int {
 	return c.GetIntParamValueOrDefault(CfgBigQueryBatchTimeouSec, DefaultBqBatchTimeoutSec)
+}
+
+func (c *BaseConfig) UnderTest() bool {
+	return c.GetBoolParamValueOrDefault(CfgUnderTest, false)
 }
 
 // endregion

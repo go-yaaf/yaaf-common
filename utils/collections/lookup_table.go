@@ -1,0 +1,51 @@
+package collections
+
+// LookupTable is a generic lookup table with string keys and values of type T
+type LookupTable[T any] map[string]T
+
+// Get returns the value and a bool indicating if it was found
+func (lt LookupTable[T]) Get(key string) (T, bool) {
+	val, ok := lt[key]
+	return val, ok
+}
+
+// Keys returns all keys in the table
+func (lt LookupTable[T]) Keys() []string {
+	keys := make([]string, 0, len(lt))
+	for k := range lt {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+// Values returns all values in the table
+func (lt LookupTable[T]) Values() []T {
+	vals := make([]T, 0, len(lt))
+	for _, v := range lt {
+		vals = append(vals, v)
+	}
+	return vals
+}
+
+// Delete removes the entry for the given key, if it exists.
+func (lt LookupTable[T]) Delete(key string) {
+	delete(lt, key)
+}
+
+// Len returns the number of elements in the table.
+func (lt LookupTable[T]) Len() int {
+	return len(lt)
+}
+
+// Clear removes all entries from the table.
+func (lt LookupTable[T]) Clear() {
+	for k := range lt {
+		delete(lt, k)
+	}
+}
+
+// Contains returns true if the given key exists in the table.
+func (lt LookupTable[T]) Contains(key string) bool {
+	_, ok := lt[key]
+	return ok
+}
