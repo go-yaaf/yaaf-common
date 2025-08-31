@@ -1,7 +1,11 @@
 package database
 
 import (
+	"encoding/gob"
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -350,3 +354,103 @@ func (dbs *InMemoryDatabase) PurgeTable(table string) (err error) {
 }
 
 // endregion
+
+// region Backup and Restore Database ----------------------------------------------------------------
+
+// Backup database to a file
+// @param path - file path to back up
+func (dbs *InMemoryDatabase) Backup(path string) error {
+	if strings.HasSuffix(path, ".json") {
+		return dbs.backupJson(path)
+	} else {
+		return dbs.backupBinary(path)
+	}
+}
+
+// Restore database from file
+// @param path - file path to restore
+func (dbs *InMemoryDatabase) Restore(path string) error {
+	if strings.HasSuffix(path, ".json") {
+		return dbs.restoreJson(path)
+	} else {
+		return dbs.restoreBinary(path)
+	}
+}
+
+// Backup database to a file in Json format
+// @param path - file path to back up
+func (dbs *InMemoryDatabase) backupJson(path string) error {
+
+	// Ensure path
+	folders := filepath.Dir(path)
+	if err := os.MkdirAll(folders, 0755); err != nil {
+		return err
+	}
+
+	// create file
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+
+	enc := json.NewEncoder(file)
+	enc.SetIndent("", "  ")
+
+	err = enc.Encode(dbs.db)
+	_ = file.Close()
+	return err
+}
+
+// Backup database to a file in binary format
+// @param path - file path to back up
+func (dbs *InMemoryDatabase) backupBinary(path string) error {
+
+	// Ensure path
+	folders := filepath.Dir(path)
+	if err := os.MkdirAll(folders, 0755); err != nil {
+		return err
+	}
+
+	// create file
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+
+	enc := gob.NewEncoder(file)
+	err = enc.Encode(dbs.db)
+	_ = file.Close()
+	return err
+}
+
+// Restore database from file in Json format
+// @param path - file path to restore
+func (dbs *InMemoryDatabase) restoreJson(path string) error {
+	// open file
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+
+	dec := json.NewDecoder(file)
+	err = dec.Decode(&dbs.db)
+	_ = file.Close()
+	return err
+}
+
+// Restore database from file in binary format
+// @param path - file path to restore
+func (dbs *InMemoryDatabase) restoreBinary(path string) error {
+	// open file
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+
+	dec := gob.NewDecoder(file)
+	err = dec.Decode(&dbs.db)
+	_ = file.Close()
+	return err
+}
+
+//endregion
