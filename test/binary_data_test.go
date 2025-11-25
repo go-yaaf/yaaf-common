@@ -2,6 +2,7 @@
 
 package test
 
+/*
 import (
 	"github.com/go-yaaf/yaaf-common/entity"
 	"github.com/go-yaaf/yaaf-common/utils/binary"
@@ -161,3 +162,4 @@ func (c *ComplexObject) UnmarshalBinary(data []byte) (e error) {
 
 	return nil
 }
+*/

@@ -49,3 +49,9 @@ $ go get -v -t github.com/go-yaaf/yaaf-common ./...
 ```bash
 $ GOPROXY=proxy.golang.org go list -m github.com/go-yaaf/yaaf-common@v1.1.0
 ```
+
+
+
+
+
+

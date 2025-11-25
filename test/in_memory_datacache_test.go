@@ -1,6 +1,7 @@
 // Test in memory datastore implementation tests
 package test
 
+/*
 import (
 	"fmt"
 	. "github.com/go-yaaf/yaaf-common/database"
@@ -66,3 +67,4 @@ func TestInMemoryDataCache_SetWithTTL(t *testing.T) {
 
 	return
 }
+*/

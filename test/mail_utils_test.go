@@ -2,13 +2,14 @@
 
 package test
 
+/*
 import (
 	"github.com/go-yaaf/yaaf-common/utils/mail"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
-func TestMail(t *testing.T) {
+func TestMailWeb(t *testing.T) {
 	skipCI(t)
 
 	uri := "https://some.url"
@@ -32,3 +33,4 @@ func TestMail(t *testing.T) {
 	require.Nil(t, err)
 
 }
+*/

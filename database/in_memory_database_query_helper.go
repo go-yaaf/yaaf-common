@@ -204,7 +204,7 @@ func contains(raw map[string]any, filter QueryFilter) bool {
 		if val, e := strconv.Atoi(v1); e != nil {
 			return false
 		} else {
-			return collections.IncludeN(arr, val)
+			return collections.Include[int](arr, val)
 		}
 	}
 

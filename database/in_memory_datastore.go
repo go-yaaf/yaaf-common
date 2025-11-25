@@ -1,13 +1,8 @@
-// Copyright 2022. Motty Cohen
-//
-// In-memory datastore implementation of IDatastore (used for testing)
-
 package database
 
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	. "github.com/go-yaaf/yaaf-common/entity"
 	"github.com/go-yaaf/yaaf-common/logger"
@@ -18,220 +13,205 @@ const (
 	INDEX_NOT_EXISTS = "index does not exist"
 )
 
-// region Database store definitions -----------------------------------------------------------------------------------
+// region Datastore definitions ----------------------------------------------------------------------------------------
 
-// InMemoryDatastore Represent a Db with tables
+// InMemoryDatastore represents an in-memory implementation of the IDatastore interface.
+// It uses a map to store data (simulating tables/collections) and is primarily used for testing and development.
 type InMemoryDatastore struct {
-	db map[string]ITable
+	Db map[string]ITable `json:"db"` // Db is a map of collection names to ITable instances.
 }
 
-// Resolve index name from entity name
+// resolveTableName determines the table name for a given entity.
+func (d *InMemoryDatastore) resolveTableName(entity Entity, keys ...string) string {
+	return tableName(entity.TABLE(), keys...)
+}
+
+// indexName resolves index name from entity name (alias for tableName for backward compatibility).
 func indexName(table string, keys ...string) (name string) {
-
-	index := table
-
-	if len(keys) == 0 {
-		return index
-	}
-
-	// Replace accountId placeholder with the first key
-	index = strings.Replace(index, "{{accountId}}", "{{0}}", -1)
-
-	for idx, key := range keys {
-		placeHolder := fmt.Sprintf("{{%d}}", idx)
-		index = strings.Replace(index, placeHolder, key, -1)
-	}
-
-	// Replace templates: {{year}}
-	index = strings.Replace(index, "{{year}}", time.Now().Format("2006"), -1)
-
-	// Replace templates: {{month}}
-	index = strings.Replace(index, "{{month}}", time.Now().Format("01"), -1)
-
-	// TODO: Replace templates: {{week}}
-
-	return index
+	return tableName(table, keys...)
 }
 
 // endregion
 
 // region Factory and connectivity methods for Datastore ---------------------------------------------------------------
 
-// NewInMemoryDatastore Factory method for Datastore
-func NewInMemoryDatastore() (dbs IDatastore, err error) {
-	return &InMemoryDatastore{db: make(map[string]ITable)}, nil
+// NewInMemoryDatastore creates a new instance of InMemoryDatastore.
+func NewInMemoryDatastore() (IDatastore, error) {
+	return &InMemoryDatastore{
+		Db: make(map[string]ITable),
+	}, nil
 }
 
-// Ping tests database connectivity for retries number of time with time interval (in seconds) between retries
-func (dbs *InMemoryDatastore) Ping(retries uint, interval uint) error {
-	logger.Debug("Pinging %d times with %d interval", retries, interval)
+// Ping tests the datastore connectivity (always returns nil for in-memory datastore).
+func (d *InMemoryDatastore) Ping(retries uint, intervalInSeconds uint) error {
+	logger.Debug("Pinging %d times with %d interval", retries, intervalInSeconds)
 	return nil
 }
 
-// Close Datastore and free resources
-func (dbs *InMemoryDatastore) Close() error {
+// Close closes the datastore connection (no-op for in-memory datastore).
+func (d *InMemoryDatastore) Close() error {
 	logger.Debug("In memory datastore closed")
 	return nil
 }
 
-// CloneDatastore Returns a clone (copy) of the instance
-func (dbs *InMemoryDatastore) CloneDatastore() (IDatastore, error) {
-	return dbs, nil
+// CloneDatastore creates a copy of the current datastore instance.
+func (d *InMemoryDatastore) CloneDatastore() (IDatastore, error) {
+	return &InMemoryDatastore{
+		Db: d.Db,
+	}, nil
 }
 
-//endregion
+// endregion
 
-// region Datastore Basic CRUD methods ----------------------------------------------------------------------------
+// region Datastore Basic CRUD methods ---------------------------------------------------------------------------------
 
-// Get a single entity by ID
-func (dbs *InMemoryDatastore) Get(factory EntityFactory, entityID string, keys ...string) (result Entity, err error) {
-
+// Get retrieves a single entity by its ID.
+func (d *InMemoryDatastore) Get(factory EntityFactory, entityID string, keys ...string) (result Entity, err error) {
 	entity := factory()
-	index := indexName(entity.TABLE(), keys...)
-	if tbl, ok := dbs.db[index]; ok {
-		return tbl.Get(entityID)
+	tableName := d.resolveTableName(entity, keys...)
+	if table, ok := d.Db[tableName]; ok {
+		return table.Get(entityID)
 	} else {
-		return nil, fmt.Errorf(INDEX_NOT_EXISTS)
+		return nil, fmt.Errorf("collection not found: %s", tableName)
 	}
 }
 
-// List gets multiple entities by IDs
-func (dbs *InMemoryDatastore) List(factory EntityFactory, entityIDs []string, keys ...string) (list []Entity, err error) {
-
-	index := indexName(factory().TABLE(), keys...)
+// List retrieves a list of entities by their IDs.
+func (d *InMemoryDatastore) List(factory EntityFactory, entityIDs []string, keys ...string) (list []Entity, err error) {
+	entity := factory()
+	tableName := d.resolveTableName(entity, keys...)
 
 	list = make([]Entity, 0)
 
-	if tbl, ok := dbs.db[index]; ok {
+	if table, ok := d.Db[tableName]; ok {
 		for _, id := range entityIDs {
-			if ent, err := tbl.Get(id); err == nil {
+			if ent, err := table.Get(id); err == nil {
 				list = append(list, ent)
 			}
 		}
 	} else {
-		return list, fmt.Errorf(INDEX_NOT_EXISTS)
+		return list, fmt.Errorf("collection not found: %s", tableName)
 	}
 	return
 }
 
-// Exists checks if entity exists by ID
-func (dbs *InMemoryDatastore) Exists(factory EntityFactory, entityID string, keys ...string) (result bool, err error) {
+// Exists checks if an entity exists by its ID.
+func (d *InMemoryDatastore) Exists(factory EntityFactory, entityID string, keys ...string) (result bool, err error) {
+	entity := factory()
+	tableName := d.resolveTableName(entity, keys...)
+	if table, ok := d.Db[tableName]; ok {
+		if _, err := table.Get(entityID); err == nil {
+			return true, nil
+		}
+	}
+	return false, nil
+}
 
-	index := indexName(factory().TABLE(), keys...)
+// Insert inserts a new entity into the datastore.
+func (d *InMemoryDatastore) Insert(entity Entity) (added Entity, err error) {
+	tableName := d.resolveTableName(entity, entity.KEY())
+	if _, ok := d.Db[tableName]; !ok {
+		d.Db[tableName] = NewInMemTable()
+	}
+	return d.Db[tableName].Insert(entity)
+}
 
-	if tbl, ok := dbs.db[index]; ok {
-		return tbl.Exists(entityID)
+// Update updates an existing entity in the datastore.
+func (d *InMemoryDatastore) Update(entity Entity) (updated Entity, err error) {
+	tableName := d.resolveTableName(entity, entity.KEY())
+	if table, ok := d.Db[tableName]; ok {
+		return table.Update(entity)
 	} else {
-		return false, fmt.Errorf(INDEX_NOT_EXISTS)
+		return nil, fmt.Errorf("collection not found: %s", tableName)
 	}
 }
 
-// Insert a new entity
-func (dbs *InMemoryDatastore) Insert(entity Entity) (added Entity, err error) {
-
-	index := indexName(entity.TABLE(), entity.KEY())
-
-	if _, ok := dbs.db[index]; !ok {
-		dbs.db[index] = NewInMemTable()
+// Upsert inserts or updates an entity in the datastore.
+func (d *InMemoryDatastore) Upsert(entity Entity) (updated Entity, err error) {
+	tableName := d.resolveTableName(entity, entity.KEY())
+	if _, ok := d.Db[tableName]; !ok {
+		d.Db[tableName] = NewInMemTable()
 	}
-
-	return dbs.db[index].Insert(entity)
-}
-
-// Update an existing entity
-func (dbs *InMemoryDatastore) Update(entity Entity) (updated Entity, err error) {
-	index := indexName(entity.TABLE(), entity.KEY())
-
-	if _, ok := dbs.db[index]; !ok {
-		dbs.db[index] = NewInMemTable()
-	}
-
-	return dbs.db[index].Update(entity)
-}
-
-// Upsert update entity or create it if it does not exist
-func (dbs *InMemoryDatastore) Upsert(entity Entity) (updated Entity, err error) {
-	index := indexName(entity.TABLE(), entity.KEY())
-	if tbl, ok := dbs.db[index]; ok {
-		return tbl.Upsert(entity)
+	if _, err := d.Db[tableName].Get(entity.ID()); err == nil {
+		return d.Db[tableName].Update(entity)
 	} else {
-		return nil, fmt.Errorf(INDEX_NOT_EXISTS)
+		return d.Db[tableName].Insert(entity)
 	}
 }
 
-// Delete entity by id and shard (key)
-func (dbs *InMemoryDatastore) Delete(factory EntityFactory, entityID string, keys ...string) (err error) {
-	index := indexName(factory().TABLE(), keys...)
-	if tbl, ok := dbs.db[index]; ok {
-		return tbl.Delete(entityID)
+// Delete deletes an entity from the datastore by its ID.
+func (d *InMemoryDatastore) Delete(factory EntityFactory, entityID string, keys ...string) (err error) {
+	entity := factory()
+	tableName := d.resolveTableName(entity, keys...)
+	if table, ok := d.Db[tableName]; ok {
+		return table.Delete(entityID)
 	} else {
-		return fmt.Errorf(INDEX_NOT_EXISTS)
+		return fmt.Errorf("collection not found: %s", tableName)
 	}
 }
 
-// BulkInsert inserts multiple entities
-func (dbs *InMemoryDatastore) BulkInsert(entities []Entity) (affected int64, err error) {
+// BulkInsert inserts multiple entities into the datastore.
+func (d *InMemoryDatastore) BulkInsert(entities []Entity) (affected int64, err error) {
 	if len(entities) == 0 {
 		return 0, nil
 	}
 	for _, ent := range entities {
-		if _, err := dbs.Insert(ent); err == nil {
+		if _, err := d.Insert(ent); err == nil {
 			affected += 1
 		}
 	}
 	return affected, nil
 }
 
-// BulkUpdate updates multiple entities
-func (dbs *InMemoryDatastore) BulkUpdate(entities []Entity) (affected int64, err error) {
+// BulkUpdate updates multiple entities in the datastore.
+func (d *InMemoryDatastore) BulkUpdate(entities []Entity) (affected int64, err error) {
 	if len(entities) == 0 {
 		return 0, nil
 	}
 	for _, ent := range entities {
-		if _, err := dbs.Update(ent); err == nil {
+		if _, err := d.Update(ent); err == nil {
 			affected += 1
 		}
 	}
 	return affected, nil
 }
 
-// BulkUpsert update or insert multiple entities
-func (dbs *InMemoryDatastore) BulkUpsert(entities []Entity) (affected int64, err error) {
+// BulkUpsert inserts or updates multiple entities in the datastore.
+func (d *InMemoryDatastore) BulkUpsert(entities []Entity) (affected int64, err error) {
 	if len(entities) == 0 {
 		return 0, nil
 	}
 	for _, ent := range entities {
-		if _, err := dbs.Upsert(ent); err == nil {
+		if _, err := d.Upsert(ent); err == nil {
 			affected += 1
 		}
 	}
 	return affected, nil
 }
 
-// BulkDelete delete multiple entities by IDs
-func (dbs *InMemoryDatastore) BulkDelete(factory EntityFactory, entityIDs []string, keys ...string) (affected int64, err error) {
+// BulkDelete deletes multiple entities from the datastore by their IDs.
+func (d *InMemoryDatastore) BulkDelete(factory EntityFactory, entityIDs []string, keys ...string) (affected int64, err error) {
 	if len(entityIDs) == 0 {
 		return 0, nil
 	}
 	for _, entityID := range entityIDs {
-		if err := dbs.Delete(factory, entityID, keys...); err == nil {
+		if err := d.Delete(factory, entityID, keys...); err == nil {
 			affected += 1
 		}
 	}
 	return affected, nil
 }
 
-// SetField update a single field of the document in a single transaction (eliminates the need to fetch - change - update)
-func (dbs *InMemoryDatastore) SetField(factory EntityFactory, entityID string, field string, value any, keys ...string) (err error) {
+// SetField updates a single field of an entity.
+func (d *InMemoryDatastore) SetField(factory EntityFactory, entityID string, field string, value any, keys ...string) (err error) {
 	fields := make(map[string]any)
 	fields[field] = value
-	return dbs.SetFields(factory, entityID, fields, keys...)
+	return d.SetFields(factory, entityID, fields, keys...)
 }
 
-// SetFields update some fields of the document in a single transaction (eliminates the need to fetch - change - update)
-func (dbs *InMemoryDatastore) SetFields(factory EntityFactory, entityID string, fields map[string]any, keys ...string) (err error) {
-
-	entity, fe := dbs.Get(factory, entityID, keys...)
+// SetFields updates multiple fields of an entity.
+func (d *InMemoryDatastore) SetFields(factory EntityFactory, entityID string, fields map[string]any, keys ...string) (err error) {
+	entity, fe := d.Get(factory, entityID, keys...)
 	if fe != nil {
 		return fe
 	}
@@ -252,15 +232,13 @@ func (dbs *InMemoryDatastore) SetFields(factory EntityFactory, entityID string, 
 		return fe
 	}
 
-	_, fe = dbs.Update(toSet)
+	_, fe = d.Update(toSet)
 	return fe
 }
 
-// BulkSetFields Update specific field of multiple entities in a single transaction (eliminates the need to fetch - change - update)
-// The field is the name of the field, values is a map of entityId -> field value
-func (dbs *InMemoryDatastore) BulkSetFields(factory EntityFactory, field string, values map[string]any, keys ...string) (affected int64, error error) {
-
-	list, _, fe := dbs.Query(factory).Find(keys...)
+// BulkSetFields updates a specific field of multiple entities in a single transaction.
+func (d *InMemoryDatastore) BulkSetFields(factory EntityFactory, field string, values map[string]any, keys ...string) (affected int64, error error) {
+	list, _, fe := d.Query(factory).Find(keys...)
 	if fe != nil {
 		return 0, fe
 	}
@@ -278,20 +256,19 @@ func (dbs *InMemoryDatastore) BulkSetFields(factory EntityFactory, field string,
 			js[field] = val
 
 			if toSet, _ := utils.JsonUtils().FromJson(factory, js); toSet != nil {
-				if _, er := dbs.Update(toSet); er == nil {
+				if _, er := d.Update(toSet); er == nil {
 					count += 1
 				}
-
 			}
 		}
 	}
 	return int64(count), nil
 }
 
-// Query is a factory method for query builder Utility
-func (dbs *InMemoryDatastore) Query(factory EntityFactory) IQuery {
+// Query creates a new query builder for the specified entity factory.
+func (d *InMemoryDatastore) Query(factory EntityFactory) IQuery {
 	return &inMemoryDatastoreQuery{
-		db:         dbs,
+		db:         d,
 		factory:    factory,
 		allFilters: make([][]QueryFilter, 0),
 		anyFilters: make([][]QueryFilter, 0),
@@ -308,39 +285,36 @@ func (dbs *InMemoryDatastore) Query(factory EntityFactory) IQuery {
 // region Datastore Index methods --------------------------------------------------------------------------------------
 
 // IndexExists tests if index exists
-func (dbs *InMemoryDatastore) IndexExists(indexName string) (exists bool) {
-	if _, ok := dbs.db[indexName]; ok {
+func (d *InMemoryDatastore) IndexExists(indexName string) (exists bool) {
+	if _, ok := d.Db[indexName]; ok {
 		return true
 	} else {
 		return false
 	}
 }
 
-// CreateIndex creates an index (without mapping)
-func (dbs *InMemoryDatastore) CreateIndex(indexName string) (name string, err error) {
+// CreateIndex creates an index on the specified fields (no-op for in-memory datastore).
+func (d *InMemoryDatastore) CreateIndex(indexName string) (name string, err error) {
 	// Create index
-	if _, ok := dbs.db[indexName]; !ok {
-		dbs.db[indexName] = &InMemoryTable{DbTable: make(map[string]Entity)}
+	if _, ok := d.Db[indexName]; !ok {
+		d.Db[indexName] = &InMemoryTable{DbTable: make(map[string]Entity)}
 	}
 	return indexName, nil
 }
 
-// CreateEntityIndex creates an index of entity and add entity field mapping
-func (dbs *InMemoryDatastore) CreateEntityIndex(factory EntityFactory, key string) (name string, err error) {
-
-	idxName := indexName(factory().TABLE(), key)
-
-	// Create index
-	if _, ok := dbs.db[idxName]; !ok {
-		dbs.db[idxName] = NewInMemTable()
+// CreateEntityIndex creates an index for the entity (no-op for in-memory datastore).
+func (d *InMemoryDatastore) CreateEntityIndex(factory EntityFactory, key string) (name string, err error) {
+	idxName := d.resolveTableName(factory(), key)
+	if _, ok := d.Db[idxName]; !ok {
+		d.Db[idxName] = NewInMemTable()
 	}
 	return idxName, nil
 }
 
-// ListIndices returns a list of all indices matching the pattern
-func (dbs *InMemoryDatastore) ListIndices(pattern string) (map[string]int, error) {
+// ListIndices retrieves a list of existing indices (returns empty list for in-memory datastore).
+func (d *InMemoryDatastore) ListIndices(pattern string) (map[string]int, error) {
 	result := make(map[string]int)
-	for name, table := range dbs.db {
+	for name, table := range d.Db {
 		if strings.Contains(name, pattern) {
 			result[name] = len(table.Table())
 		}
@@ -348,20 +322,29 @@ func (dbs *InMemoryDatastore) ListIndices(pattern string) (map[string]int, error
 	return result, nil
 }
 
-// DropIndex drops an index
-func (dbs *InMemoryDatastore) DropIndex(indexName string) (ack bool, err error) {
-
-	if _, ok := dbs.db[indexName]; !ok {
+// DropIndex drops an index (no-op for in-memory datastore).
+func (d *InMemoryDatastore) DropIndex(indexName string) (ack bool, err error) {
+	if _, ok := d.Db[indexName]; !ok {
 		return false, nil
 	} else {
-		delete(dbs.db, indexName)
+		delete(d.Db, indexName)
 		return true, nil
 	}
 }
 
-// ExecuteQuery Execute native KQL query
-func (dbs *InMemoryDatastore) ExecuteQuery(source string, query string, args ...any) ([]Json, error) {
+// PurgeIndex removes all data from an index (truncate).
+func (d *InMemoryDatastore) PurgeIndex(indexName string) (ack bool, err error) {
+	if _, ok := d.Db[indexName]; !ok {
+		return false, nil
+	} else {
+		delete(d.Db, indexName)
+		return true, nil
+	}
+}
+
+// ExecuteQuery executes a native query (not implemented).
+func (d *InMemoryDatastore) ExecuteQuery(source string, query string, args ...any) ([]Json, error) {
 	return nil, fmt.Errorf("not yet implemented")
 }
 
-//endregion
+// endregion

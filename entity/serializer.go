@@ -27,22 +27,21 @@ import (
 //	}
 //}
 
-// Marshal returns the JSON encoding of v
+// Marshal returns the JSON encoding of v.
+// It is a wrapper around json.Marshal.
 func Marshal(v any) ([]byte, error) {
 	return json.Marshal(&v)
 }
 
-// Unmarshal returns the struct from JSON byte array
+// Unmarshal parses the JSON-encoded data and stores the result in the value pointed to by v.
+// It is a wrapper around json.Unmarshal.
 func Unmarshal(data []byte, v any) error {
 	return json.Unmarshal(data, v)
 }
 
-// UnmarshalFromString returns the struct from JSON string
-//func UnmarshalFromString(data string, v any) error {
-//	return fastjson.UnmarshalFromString(data, v)
-//}
-
-// JsonMarshal convert any type to a map of string->any
+// JsonMarshal converts any Go value to a generic Json map (map[string]any).
+// It first marshals the value to JSON bytes, then unmarshals it back into a map.
+// This is useful for converting structs to maps.
 func JsonMarshal(v any) (Json, error) {
 	bytes, err := json.Marshal(&v)
 	if err != nil {
@@ -57,7 +56,8 @@ func JsonMarshal(v any) (Json, error) {
 	}
 }
 
-// JsonUnmarshal convert map of string->any to entity
+// JsonUnmarshal converts a generic Json map (map[string]any) to a specific Go value.
+// It first marshals the map to JSON bytes, then unmarshals it into the target value.
 func JsonUnmarshal(data Json, v any) error {
 	bytes, err := json.Marshal(&data)
 	if err != nil {

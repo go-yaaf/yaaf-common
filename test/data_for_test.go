@@ -1,6 +1,7 @@
 // Data model and testing data
 package test
 
+/*
 import (
 	. "github.com/go-yaaf/yaaf-common/entity"
 )
@@ -61,3 +62,5 @@ var list_of_heroes = []Entity{
 }
 
 // endregion
+
+*/

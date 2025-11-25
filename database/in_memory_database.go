@@ -22,14 +22,21 @@ const (
 
 // region Database store definitions -----------------------------------------------------------------------------------
 
-// InMemoryDatabase represents in memory database with tables
+// InMemoryDatabase represents an in-memory database implementation using maps.
+// It implements the IDatabase interface and is primarily used for testing and development.
 type InMemoryDatabase struct {
-	Db map[string]ITable `json:"db"` // Database
+	Db map[string]ITable `json:"db"` // Db is a map of table names to ITable instances.
 }
 
-// Resolve DbTable name from entity class name and shard keys
-func tableName(table string, keys ...string) (tblName string) {
+// resolveTableName determines the table name for a given entity.
+// It handles shard keys and template replacements (e.g., {{year}}, {{month}}).
+func (d *InMemoryDatabase) resolveTableName(entity Entity, keys ...string) string {
+	return tableName(entity.TABLE(), keys...)
+}
 
+// tableName resolves the table name from entity class name and shard keys.
+// It is a package-level helper used by other in-memory components.
+func tableName(table string, keys ...string) (tblName string) {
 	tblName = table
 
 	if len(keys) == 0 {
@@ -50,65 +57,64 @@ func tableName(table string, keys ...string) (tblName string) {
 	// Replace templates: {{month}}
 	tblName = strings.Replace(tblName, "{{month}}", time.Now().Format("01"), -1)
 
-	// TODO: Replace templates: {{week}}
-
-	return
+	return tblName
 }
 
 // endregion
 
 // region Factory and connectivity methods for Database ----------------------------------------------------------------
 
-// NewInMemoryDatabase Factory method for database
-func NewInMemoryDatabase() (dbs IDatabase, err error) {
-	return &InMemoryDatabase{Db: make(map[string]ITable)}, nil
+// NewInMemoryDatabase creates a new instance of InMemoryDatabase.
+func NewInMemoryDatabase() (IDatabase, error) {
+	return &InMemoryDatabase{
+		Db: make(map[string]ITable),
+	}, nil
 }
 
-// Ping Test database connectivity
-// @param retries - how many retries are required (max 10)
-// @param interval - time interval (in seconds) between retries (max 60)
-func (dbs *InMemoryDatabase) Ping(retries uint, interval uint) error {
+// Ping tests the database connectivity (always returns nil for in-memory database).
+func (d *InMemoryDatabase) Ping(retries uint, intervalInSeconds uint) error {
 	return nil
 }
 
-// Close DB and free resources
-func (dbs *InMemoryDatabase) Close() error {
+// Close closes the database connection (no-op for in-memory database).
+func (d *InMemoryDatabase) Close() error {
 	logger.Debug("In memory database closed")
 	return nil
 }
 
-// CloneDatabase Returns a clone (copy) of the database instance
-func (dbs *InMemoryDatabase) CloneDatabase() (IDatabase, error) {
-	return dbs, nil
+// CloneDatabase creates a copy of the current database instance.
+// Note: This performs a shallow copy of the database structure.
+func (d *InMemoryDatabase) CloneDatabase() (IDatabase, error) {
+	return &InMemoryDatabase{
+		Db: d.Db,
+	}, nil
 }
 
-//endregion
+// endregion
 
 // region Database store Basic CRUD methods ----------------------------------------------------------------------------
 
-// Get single entity by ID
-func (dbs *InMemoryDatabase) Get(factory EntityFactory, entityID string, keys ...string) (result Entity, err error) {
-
+// Get retrieves a single entity by its ID.
+func (d *InMemoryDatabase) Get(factory EntityFactory, entityID string, keys ...string) (result Entity, err error) {
 	entity := factory()
-	table := tableName(entity.TABLE(), keys...)
-	if tbl, ok := dbs.Db[table]; ok {
-		return tbl.Get(entityID)
+	tableName := d.resolveTableName(entity, keys...)
+	if table, ok := d.Db[tableName]; ok {
+		return table.Get(entityID)
 	} else {
-		return nil, fmt.Errorf(TABLE_NOT_EXISTS)
+		return nil, fmt.Errorf("table not found: %s", tableName)
 	}
 }
 
-// List get a list of entities by IDs
-func (dbs *InMemoryDatabase) List(factory EntityFactory, entityIDs []string, keys ...string) (list []Entity, err error) {
-
+// List retrieves a list of entities by their IDs.
+func (d *InMemoryDatabase) List(factory EntityFactory, entityIDs []string, keys ...string) (list []Entity, err error) {
 	entity := factory()
-	table := tableName(entity.TABLE(), keys...)
+	tableName := d.resolveTableName(entity, keys...)
 
 	list = make([]Entity, 0)
 
-	if tbl, ok := dbs.Db[table]; ok {
+	if table, ok := d.Db[tableName]; ok {
 		for _, id := range entityIDs {
-			if ent, err := tbl.Get(id); err == nil {
+			if ent, err := table.Get(id); err == nil {
 				list = append(list, ent)
 			}
 		}
@@ -118,126 +124,123 @@ func (dbs *InMemoryDatabase) List(factory EntityFactory, entityIDs []string, key
 	return
 }
 
-// Exists checks if entity exists by ID
-func (dbs *InMemoryDatabase) Exists(factory EntityFactory, entityID string, keys ...string) (result bool, err error) {
-
+// Exists checks if an entity exists by its ID.
+func (d *InMemoryDatabase) Exists(factory EntityFactory, entityID string, keys ...string) (result bool, err error) {
 	entity := factory()
-	table := tableName(entity.TABLE(), keys...)
+	tableName := d.resolveTableName(entity, keys...)
+	if table, ok := d.Db[tableName]; ok {
+		if _, err := table.Get(entityID); err == nil {
+			return true, nil
+		}
+	}
+	return false, nil
+}
 
-	if tbl, ok := dbs.Db[table]; ok {
-		return tbl.Exists(entityID)
+// Insert inserts a new entity into the database.
+func (d *InMemoryDatabase) Insert(entity Entity) (added Entity, err error) {
+	tableName := d.resolveTableName(entity, entity.KEY())
+	if _, ok := d.Db[tableName]; !ok {
+		d.Db[tableName] = NewInMemTable()
+	}
+	return d.Db[tableName].Insert(entity)
+}
+
+// Update updates an existing entity in the database.
+func (d *InMemoryDatabase) Update(entity Entity) (updated Entity, err error) {
+	tableName := d.resolveTableName(entity, entity.KEY())
+	if table, ok := d.Db[tableName]; ok {
+		return table.Update(entity)
 	} else {
-		return false, fmt.Errorf(TABLE_NOT_EXISTS)
+		return nil, fmt.Errorf("table not found: %s", tableName)
 	}
 }
 
-// Insert Add new entity
-func (dbs *InMemoryDatabase) Insert(entity Entity) (added Entity, err error) {
-
-	table := tableName(entity.TABLE(), entity.KEY())
-
-	if _, ok := dbs.Db[table]; !ok {
-		dbs.Db[table] = NewInMemTable()
+// Upsert inserts or updates an entity in the database.
+func (d *InMemoryDatabase) Upsert(entity Entity) (updated Entity, err error) {
+	tableName := d.resolveTableName(entity, entity.KEY())
+	if _, ok := d.Db[tableName]; !ok {
+		d.Db[tableName] = NewInMemTable()
 	}
-	return dbs.Db[table].Insert(entity)
-}
-
-// Update existing entity in the data store
-func (dbs *InMemoryDatabase) Update(entity Entity) (updated Entity, err error) {
-	table := tableName(entity.TABLE(), entity.KEY())
-
-	if _, ok := dbs.Db[table]; !ok {
-		dbs.Db[table] = NewInMemTable()
-	}
-	return dbs.Db[table].Update(entity)
-}
-
-// Upsert updates existing entity in the data store or add it if it does not exist
-func (dbs *InMemoryDatabase) Upsert(entity Entity) (updated Entity, err error) {
-	table := tableName(entity.TABLE(), entity.KEY())
-	if tbl, ok := dbs.Db[table]; ok {
-		return tbl.Upsert(entity)
+	if _, err := d.Db[tableName].Get(entity.ID()); err == nil {
+		return d.Db[tableName].Update(entity)
 	} else {
-		return nil, fmt.Errorf(TABLE_NOT_EXISTS)
+		return d.Db[tableName].Insert(entity)
 	}
 }
 
-// Delete entity by id
-func (dbs *InMemoryDatabase) Delete(factory EntityFactory, entityID string, keys ...string) (err error) {
-
+// Delete deletes an entity from the database by its ID.
+func (d *InMemoryDatabase) Delete(factory EntityFactory, entityID string, keys ...string) (err error) {
 	entity := factory()
-
-	table := tableName(entity.TABLE(), keys...)
-	if tbl, ok := dbs.Db[table]; ok {
-		return tbl.Delete(entityID)
+	tableName := d.resolveTableName(entity, keys...)
+	if table, ok := d.Db[tableName]; ok {
+		return table.Delete(entityID)
 	} else {
-		return fmt.Errorf(TABLE_NOT_EXISTS)
+		return fmt.Errorf("table not found: %s", tableName)
 	}
 }
 
-// BulkInsert adds multiple entities to data store (all must be of the same type)
-func (dbs *InMemoryDatabase) BulkInsert(entities []Entity) (affected int64, err error) {
+// BulkInsert inserts multiple entities into the database.
+func (d *InMemoryDatabase) BulkInsert(entities []Entity) (affected int64, err error) {
 	if len(entities) == 0 {
 		return 0, nil
 	}
 	for _, ent := range entities {
-		if _, err := dbs.Insert(ent); err == nil {
+		if _, err := d.Insert(ent); err == nil {
 			affected += 1
 		}
 	}
 	return affected, nil
 }
 
-// BulkUpdate updates multiple entities in the data store (all must be of the same type)
-func (dbs *InMemoryDatabase) BulkUpdate(entities []Entity) (affected int64, err error) {
+// BulkUpdate updates multiple entities in the database.
+func (d *InMemoryDatabase) BulkUpdate(entities []Entity) (affected int64, err error) {
 	if len(entities) == 0 {
 		return 0, nil
 	}
 	for _, ent := range entities {
-		if _, err := dbs.Update(ent); err == nil {
+		if _, err := d.Update(ent); err == nil {
 			affected += 1
 		}
 	}
 	return affected, nil
 }
 
-// BulkUpsert update or insert multiple entities in the data store (all must be of the same type)
-func (dbs *InMemoryDatabase) BulkUpsert(entities []Entity) (affected int64, err error) {
+// BulkUpsert inserts or updates multiple entities in the database.
+func (d *InMemoryDatabase) BulkUpsert(entities []Entity) (affected int64, err error) {
 	if len(entities) == 0 {
 		return 0, nil
 	}
 	for _, ent := range entities {
-		if _, err := dbs.Upsert(ent); err == nil {
+		if _, err := d.Upsert(ent); err == nil {
 			affected += 1
 		}
 	}
 	return affected, nil
 }
 
-// BulkDelete delete multiple entities by id list
-func (dbs *InMemoryDatabase) BulkDelete(factory EntityFactory, entityIDs []string, keys ...string) (affected int64, err error) {
+// BulkDelete deletes multiple entities from the database by their IDs.
+func (d *InMemoryDatabase) BulkDelete(factory EntityFactory, entityIDs []string, keys ...string) (affected int64, err error) {
 	if len(entityIDs) == 0 {
 		return 0, nil
 	}
 	for _, entityID := range entityIDs {
-		if err := dbs.Delete(factory, entityID, keys...); err == nil {
+		if err := d.Delete(factory, entityID, keys...); err == nil {
 			affected += 1
 		}
 	}
 	return affected, nil
 }
 
-// SetField updates single field of the document in a single transaction (eliminates the need to fetch - change - update)
-func (dbs *InMemoryDatabase) SetField(factory EntityFactory, entityID string, field string, value any, keys ...string) (err error) {
+// SetField updates a single field of an entity.
+func (d *InMemoryDatabase) SetField(factory EntityFactory, entityID string, field string, value any, keys ...string) (err error) {
 	fields := make(map[string]any)
 	fields[field] = value
-	return dbs.SetFields(factory, entityID, fields, keys...)
+	return d.SetFields(factory, entityID, fields, keys...)
 }
 
-// SetFields Updates some numeric fields of the document in a single transaction (eliminates the need to fetch - change - update)
-func (dbs *InMemoryDatabase) SetFields(factory EntityFactory, entityID string, fields map[string]any, keys ...string) (err error) {
-
-	entity, fe := dbs.Get(factory, entityID, keys...)
+// SetFields updates multiple fields of an entity.
+func (d *InMemoryDatabase) SetFields(factory EntityFactory, entityID string, fields map[string]any, keys ...string) (err error) {
+	entity, fe := d.Get(factory, entityID, keys...)
 	if fe != nil {
 		return fe
 	}
@@ -258,15 +261,13 @@ func (dbs *InMemoryDatabase) SetFields(factory EntityFactory, entityID string, f
 		return fe
 	}
 
-	_, fe = dbs.Update(toSet)
+	_, fe = d.Update(toSet)
 	return fe
 }
 
-// BulkSetFields Update specific field of multiple entities in a single transaction (eliminates the need to fetch - change - update)
-// The field is the name of the field, values is a map of entityId -> field value
-func (dbs *InMemoryDatabase) BulkSetFields(factory EntityFactory, field string, values map[string]any, keys ...string) (affected int64, error error) {
-
-	list, _, fe := dbs.Query(factory).Find(keys...)
+// BulkSetFields updates a specific field of multiple entities in a single transaction.
+func (d *InMemoryDatabase) BulkSetFields(factory EntityFactory, field string, values map[string]any, keys ...string) (affected int64, error error) {
+	list, _, fe := d.Query(factory).Find(keys...)
 	if fe != nil {
 		return 0, fe
 	}
@@ -284,20 +285,19 @@ func (dbs *InMemoryDatabase) BulkSetFields(factory EntityFactory, field string, 
 			js[field] = val
 
 			if toSet, _ := utils.JsonUtils().FromJson(factory, js); toSet != nil {
-				if _, er := dbs.Update(toSet); er == nil {
+				if _, er := d.Update(toSet); er == nil {
 					count += 1
 				}
-
 			}
 		}
 	}
 	return int64(count), nil
 }
 
-// Query is a builder method to construct query
-func (dbs *InMemoryDatabase) Query(factory EntityFactory) IQuery {
+// Query creates a new query builder for the specified entity factory.
+func (d *InMemoryDatabase) Query(factory EntityFactory) IQuery {
 	return &inMemoryDatabaseQuery{
-		db:         dbs,
+		db:         d,
 		factory:    factory,
 		allFilters: make([][]QueryFilter, 0),
 		anyFilters: make([][]QueryFilter, 0),
@@ -309,7 +309,8 @@ func (dbs *InMemoryDatabase) Query(factory EntityFactory) IQuery {
 	}
 }
 
-func (dbs *InMemoryDatabase) AdvancedQuery(factory EntityFactory) IAdvancedQuery {
+// AdvancedQuery creates a new advanced query builder (not implemented).
+func (d *InMemoryDatabase) AdvancedQuery(factory EntityFactory) IAdvancedQuery {
 	panic("InMemoryDatabase: IAdvancedQuery is not implemented/supported")
 }
 
@@ -317,39 +318,38 @@ func (dbs *InMemoryDatabase) AdvancedQuery(factory EntityFactory) IAdvancedQuery
 
 // region Database DDL and DML -----------------------------------------------------------------------------------------
 
-// ExecuteDDL create DbTable and indexes
-// The ddl parameter is a map of strings (DbTable names) to array of strings (list of fields to index)
-func (dbs *InMemoryDatabase) ExecuteDDL(ddl map[string][]string) (err error) {
-
+// ExecuteDDL executes a Data Definition Language (DDL) query.
+// The ddl parameter is a map of strings (table names) to array of strings (list of fields to index).
+func (d *InMemoryDatabase) ExecuteDDL(ddl map[string][]string) (err error) {
 	for table, fields := range ddl {
 		logger.Debug("Creating DbTable: %s with fields indexes: %s", table, strings.Join(fields, ","))
 
-		if _, ok := dbs.Db[table]; !ok {
-			dbs.Db[table] = &InMemoryTable{DbTable: make(map[string]Entity)}
+		if _, ok := d.Db[table]; !ok {
+			d.Db[table] = &InMemoryTable{DbTable: make(map[string]Entity)}
 		}
 	}
 	return nil
 }
 
-// ExecuteSQL execute raw SQL command
-func (dbs *InMemoryDatabase) ExecuteSQL(sql string, args ...any) (affected int64, err error) {
+// ExecuteSQL executes a raw SQL query (not supported).
+func (d *InMemoryDatabase) ExecuteSQL(sql string, args ...any) (affected int64, err error) {
 	return 0, fmt.Errorf(NOT_SUPPORTED)
 }
 
-// ExecuteQuery Execute native SQL query
-func (dbs *InMemoryDatabase) ExecuteQuery(source, sql string, args ...any) ([]Json, error) {
+// ExecuteQuery executes a native SQL query (not supported).
+func (d *InMemoryDatabase) ExecuteQuery(source, sql string, args ...any) ([]Json, error) {
 	return nil, fmt.Errorf(NOT_SUPPORTED)
 }
 
-// DropTable drop a DbTable and its related indexes
-func (dbs *InMemoryDatabase) DropTable(table string) (err error) {
-	delete(dbs.Db, table)
+// DropTable drops a table and its related indexes.
+func (d *InMemoryDatabase) DropTable(table string) (err error) {
+	delete(d.Db, table)
 	return nil
 }
 
-// PurgeTable fast delete DbTable content (truncate)
-func (dbs *InMemoryDatabase) PurgeTable(table string) (err error) {
-	delete(dbs.Db, table)
+// PurgeTable removes all data from a table (truncate).
+func (d *InMemoryDatabase) PurgeTable(table string) (err error) {
+	delete(d.Db, table)
 	return nil
 }
 
@@ -359,30 +359,26 @@ func (dbs *InMemoryDatabase) PurgeTable(table string) (err error) {
 
 // TODO: Restore is not working properly since table holds Entity interface pointers
 
-// Backup database to a file
-// @param path - file path to back up
-func (dbs *InMemoryDatabase) Backup(path string) error {
+// Backup creates a backup of the database to a file.
+func (d *InMemoryDatabase) Backup(path string) error {
 	if strings.HasSuffix(path, ".json") {
-		return dbs.backupJson(path)
+		return d.backupJson(path)
 	} else {
-		return dbs.backupBinary(path)
+		return d.backupBinary(path)
 	}
 }
 
-// Restore database from file
-// @param path - file path to restore
-func (dbs *InMemoryDatabase) Restore(path string) error {
+// Restore restores the database from a backup file.
+func (d *InMemoryDatabase) Restore(path string) error {
 	if strings.HasSuffix(path, ".json") {
-		return dbs.restoreJson(path)
+		return d.restoreJson(path)
 	} else {
-		return dbs.restoreBinary(path)
+		return d.restoreBinary(path)
 	}
 }
 
-// Backup database to a file in Json format
-// @param path - file path to back up
-func (dbs *InMemoryDatabase) backupJson(path string) error {
-
+// backupJson backs up the database to a file in JSON format.
+func (d *InMemoryDatabase) backupJson(path string) error {
 	// Ensure path
 	folders := filepath.Dir(path)
 	if err := os.MkdirAll(folders, 0755); err != nil {
@@ -398,15 +394,13 @@ func (dbs *InMemoryDatabase) backupJson(path string) error {
 	enc := json.NewEncoder(file)
 	enc.SetIndent("", "  ")
 
-	err = enc.Encode(dbs.Db)
+	err = enc.Encode(d.Db)
 	_ = file.Close()
 	return err
 }
 
-// Backup database to a file in binary format
-// @param path - file path to back up
-func (dbs *InMemoryDatabase) backupBinary(path string) error {
-
+// backupBinary backs up the database to a file in binary format.
+func (d *InMemoryDatabase) backupBinary(path string) error {
 	// Ensure path
 	folders := filepath.Dir(path)
 	if err := os.MkdirAll(folders, 0755); err != nil {
@@ -420,14 +414,13 @@ func (dbs *InMemoryDatabase) backupBinary(path string) error {
 	}
 
 	enc := gob.NewEncoder(file)
-	err = enc.Encode(dbs.Db)
+	err = enc.Encode(d.Db)
 	_ = file.Close()
 	return err
 }
 
-// Restore database from file in Json format
-// @param path - file path to restore
-func (dbs *InMemoryDatabase) restoreJson(path string) error {
+// restoreJson restores the database from a JSON file.
+func (d *InMemoryDatabase) restoreJson(path string) error {
 	// open file
 	file, err := os.Open(path)
 	if err != nil {
@@ -442,9 +435,8 @@ func (dbs *InMemoryDatabase) restoreJson(path string) error {
 	return err
 }
 
-// Restore database from file in binary format
-// @param path - file path to restore
-func (dbs *InMemoryDatabase) restoreBinary(path string) error {
+// restoreBinary restores the database from a binary file.
+func (d *InMemoryDatabase) restoreBinary(path string) error {
 	// open file
 	file, err := os.Open(path)
 	if err != nil {
@@ -452,9 +444,9 @@ func (dbs *InMemoryDatabase) restoreBinary(path string) error {
 	}
 
 	dec := gob.NewDecoder(file)
-	err = dec.Decode(&dbs.Db)
+	err = dec.Decode(&d.Db)
 	_ = file.Close()
 	return err
 }
 
-//endregion
+// endregion

@@ -10,30 +10,31 @@ import (
 
 // region Docker configuration object ----------------------------------------------------------------------------------
 
-// DockerContainer is used to construct docker container spec for the docker engine.
+// DockerContainer provides a fluent API for configuring and managing a Docker container.
+// It simplifies the process of building and executing `docker` commands.
 type DockerContainer struct {
-	image      string            // Docker image
-	name       string            // Container name
-	ports      map[string]string // Container ports mapping
-	vars       map[string]string // Environment variables
-	labels     map[string]string // Container labels
-	entryPoint []string          // Entry point
-	autoRemove bool              // Automatically remove container when stopped (default: true)
+	image      string            // The Docker image to use for the container.
+	name       string            // The name to assign to the container.
+	ports      map[string]string // A map of port mappings from host to container (e.g., "8080:80").
+	vars       map[string]string // A map of environment variables to set in the container.
+	labels     map[string]string // A map of labels to apply to the container.
+	entryPoint []string          // The entrypoint command and arguments for the container.
+	autoRemove bool              // If true, the container will be automatically removed on exit.
 }
 
-// Name sets the container name.
+// Name sets the name of the container.
 func (c *DockerContainer) Name(value string) *DockerContainer {
 	c.name = value
 	return c
 }
 
-// Port adds a port mapping
+// Port adds a single port mapping to the container configuration.
 func (c *DockerContainer) Port(external, internal string) *DockerContainer {
 	c.ports[external] = internal
 	return c
 }
 
-// Ports adds multiple port mappings
+// Ports adds multiple port mappings to the container configuration.
 func (c *DockerContainer) Ports(ports map[string]string) *DockerContainer {
 	for k, v := range ports {
 		c.ports[k] = v
@@ -41,13 +42,13 @@ func (c *DockerContainer) Ports(ports map[string]string) *DockerContainer {
 	return c
 }
 
-// Var adds an environment variable
+// Var adds a single environment variable to the container configuration.
 func (c *DockerContainer) Var(key, value string) *DockerContainer {
 	c.vars[key] = value
 	return c
 }
 
-// Vars adds multiple environment variables
+// Vars adds multiple environment variables to the container configuration.
 func (c *DockerContainer) Vars(vars map[string]string) *DockerContainer {
 	for k, v := range vars {
 		c.vars[k] = v
@@ -55,159 +56,137 @@ func (c *DockerContainer) Vars(vars map[string]string) *DockerContainer {
 	return c
 }
 
-// Label adds custom label
+// Label adds a single label to the container configuration.
 func (c *DockerContainer) Label(label, value string) *DockerContainer {
 	c.labels[label] = value
 	return c
 }
 
-// Labels adds multiple labels
-func (c *DockerContainer) Labels(label map[string]string) *DockerContainer {
-	for k, v := range label {
+// Labels adds multiple labels to the container configuration.
+func (c *DockerContainer) Labels(labels map[string]string) *DockerContainer {
+	for k, v := range labels {
 		c.labels[k] = v
 	}
 	return c
 }
 
-// EntryPoint sets the entrypoint arguments of the container.
+// EntryPoint sets the entrypoint for the container.
 func (c *DockerContainer) EntryPoint(args ...string) *DockerContainer {
-	c.entryPoint = append(c.entryPoint, args...)
+	c.entryPoint = args
 	return c
 }
 
-// AutoRemove determines whether to automatically remove the container when it has stopped
+// AutoRemove sets whether the container should be automatically removed when it stops.
 func (c *DockerContainer) AutoRemove(value bool) *DockerContainer {
 	c.autoRemove = value
 	return c
 }
 
-// Run builds and run command
+// Run executes the `docker run` command based on the configured container settings.
+// If the container is already running, it does nothing.
 func (c *DockerContainer) Run() error {
-
 	if c.IsRunning() {
 		return nil
 	}
 
-	// construct the docker shell command
-	command := "docker"
-	args := make([]string, 0)
-	args = append(args, "run")
+	args := []string{"run", "-d"} // Run in detached mode.
 
-	if len(c.name) > 0 {
-		args = append(args, "--name")
-		args = append(args, c.name)
+	if c.autoRemove {
+		args = append(args, "--rm")
+	}
+	if c.name != "" {
+		args = append(args, "--name", c.name)
 	}
 
-	// Expose ports if defined, otherwise, use host network
-	if len(c.ports) > 0 {
-		for k, v := range c.ports {
-			args = append(args, "-p")
-			args = append(args, fmt.Sprintf("%s:%s", k, v))
+	for ext, in := range c.ports {
+		args = append(args, "-p", fmt.Sprintf("%s:%s", ext, in))
+	}
+
+	if len(c.ports) == 0 {
+		args = append(args, "-h", getMachineIP())
+	}
+
+	for k, v := range c.vars {
+		args = append(args, "-e", fmt.Sprintf("%s=%s", k, v))
+	}
+
+	for k, v := range c.labels {
+		args = append(args, "-l", fmt.Sprintf("%s=%s", k, v))
+	}
+
+	if c.image == "" {
+		return fmt.Errorf("docker image is not specified")
+	}
+	args = append(args, c.image)
+	args = append(args, c.entryPoint...)
+
+	cmd := exec.Command("docker", args...)
+	return cmd.Run()
+}
+
+// Stop stops and removes the container.
+func (c *DockerContainer) Stop() error {
+	if c.name == "" {
+		return fmt.Errorf("container name is not specified")
+	}
+
+	// Stop the container.
+	stopCmd := exec.Command("docker", "stop", c.name)
+	if err := stopCmd.Run(); err != nil {
+		// Ignore "No such container" errors, as the container might already be stopped.
+		if !strings.Contains(err.Error(), "No such container") {
+			return fmt.Errorf("failed to stop container %s: %w", c.name, err)
 		}
-	} else {
-		args = append(args, "-h")
-		args = append(args, getMachineIP())
 	}
 
-	// Add environment variables
-	if len(c.vars) > 0 {
-		for k, v := range c.vars {
-			args = append(args, "-e")
-			args = append(args, fmt.Sprintf("%s=%s", k, v))
+	// If auto-remove is not enabled, manually remove the container.
+	if !c.autoRemove {
+		rmCmd := exec.Command("docker", "rm", c.name)
+		if err := rmCmd.Run(); err != nil {
+			if !strings.Contains(err.Error(), "No such container") {
+				return fmt.Errorf("failed to remove container %s: %w", c.name, err)
+			}
 		}
 	}
-
-	// Add metadata (labels)
-	if len(c.labels) > 0 {
-		for k, v := range c.labels {
-			args = append(args, "-l")
-			args = append(args, fmt.Sprintf("%s=%s", k, v))
-		}
-	}
-
-	// Add docker image
-	if len(c.image) > 0 {
-		args = append(args, c.image)
-	} else {
-		return fmt.Errorf("missing image field")
-	}
-
-	// Add entry point
-	if len(c.entryPoint) > 0 {
-		for _, v := range c.entryPoint {
-			args = append(args, v)
-		}
-	}
-
-	cmd := exec.Command(command, args...)
-	go cmd.Run()
 	return nil
 }
 
-// Stop and kill container
-func (c *DockerContainer) Stop() error {
-	// construct the docker shell command
-	command := "docker"
-	args := make([]string, 0)
-	args = append(args, "stop")
-
-	if len(c.name) > 0 {
-		args = append(args, c.name)
-	} else {
-		return fmt.Errorf("missing container name")
-	}
-
-	cmd := exec.Command(command, args...)
-	if er := cmd.Run(); er != nil {
-		return er
-	}
-
-	args2 := make([]string, 0)
-	args2 = append(args2, "rm")
-	args2 = append(args2, c.name)
-
-	cmd2 := exec.Command(command, args2...)
-	return cmd2.Run()
-}
-
-// Exists return true if the container exists
+// Exists checks if a container with the configured name exists (either running or stopped).
 func (c *DockerContainer) Exists() bool {
-	cmd := fmt.Sprintf("docker ps -a | grep '%s'", c.name)
-	out, err := exec.Command("bash", "-c", cmd).Output()
-	if err != nil {
+	if c.name == "" {
 		return false
-	} else {
-		return strings.Contains(string(out), c.name)
 	}
+	cmd := exec.Command("docker", "ps", "-a", "--filter", fmt.Sprintf("name=%s", c.name))
+	out, err := cmd.Output()
+	return err == nil && strings.Contains(string(out), c.name)
 }
 
-// IsRunning return true if the container exists and running
+// IsRunning checks if a container with the configured name is currently running.
 func (c *DockerContainer) IsRunning() bool {
-	cmd := fmt.Sprintf(`docker ps -f "status=running" | grep '%s'`, c.name)
-	out, err := exec.Command("bash", "-c", cmd).Output()
-	if err != nil {
+	if c.name == "" {
 		return false
-	} else {
-		return strings.Contains(string(out), c.name)
 	}
+	cmd := exec.Command("docker", "ps", "--filter", fmt.Sprintf("name=%s", c.name), "--filter", "status=running")
+	out, err := cmd.Output()
+	return err == nil && strings.Contains(string(out), c.name)
 }
 
 // endregion
 
 // region Singleton Pattern --------------------------------------------------------------------------------------------
 
-type dockerUtils struct {
-}
+// dockerUtils is a singleton struct providing Docker utility functions.
+type dockerUtils struct{}
 
-var onlyOnce sync.Once
-var dockerUtilsSingleton *dockerUtils = nil
+var (
+	dockerUtilsSingleton *dockerUtils
+	once                 sync.Once
+)
 
-// DockerUtils is a simple utility to execute docker commands using shell
-// This utility does not us the docker client library (due to compatability issues) but instead utilizes
-// the shell command executor (from os/exec package).
-// The pre-requisite
-func DockerUtils() (du *dockerUtils) {
-	onlyOnce.Do(func() {
+// DockerUtils returns a singleton instance of the dockerUtils.
+// This utility uses shell commands to interact with Docker, avoiding direct dependency on the Docker client library.
+func DockerUtils() *dockerUtils {
+	once.Do(func() {
 		dockerUtilsSingleton = &dockerUtils{}
 	})
 	return dockerUtilsSingleton
@@ -217,81 +196,63 @@ func DockerUtils() (du *dockerUtils) {
 
 // region Docker utilities ---------------------------------------------------------------------------------------------
 
-// CreateContainer create a docker container configuration via a fluent interface.
+// CreateContainer creates a new DockerContainer configuration with the specified image.
 func (c *dockerUtils) CreateContainer(image string) *DockerContainer {
 	return &DockerContainer{
 		image:      image,
 		ports:      make(map[string]string),
 		vars:       make(map[string]string),
 		labels:     make(map[string]string),
-		entryPoint: make([]string, 0),
 		autoRemove: true,
 	}
 }
 
-// StopContainer stops and kill container
-func (c *dockerUtils) StopContainer(container string) error {
-
-	// Verify container
-	if len(container) == 0 {
-		return fmt.Errorf("missing container name")
+// StopContainer stops and removes a container by its name.
+func (c *dockerUtils) StopContainer(containerName string) error {
+	if containerName == "" {
+		return fmt.Errorf("container name is required")
 	}
 
-	// construct the docker stop shell command
-	command := "docker"
-	args := make([]string, 0)
-	args = append(args, "stop", container)
-	_ = exec.Command(command, args...).Run()
+	// Stop the container.
+	stopCmd := exec.Command("docker", "stop", containerName)
+	_ = stopCmd.Run() // Ignore error, as container might not be running.
 
-	// construct the docker rm shell command
-	args = nil
-	args = make([]string, 0)
-	args = append(args, "rm", container)
-	_ = exec.Command(command, args...).Run()
+	// Remove the container.
+	rmCmd := exec.Command("docker", "rm", containerName)
+	_ = rmCmd.Run() // Ignore error, as container might already be removed.
 
 	return nil
 }
 
-// ContainerExists return true if the container exists
-func (c *dockerUtils) ContainerExists(container string) bool {
-	cmd := fmt.Sprintf("docker ps -a | grep '%s'", container)
-	out, err := exec.Command("bash", "-c", cmd).Output()
-	if err != nil {
+// ContainerExists checks if a container with the given name exists.
+func (c *dockerUtils) ContainerExists(containerName string) bool {
+	if containerName == "" {
 		return false
-	} else {
-		return strings.Contains(string(out), container)
 	}
+	cmd := exec.Command("docker", "ps", "-a", "--filter", fmt.Sprintf("name=%s", containerName))
+	out, err := cmd.Output()
+	return err == nil && strings.Contains(string(out), containerName)
 }
 
 // endregion
 
 // region PRIVATE SECTION ----------------------------------------------------------------------------------------------
 
-// getMachineIP returns one of the IPv4 (which is not the localhost)
-func getMachineIP() (result string) {
+// getMachineIP returns a non-localhost IPv4 address of the machine.
+func getMachineIP() string {
+	addresses, err := net.InterfaceAddrs()
+	if err != nil {
+		return "127.0.0.1"
+	}
 
-	// Initialize with localhost
-	result = "127.0.0.1"
-	results := make([]string, 0)
-	results = append(results, result)
-
-	if interfaces, err := net.Interfaces(); err != nil {
-		return
-	} else {
-		for _, i := range interfaces {
-			if addresses, er := i.Addrs(); er == nil {
-				for _, addr := range addresses {
-					ip := addr.String()
-					if strings.Count(ip, ".") == 3 {
-						if idx := strings.Index(ip, "/"); idx > 0 {
-							results = append(results, ip[0:idx])
-						}
-					}
-				}
+	for _, addr := range addresses {
+		if ipNet, ok := addr.(*net.IPNet); ok && !ipNet.IP.IsLoopback() {
+			if ipNet.IP.To4() != nil {
+				return ipNet.IP.String()
 			}
 		}
 	}
-	return results[len(results)-1]
+	return "127.0.0.1"
 }
 
 // endregion

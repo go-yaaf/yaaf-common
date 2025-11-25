@@ -4,91 +4,92 @@ import "fmt"
 
 // region QueryFilter Interface ----------------------------------------------------------------------------------------
 
-// QueryFilter Query filter interface
+// QueryFilter defines the interface for building query filters.
+// It allows for constructing complex conditions for database queries.
 type QueryFilter interface {
 
-	// Eq - Equal
+	// Eq adds an "Equal" condition.
 	Eq(value any) QueryFilter
 
-	// Neq - Not equal
+	// Neq adds a "Not Equal" condition.
 	Neq(value any) QueryFilter
 
-	// Like - similar
+	// Like adds a "Like" condition (similar to SQL LIKE).
 	Like(value string) QueryFilter
 
-	// NotLike - not similar
+	// NotLike adds a "Not Like" condition.
 	NotLike(value string) QueryFilter
 
-	// Gt - Greater than
+	// Gt adds a "Greater Than" condition.
 	Gt(value any) QueryFilter
 
-	// Gte - Greater or equal
+	// Gte adds a "Greater Than or Equal" condition.
 	Gte(value any) QueryFilter
 
-	// Lt - Less than
+	// Lt adds a "Less Than" condition.
 	Lt(value any) QueryFilter
 
-	// Lte - Less or equal
+	// Lte adds a "Less Than or Equal" condition.
 	Lte(value any) QueryFilter
 
-	// In - match one of the values
+	// In adds an "In" condition (match one of the values).
 	In(values ...any) QueryFilter
 
-	// NotIn - Not In
+	// NotIn adds a "Not In" condition.
 	NotIn(values ...any) QueryFilter
 
-	// InSubQuery - match one of the values in the result of the sub query
+	// InSubQuery adds a condition to match values in the result of a sub-query.
 	InSubQuery(field string, subQuery IQuery) QueryFilter
 
-	// NotInSubQuery - exclude any record matching one of the values in the result of the sub query
+	// NotInSubQuery adds a condition to exclude values in the result of a sub-query.
 	NotInSubQuery(field string, subQuery IQuery) QueryFilter
 
-	// Between - equal or greater than the lower boundary and equal or less than the upper boundary
+	// Between adds a "Between" condition (inclusive).
 	Between(value1, value2 any) QueryFilter
 
-	// Contains - a field of type array contains the provided value
+	// Contains adds a condition to check if an array field contains the value.
 	Contains(value any) QueryFilter
 
-	// NotContains - a field of type array does not contain the provided value
+	// NotContains adds a condition to check if an array field does not contain the value.
 	NotContains(value any) QueryFilter
 
-	// WithFlag - a field of type integer representing bit flags include a flag or set of flags
+	// WithFlag adds a condition to check if an integer field has specific bit flags set.
 	WithFlag(value int) QueryFilter
 
-	// WithNoFlag - a field of type integer representing bit flags does not include a flag or set of flags
+	// WithNoFlag adds a condition to check if an integer field does not have specific bit flags set.
 	WithNoFlag(value int) QueryFilter
 
-	// IsEmpty - field is null or empty
+	// IsEmpty adds a condition to check if a field is null or empty.
 	IsEmpty() QueryFilter
 
-	// IsTrue - boolean field is true
+	// IsTrue adds a condition to check if a boolean field is true.
 	IsTrue() QueryFilter
 
-	// IsFalse - boolean field is null or false
+	// IsFalse adds a condition to check if a boolean field is false or null.
 	IsFalse() QueryFilter
 
-	// If - Include this filter only if condition is true
+	// If enables or disables the filter based on the boolean condition.
 	If(value bool) QueryFilter
 
-	// IsActive Include this filter only if condition is true
+	// IsActive returns true if the filter is active.
 	IsActive() bool
 
-	// GetField Get the field name
+	// GetField returns the field name being filtered.
 	GetField() string
 
-	// GetOperator Get the criteria operator
+	// GetOperator returns the filter operator.
 	GetOperator() QueryOperator
 
-	// GetValues Get the criteria values
+	// GetValues returns the filter values.
 	GetValues() []any
 
-	// GetStringValue Get string representation of the value
+	// GetStringValue returns the string representation of the value at the given index.
 	GetStringValue(index int) string
 
-	// GetSubQuery gets the underlying sub-query
+	// GetSubQuery returns the underlying sub-query.
 	GetSubQuery() IQuery
 
-	// GetSubQueryField gets the underlying sub-query field
+	// GetSubQueryField returns the field used in the sub-query.
 	GetSubQueryField() string
 }
 
@@ -96,7 +97,7 @@ type QueryFilter interface {
 
 // region QueryFilter internal implementation --------------------------------------------------------------------------
 
-// Query filter
+// queryFilter implements the QueryFilter interface.
 type queryFilter struct {
 	field         string
 	operator      QueryOperator
@@ -106,7 +107,7 @@ type queryFilter struct {
 	subQueryField string
 }
 
-// Filter by field
+// Filter creates a new QueryFilter for the specified field.
 func Filter(field string) QueryFilter {
 	return &queryFilter{
 		field:    field,
@@ -115,7 +116,7 @@ func Filter(field string) QueryFilter {
 	}
 }
 
-// F filter by field (synonym to Filter)
+// F is a shorthand alias for Filter.
 func F(field string) QueryFilter {
 	return &queryFilter{
 		field:    field,

@@ -3,10 +3,11 @@ package binary
 import (
 	"bytes"
 	"fmt"
-	"github.com/go-yaaf/yaaf-common/entity"
 	"io"
 	"math"
 	"unsafe"
+
+	"github.com/go-yaaf/yaaf-common/entity"
 )
 
 const (

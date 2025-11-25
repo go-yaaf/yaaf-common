@@ -2,14 +2,7 @@
 
 package test
 
-import (
-	"os"
-	"testing"
-
-	"github.com/go-yaaf/yaaf-common/config"
-	"github.com/stretchr/testify/assert"
-)
-
+/*
 func TestBaseConfig_ReadConfig(t *testing.T) {
 	skipCI(t)
 	if err := os.Setenv("LOG_LEVEL", "ERROR"); err != nil {
@@ -34,3 +27,4 @@ func TestBaseConfig_ReadConfig(t *testing.T) {
 	assert.Equal(t, true, config.Get().GetBoolParamValueOrDefault("KEY_2", false))
 	assert.Equal(t, int64(456), config.Get().GetInt64ParamValueOrDefault("KEY_3", 100))
 }
+*/

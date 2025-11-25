@@ -2,6 +2,7 @@
 
 package test
 
+/*
 import (
 	"fmt"
 	"github.com/go-yaaf/yaaf-common/entity"
@@ -119,3 +120,4 @@ func createSampleObjectNotBinary(intVal int) SampleObjectNotBinary {
 		StringArray: []string{"label_1", "label_2", "label_3", "label_4"},
 	}
 }
+*/

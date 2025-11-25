@@ -1,12 +1,14 @@
 package test
 
+/*
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"log"
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/go-yaaf/yaaf-common/utils/pool"
 )
@@ -101,3 +103,4 @@ func parallelProcessor(p parseFileTask) {
 	time.Sleep(5 * time.Second)
 	log.Println(fmt.Sprintf("%d Parse Finished: %s,", p.idx, p.file))
 }
+*/

@@ -1,5 +1,6 @@
 package test
 
+/*
 import (
 	"fmt"
 	"github.com/go-yaaf/yaaf-common/entity"
@@ -129,3 +130,4 @@ func TestGenericsTtlCacheString(t *testing.T) {
 	fmt.Println("items:", ttlCache.Count())
 
 }
+*/

@@ -1,118 +1,140 @@
-//  Thread-safe implementation of stack data structure
-//
-
+// Package collections provides a thread-safe implementation of a LIFO (Last-In, First-Out) stack data structure.
 package collections
 
 import (
 	"sync"
-	"sync/atomic"
 )
 
-// Stack functions for manager data items in a stack
-type Stack interface {
-	// push item into a stack
-	Push(v any)
+// Stack defines the interface for a generic, thread-safe stack.
+//
+// Type Parameters:
+//
+//	T: The type of the items stored in the stack.
+type Stack[T any] interface {
+	// Push adds an item to the top of the stack.
+	Push(v T)
 
-	// pop last item
-	Pop() (any, bool)
+	// Pop removes and returns the item from the top of the stack.
+	// It also returns a boolean indicating if an item was successfully popped.
+	Pop() (T, bool)
 
-	// pop many items
-	PopMany(count int64) ([]any, bool)
+	// PopMany removes and returns a specified number of items from the top of the stack.
+	// If the stack contains fewer items than requested, it returns all the items in the stack.
+	PopMany(count int) ([]T, bool)
 
-	// pop all items
-	PopAll() ([]any, bool)
+	// PopAll removes and returns all items from the stack.
+	PopAll() ([]T, bool)
 
-	// peek last item
-	Peek() (any, bool)
+	// Peek returns the item at the top of the stack without removing it.
+	Peek() (T, bool)
 
-	// get length of stack
-	Length() int64
+	// Length returns the number of items in the stack.
+	Length() int
 
-	// is empty stack
+	// IsEmpty checks if the stack is empty.
 	IsEmpty() bool
 }
 
-type defaultStack struct {
+// defaultStack is the default implementation of the Stack interface.
+// It uses a slice and a mutex to provide a thread-safe stack.
+type defaultStack[T any] struct {
 	sync.Mutex
-	length int64
-	stack  []any
+	stack []T
 }
 
-// New get stack functions manager
-func NewStack() Stack {
-	return &defaultStack{}
+// NewStack creates and returns a new instance of a generic, thread-safe stack.
+//
+// Type Parameters:
+//
+//	T: The type of the items to be stored in the stack.
+//
+// Returns:
+//
+//	A new Stack instance.
+func NewStack[T any]() Stack[T] {
+	return &defaultStack[T]{
+		stack: make([]T, 0),
+	}
 }
 
-func (p *defaultStack) Push(v any) {
-	p.Lock()
-	defer p.Unlock()
-
-	prepend := make([]any, 1)
-	prepend[0] = v
-
-	p.stack = append(prepend, p.stack...)
-	p.length++
+// Push adds an item to the top of the stack in a thread-safe manner.
+func (s *defaultStack[T]) Push(v T) {
+	s.Lock()
+	defer s.Unlock()
+	s.stack = append(s.stack, v)
 }
 
-func (p *defaultStack) Pop() (v any, exist bool) {
-	if p.IsEmpty() {
-		return
+// Pop removes and returns the item from the top of the stack in a thread-safe manner.
+// If the stack is empty, it returns the zero value for the type and false.
+func (s *defaultStack[T]) Pop() (T, bool) {
+	s.Lock()
+	defer s.Unlock()
+
+	if len(s.stack) == 0 {
+		var zero T
+		return zero, false
 	}
 
-	p.Lock()
-	defer p.Unlock()
-
-	v, p.stack, exist = p.stack[0], p.stack[1:], true
-	p.length--
-
-	return
+	index := len(s.stack) - 1
+	v := s.stack[index]
+	s.stack = s.stack[:index]
+	return v, true
 }
 
-func (p *defaultStack) PopMany(count int64) (vs []any, exist bool) {
+// PopMany removes and returns a specified number of items from the top of the stack.
+func (s *defaultStack[T]) PopMany(count int) ([]T, bool) {
+	s.Lock()
+	defer s.Unlock()
 
-	if p.IsEmpty() {
-		return
+	if len(s.stack) == 0 {
+		return nil, false
 	}
 
-	p.Lock()
-	defer p.Unlock()
-
-	if count >= p.length {
-		count = p.length
-	}
-	p.length -= count
-
-	vs, p.stack, exist = p.stack[:count-1], p.stack[count:], true
-	return
-}
-
-func (p *defaultStack) PopAll() (all []any, exist bool) {
-	if p.IsEmpty() {
-		return
-	}
-	p.Lock()
-	defer p.Unlock()
-
-	all, p.stack, exist = p.stack[:], nil, true
-	p.length = 0
-	return
-}
-
-func (p *defaultStack) Peek() (v any, exist bool) {
-	if p.IsEmpty() {
-		return
+	if count > len(s.stack) {
+		count = len(s.stack)
 	}
 
-	p.Lock()
-	defer p.Unlock()
-
-	return p.stack[0], true
+	index := len(s.stack) - count
+	vs := s.stack[index:]
+	s.stack = s.stack[:index]
+	return vs, true
 }
 
-func (p *defaultStack) Length() int64 {
-	return atomic.LoadInt64(&p.length)
+// PopAll removes and returns all items from the stack.
+func (s *defaultStack[T]) PopAll() ([]T, bool) {
+	s.Lock()
+	defer s.Unlock()
+
+	if len(s.stack) == 0 {
+		return nil, false
+	}
+
+	all := s.stack
+	s.stack = make([]T, 0)
+	return all, true
 }
 
-func (p *defaultStack) IsEmpty() bool {
-	return p.Length() == 0
+// Peek returns the item at the top of the stack without removing it.
+func (s *defaultStack[T]) Peek() (T, bool) {
+	s.Lock()
+	defer s.Unlock()
+
+	if len(s.stack) == 0 {
+		var zero T
+		return zero, false
+	}
+
+	return s.stack[len(s.stack)-1], true
+}
+
+// Length returns the number of items in the stack.
+func (s *defaultStack[T]) Length() int {
+	s.Lock()
+	defer s.Unlock()
+	return len(s.stack)
+}
+
+// IsEmpty checks if the stack is empty.
+func (s *defaultStack[T]) IsEmpty() bool {
+	return s.Length() == 0
 }

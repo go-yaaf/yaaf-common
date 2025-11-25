@@ -1,101 +1,108 @@
 package database
 
 import (
-	. "github.com/go-yaaf/yaaf-common/entity"
 	"time"
+
+	. "github.com/go-yaaf/yaaf-common/entity"
 )
 
+// AggFunc represents an aggregation function type (e.g., count, sum, avg).
 type AggFunc string
 
 const (
-	COUNT AggFunc = "count"
-	SUM   AggFunc = "sum"
-	AVG   AggFunc = "avg"
-	MIN   AggFunc = "min"
-	MAX   AggFunc = "max"
+	COUNT AggFunc = "count" // Count aggregation
+	SUM   AggFunc = "sum"   // Sum aggregation
+	AVG   AggFunc = "avg"   // Average aggregation
+	MIN   AggFunc = "min"   // Minimum aggregation
+	MAX   AggFunc = "max"   // Maximum aggregation
 )
 
-// IQuery Database Query interface
+// IQuery defines the interface for building and executing database queries.
+// It supports filtering, sorting, pagination, and aggregation.
 type IQuery interface {
 
-	// Apply adds a callback to apply on each result entity in the query
+	// Apply adds a callback function to be applied to each result entity.
 	Apply(cb func(in Entity) Entity) IQuery
 
-	// Filter Add single field filter
+	// Filter adds a single field filter to the query.
 	Filter(filter QueryFilter) IQuery
 
-	// Range add time frame filter on specific time field
+	// Range adds a time frame filter on a specific time field.
 	Range(field string, from Timestamp, to Timestamp) IQuery
 
-	// MatchAll Add list of filters, all of them should be satisfied (AND)
+	// MatchAll adds a list of filters, all of which must be satisfied (AND logic).
 	MatchAll(filters ...QueryFilter) IQuery
 
-	// MatchAny Add list of filters, any of them should be satisfied (OR)
+	// MatchAny adds a list of filters, any of which must be satisfied (OR logic).
 	MatchAny(filters ...QueryFilter) IQuery
 
-	// Sort Add sort order by field,  expects sort parameter in the following form: field_name (Ascending) or field_name- (Descending)
+	// Sort adds a sort order by field.
+	// The sort parameter should be in the format: "field_name" (Ascending) or "field_name-" (Descending).
 	Sort(sort string) IQuery
 
-	// Page Set page number (for pagination)
+	// Page sets the requested page number for pagination (0-based).
 	Page(page int) IQuery
 
-	// Limit Set page size limit (for pagination)
+	// Limit sets the page size limit for pagination.
 	Limit(page int) IQuery
 
-	// List Execute a query to get list of entities by IDs (the criteria is ignored)
+	// List executes the query to retrieve a list of entities by their IDs, ignoring other criteria.
+	// The 'keys' argument is optional and can be used for sharding or other specific lookup mechanisms.
 	List(entityIDs []string, keys ...string) (out []Entity, err error)
 
-	// Find Execute the query based on the criteria, order and pagination
+	// Find executes the query based on criteria, order, and pagination.
+	// The 'keys' argument is optional and can be used for sharding or other specific lookup mechanisms.
 	Find(keys ...string) (out []Entity, total int64, err error)
 
-	// Select is similar to find but with ability to retrieve specific fields
+	// Select executes the query and returns specific fields as a list of Json maps.
 	Select(fields ...string) ([]Json, error)
 
-	// Count Execute the query based on the criteria, order and pagination and return only the count of matching rows
+	// Count executes the query and returns the number of matching entities.
+	// The 'keys' argument is optional and can be used for sharding or other specific lookup mechanisms.
 	Count(keys ...string) (total int64, err error)
 
-	// Aggregation Execute the query based on the criteria, order and pagination and return the provided aggregation function on the field
-	// supported functions: count : avg, sum, min, max
+	// Aggregation executes an aggregation function on a field for the matching entities.
+	// Supported functions: count, sum, avg, min, max.
 	Aggregation(field string, function AggFunc, keys ...string) (value float64, err error)
 
-	// GroupCount Execute the query based on the criteria, grouped by field and return count per group
+	// GroupCount executes the query and returns the count of entities per group (grouped by field).
 	GroupCount(field string, keys ...string) (out map[any]int64, total int64, err error)
 
-	// GroupAggregation Execute the query based on the criteria, order and pagination and return the aggregated value per group
-	// the data point is a calculation of the provided function on the selected field, each data point includes the number of documents and the calculated value
-	// the total is the sum of all calculated values in all the buckets
-	// supported functions: count : avg, sum, min, max
+	// GroupAggregation executes the query and returns the aggregated value per group.
+	// Each data point includes the count of documents and the calculated value.
 	GroupAggregation(field string, function AggFunc, keys ...string) (out map[any]Tuple[int64, float64], total float64, err error)
 
-	// Histogram returns a time series data points based on the time field, supported intervals: Minute, Hour, Day, week, month
-	// the data point is a calculation of the provided function on the selected field, each data point includes the number of documents and the calculated value
-	// the total is the sum of all calculated values in all the buckets
-	// supported functions: count : avg, sum, min, max
+	// Histogram returns time series data points based on a time field.
+	// Supported intervals: Minute, Hour, Day, Week, Month.
 	Histogram(field string, function AggFunc, timeField string, interval time.Duration, keys ...string) (out map[Timestamp]Tuple[int64, float64], total float64, err error)
 
-	// Histogram2D returns a two-dimensional time series data points based on the time field, supported intervals: Minute, Hour, Day, week, month
-	// the data point is a calculation of the provided function on the selected field
-	// supported functions: count : avg, sum, min, max
+	// Histogram2D returns two-dimensional time series data points based on a time field.
 	Histogram2D(field string, function AggFunc, dim, timeField string, interval time.Duration, keys ...string) (out map[Timestamp]map[any]Tuple[int64, float64], total float64, err error)
 
-	// FindSingle Execute query based on the where criteria to get a single (the first) result
+	// FindSingle executes the query and returns the first matching entity.
+	// The 'keys' argument is optional and can be used for sharding or other specific lookup mechanisms.
 	FindSingle(keys ...string) (entity Entity, err error)
 
-	// GetMap Execute query based on the criteria, order and pagination and return the results as a map of id->Entity
+	// GetMap executes the query and returns the results as a map of ID -> Entity.
+	// The 'keys' argument is optional and can be used for sharding or other specific lookup mechanisms.
 	GetMap(keys ...string) (out map[string]Entity, err error)
 
-	// GetIDs executes a query based on the where criteria, order and pagination and return the results as a list of Ids
+	// GetIDs executes the query and returns a list of IDs of the matching entities.
+	// The 'keys' argument is optional and can be used for sharding or other specific lookup mechanisms.
 	GetIDs(keys ...string) (out []string, err error)
 
-	// Delete the entities satisfying the criteria
+	// Delete removes the entities matching the query criteria.
+	// The 'keys' argument is optional and can be used for sharding or other specific lookup mechanisms.
 	Delete(keys ...string) (total int64, err error)
 
-	// SetField Update single field of all the documents meeting the criteria in a single transaction
+	// SetField updates a single field for all documents matching the criteria.
+	// The 'keys' argument is optional and can be used for sharding or other specific lookup mechanisms.
 	SetField(field string, value any, keys ...string) (total int64, err error)
 
-	// SetFields Update multiple fields of all the documents meeting the criteria in a single transaction
+	// SetFields updates multiple fields for all documents matching the criteria.
+	// The 'keys' argument is optional and can be used for sharding or other specific lookup mechanisms.
 	SetFields(fields map[string]any, keys ...string) (total int64, err error)
 
-	// ToString Get the string representation of the query
+	// ToString returns a string representation of the query.
 	ToString() string
 }

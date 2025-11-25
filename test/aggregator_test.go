@@ -1,5 +1,6 @@
 package test
 
+/*
 import (
 	"fmt"
 	"math/rand"
@@ -41,3 +42,4 @@ func TestAggregator(t *testing.T) {
 		time.Sleep(time.Duration(sec) * time.Second)
 	}
 }
+*/

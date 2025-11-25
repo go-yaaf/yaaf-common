@@ -4,15 +4,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/go-yaaf/yaaf-common/entity"
 	"net/http"
-	"strings"
 	"time"
+
+	"github.com/go-yaaf/yaaf-common/entity"
 )
 
 // region HTTP Mail Message --------------------------------------------------------------------------------------------
 
-// HTTP mail message implementation
+// httpMailMessage is an implementation of the IMailMessage interface for sending email via an HTTP API.
 type httpMailMessage struct {
 	client      *httpMailClient
 	from        string
@@ -28,79 +28,79 @@ type httpMailMessage struct {
 	variables   map[string]string
 }
 
-// From Set sender mail address
+// From sets the sender's email address.
 func (m *httpMailMessage) From(from string) IMailMessage {
 	m.from = from
 	return m
 }
 
-// To Set recipients mail addresses
+// To sets the recipients' email addresses.
 func (m *httpMailMessage) To(to []string) IMailMessage {
 	m.to = to
 	return m
 }
 
-// Cc Set cc list mail addresses
+// Cc sets the CC recipients' email addresses.
 func (m *httpMailMessage) Cc(cc []string) IMailMessage {
 	m.cc = cc
 	return m
 }
 
-// Bcc Set Bcc list mail addresses
+// Bcc sets the BCC recipients' email addresses.
 func (m *httpMailMessage) Bcc(bcc []string) IMailMessage {
 	m.bcc = bcc
 	return m
 }
 
-// Subject Set subject
+// Subject sets the email's subject line.
 func (m *httpMailMessage) Subject(subject string) IMailMessage {
 	m.subject = subject
 	return m
 }
 
-// Body Set subject
+// Body sets the plain text body of the email.
 func (m *httpMailMessage) Body(body string) IMailMessage {
 	m.body = body
 	return m
 }
 
-// HtmlBody Set HTML Body
+// HtmlBody sets the HTML body of the email.
 func (m *httpMailMessage) HtmlBody(html string) IMailMessage {
 	m.html = html
 	return m
 }
 
-// Attachments set list of message attachments
+// Attachments sets the list of attachments for the email.
 func (m *httpMailMessage) Attachments(attachments []MailMessageAttachment) IMailMessage {
 	m.attachments = attachments
 	return m
 }
 
-// AddTo adds mail address to the To recipients list
+// AddTo adds one or more recipients to the To list.
 func (m *httpMailMessage) AddTo(to ...string) IMailMessage {
 	m.to = append(m.to, to...)
 	return m
 }
 
-// AddCc adds mail address to the CC list
+// AddCc adds one or more recipients to the CC list.
 func (m *httpMailMessage) AddCc(cc ...string) IMailMessage {
 	m.cc = append(m.cc, cc...)
 	return m
 }
 
-// AddBcc adds mail address to the BCC list
+// AddBcc adds one or more recipients to the BCC list.
 func (m *httpMailMessage) AddBcc(bcc ...string) IMailMessage {
 	m.bcc = append(m.bcc, bcc...)
 	return m
 }
 
-// AddAttachments add attachment to the list
+// AddAttachments adds one or more attachments to the email.
 func (m *httpMailMessage) AddAttachments(attachments ...MailMessageAttachment) IMailMessage {
 	m.attachments = append(m.attachments, attachments...)
 	return m
 }
 
-// Attach add list of file paths as attachments
+// Attach adds attachments from a list of file paths.
 func (m *httpMailMessage) Attach(paths ...string) IMailMessage {
 	for _, path := range paths {
 		if att, err := getAttachment(path); err == nil {
@@ -110,16 +110,17 @@ func (m *httpMailMessage) Attach(paths ...string) IMailMessage {
 	return m
 }
 
-// Send mail message
+// Send sends the email using the HTTP client.
+// It builds the message payload and sends it as a POST request.
 func (m *httpMailMessage) Send() error {
-
-	buffer, jer := m.buildMessage()
-	if jer != nil {
-		return jer
-	}
-	req, err := http.NewRequest("POST", m.client.uri, bytes.NewBuffer(buffer))
+	payload, err := m.buildMessage()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to build http message: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, m.client.uri, bytes.NewBuffer(payload))
+	if err != nil {
+		return fmt.Errorf("failed to create http request: %w", err)
 	}
 
 	// Set headers
@@ -128,22 +129,21 @@ func (m *httpMailMessage) Send() error {
 		req.Header.Set(k, v)
 	}
 
-	// Create http client
+	// Create and send request
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to send http request: %w", err)
 	}
-	defer func() { _ = resp.Body.Close() }()
+	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusOK {
-		return nil
-	} else {
-		return fmt.Errorf("server return status: %s", resp.Status)
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("http request failed with status: %s", resp.Status)
 	}
+	return nil
 }
 
-// Build mail message
+// buildMessage constructs the JSON payload for the HTTP API call.
 func (m *httpMailMessage) buildMessage() ([]byte, error) {
 	message := make(entity.Json)
 	message["from"] = m.from
@@ -152,13 +152,16 @@ func (m *httpMailMessage) buildMessage() ([]byte, error) {
 	message["bcc"] = m.bcc
 	message["subject"] = m.subject
 
-	if len(m.body) > 0 {
-		message["body"] = m.body
-	} else if len(m.html) > 0 {
+	if m.html != "" {
 		message["body"] = m.html
+	} else {
+		message["body"] = m.body
 	}
 
-	message["attachments"] = m.attachments
+	if len(m.attachments) > 0 {
+		message["attachments"] = m.attachments
+	}
+
 	return json.Marshal(message)
 }
 
@@ -166,92 +169,58 @@ func (m *httpMailMessage) buildMessage() ([]byte, error) {
 
 // region HTTP Mail Client ---------------------------------------------------------------------------------------------
 
-// HTTP mail client implementation
+// httpMailClient is an implementation of the IMailClient interface that sends email via an HTTP API.
 type httpMailClient struct {
 	uri     string
 	user    string
 	headers map[string]string
 }
 
-// MailUsr returns mail server authentication user
-func (c *httpMailClient) MailUsr() string {
-	return c.user
-}
-
-// CreateTextMessage Create plain text message
-func (c *httpMailClient) CreateTextMessage() IMailMessage {
-	return &httpMailMessage{
-		client: c,
-		to:     make([]string, 0),
-		cc:     make([]string, 0),
-		bcc:    make([]string, 0),
-		mime:   "text/plain",
-	}
-}
-
-// CreateHtmlMessage Create HTML message
-func (c *httpMailClient) CreateHtmlMessage() IMailMessage {
-	return &httpMailMessage{
-		client:      c,
-		to:          make([]string, 0),
-		cc:          make([]string, 0),
-		bcc:         make([]string, 0),
-		attachments: make([]MailMessageAttachment, 0),
-		mime:        "text/html",
-	}
-}
-
-// CreateJsonMessage Create Json message
-func (c *httpMailClient) CreateJsonMessage() IMailMessage {
-	return &httpMailMessage{
-		client:      c,
-		to:          make([]string, 0),
-		cc:          make([]string, 0),
-		bcc:         make([]string, 0),
-		attachments: make([]MailMessageAttachment, 0),
-		mime:        "application/json",
-	}
-}
-
-// CreateTemplateMessage Create Template message
-func (c *httpMailClient) CreateTemplateMessage(template TemplateName, variables map[string]string) IMailMessage {
-	return &httpMailMessage{
-		client:      c,
-		to:          make([]string, 0),
-		cc:          make([]string, 0),
-		bcc:         make([]string, 0),
-		attachments: make([]MailMessageAttachment, 0),
-		template:    template,
-		variables:   variables,
-	}
-}
-
-// Build mail message
-func (c *httpMailClient) buildMessage(m *httpMailMessage) string {
-	message := ""
-	message += fmt.Sprintf("From: %s\r\n", m.from)
-	if len(m.to) > 0 {
-		message += fmt.Sprintf("To: %s\r\n", strings.Join(m.to, ";"))
-	}
-	if len(m.cc) > 0 {
-		message += fmt.Sprintf("Cc: %s\r\n", strings.Join(m.cc, ";"))
-	}
-	if len(m.bcc) > 0 {
-		message += fmt.Sprintf("Bcc: %s\r\n", strings.Join(m.bcc, ";"))
-	}
-
-	message += fmt.Sprintf("Subject: %s\r\n", m.subject)
-	message += "\r\n" + m.body
-
-	return message
-}
-
-// endregion
-
-func newHttpMailClient(uri string, user string, headers map[string]string) IMailClient {
+// newHttpMailClient creates a new httpMailClient.
+func newHttpMailClient(uri, user string, headers map[string]string) IMailClient {
 	return &httpMailClient{
 		uri:     uri,
 		user:    user,
 		headers: headers,
 	}
 }
+
+// MailUsr returns the username used for authentication.
+func (c *httpMailClient) MailUsr() string {
+	return c.user
+}
+
+// CreateTextMessage creates a new plain text message.
+func (c *httpMailClient) CreateTextMessage() IMailMessage {
+	return &httpMailMessage{
+		client: c,
+		mime:   "text/plain",
+	}
+}
+
+// CreateHtmlMessage creates a new HTML message.
+func (c *httpMailClient) CreateHtmlMessage() IMailMessage {
+	return &httpMailMessage{
+		client: c,
+		mime:   "text/html",
+	}
+}
+
+// CreateJsonMessage creates a new JSON message.
+func (c *httpMailClient) CreateJsonMessage() IMailMessage {
+	return &httpMailMessage{
+		client: c,
+		mime:   "application/json",
+	}
+}
+
+// CreateTemplateMessage creates a new message from a template.
+func (c *httpMailClient) CreateTemplateMessage(template TemplateName, variables map[string]string) IMailMessage {
+	return &httpMailMessage{
+		client:    c,
+		template:  template,
+		variables: variables,
+	}
+}
+
+// endregion

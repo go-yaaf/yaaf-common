@@ -4,29 +4,35 @@
 package messaging
 
 // PubSubConfig provides configuration options for a Pub/Sub consumer.
-// This configuration allows fine-tuning of the message consumption
-// behavior, particularly useful for managing workloads in environments
-// with slow message processing capabilities.
+// This configuration allows for fine-tuning of message consumption behavior,
+// which is particularly useful for managing workloads in environments with
+// slow or resource-intensive message processing. By adjusting these settings,
+// developers can control the flow of messages and prevent consumer applications
+// from being overwhelmed.
 type PubSubConfig struct {
-	// NumGoroutines specifies the number of goroutines that will be used
-	// to pull messages from the subscription in parallel. Each goroutine
-	// opens a separate StreamingPull stream. A higher number of goroutines
-	// might increase throughput but also increases the system's load.
-	// Defaults to DefaultReceiveSettings.NumGoroutines when set to 0.
+	// NumGoroutines specifies the number of goroutines that will be used to pull
+	// messages from the subscription in parallel. Each goroutine opens a separate
+	// StreamingPull stream, which can significantly increase message throughput.
+	// However, a higher number of goroutines also increases the load on the system,
+	// so this value should be chosen carefully based on the available resources
+	// and the desired performance characteristics.
+	// If set to 0, it defaults to DefaultReceiveSettings.NumGoroutines.
 	NumGoroutines int
 
-	// MaxOutstandingMessages defines the maximum number of unprocessed
-	// messages (messages that have been received but not yet acknowledged
-	// or expired). Setting this to a lower number can prevent the consumer
-	// from being overwhelmed by a large volume of incoming messages.
-	// If set to 0, the default is DefaultReceiveSettings.MaxOutstandingMessages.
+	// MaxOutstandingMessages defines the maximum number of unprocessed messages
+	// that the client will hold in memory. An unprocessed message is one that has
+	// been received but not yet acknowledged (acked) or negatively acknowledged (nacked).
+	// This setting helps to prevent the consumer from being overwhelmed by a large
+	// volume of incoming messages.
+	// If set to 0, it defaults to DefaultReceiveSettings.MaxOutstandingMessages.
 	// A negative value indicates no limit.
 	MaxOutstandingMessages int
 
-	// MaxOutstandingBytes is the maximum total size of unprocessed messages.
-	// This setting helps to control memory usage by limiting the total size
-	// of messages that can be held in memory at a time. If set to 0, the
-	// default is DefaultReceiveSettings.MaxOutstandingBytes. A negative
-	// value indicates no limit on the byte size of unprocessed messages.
+	// MaxOutstandingBytes is the maximum total size of unprocessed messages that the
+	// client will hold in memory. This setting is crucial for controlling memory usage,
+	// especially when dealing with large messages. It limits the total size of messages
+	// that can be held in memory at any given time.
+	// If set to 0, it defaults to DefaultReceiveSettings.MaxOutstandingBytes.
+	// A negative value indicates no limit on the byte size of unprocessed messages.
 	MaxOutstandingBytes int
 }

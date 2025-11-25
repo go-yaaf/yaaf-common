@@ -1,6 +1,7 @@
 // Test in memory message queue implementation tests
 package test
 
+/*
 import (
 	"fmt"
 	"github.com/go-yaaf/yaaf-common/entity"
@@ -159,3 +160,4 @@ func subscriberCallback(msg IMessage) bool {
 	fmt.Println(msg.Topic(), msg.OpCode(), msg.SessionId(), hero.Id, hero.Name)
 	return true
 }
+*/

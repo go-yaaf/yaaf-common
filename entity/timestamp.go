@@ -10,70 +10,77 @@ import (
 
 // region Timestamp ----------------------------------------------------------------------------------------------------
 
-// Timestamp represents Epoch milliseconds timestamp
+// Timestamp represents Epoch milliseconds timestamp.
+// It is the primary time representation in the system, allowing for easy serialization and arithmetic.
 type Timestamp int64
 
-// EpochNowMillis return current time as Epoch time milliseconds with delta in millis
+// EpochNowMillis returns the current time as Epoch time in milliseconds, with an optional delta.
+//
+// Parameters:
+//   - delta: A duration in milliseconds to add to the current time.
+//
+// Returns:
+//   - The calculated Timestamp.
 func EpochNowMillis(delta int64) Timestamp {
 	return Timestamp((time.Now().UnixNano() / 1000000) + delta)
 }
 
-// Now return current time as Epoch time milliseconds with delta in millis
+// Now returns the current time as Epoch time in milliseconds.
 func Now() Timestamp {
 	return EpochNowMillis(0)
 }
 
-// NewTimestamp create timestamp from the provided time object
+// NewTimestamp creates a Timestamp from a standard Go time.Time object.
 func NewTimestamp(t time.Time) Timestamp {
 	return Timestamp(t.UnixNano() / 1000000)
 }
 
-// Add time and return a new timestamp
+// Add adds a duration to the Timestamp and returns a new Timestamp.
 func (ts Timestamp) Add(delta time.Duration) Timestamp {
 	return Timestamp(int64(ts) + delta.Milliseconds())
 }
 
-// Time returns the Go primitive  time.Time object
+// Time converts the Timestamp to a standard Go time.Time object.
 func (ts Timestamp) Time() (result time.Time) {
 	return time.UnixMilli(int64(ts))
 }
 
-// StartOfHour Get the start of the current hour
+// StartOfHour returns a new Timestamp representing the start of the hour for the current timestamp.
 func (ts Timestamp) StartOfHour() Timestamp {
 	t := ts.Time()
 	sod := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location())
 	return Timestamp(sod.UnixNano() / 1000000)
 }
 
-// EndOfHour Get the start of the current hour
+// EndOfHour returns a new Timestamp representing the end of the hour for the current timestamp.
 func (ts Timestamp) EndOfHour() Timestamp {
 	t := ts.Time()
 	eod := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 59, 59, 9.99e+8, t.Location())
 	return Timestamp(eod.UnixNano() / 1000000)
 }
 
-// StartOfDay Get the start of the current day
+// StartOfDay returns a new Timestamp representing the start of the day (00:00:00) for the current timestamp.
 func (ts Timestamp) StartOfDay() Timestamp {
 	t := ts.Time()
 	sod := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 	return Timestamp(sod.UnixNano() / 1000000)
 }
 
-// EndOfDay Get the start of the current day
+// EndOfDay returns a new Timestamp representing the end of the day (23:59:59.999) for the current timestamp.
 func (ts Timestamp) EndOfDay() Timestamp {
 	t := ts.Time()
 	eod := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 9.99e+8, t.Location())
 	return Timestamp(eod.UnixNano() / 1000000)
 }
 
-// StartOfMonth Get the start of the current month
+// StartOfMonth returns a new Timestamp representing the start of the month for the current timestamp.
 func (ts Timestamp) StartOfMonth() Timestamp {
 	t := ts.Time()
 	som := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 	return Timestamp(som.UnixNano() / 1000000)
 }
 
-// EndOfMonth Get the end of the current month
+// EndOfMonth returns a new Timestamp representing the end of the month for the current timestamp.
 func (ts Timestamp) EndOfMonth() Timestamp {
 	t := ts.Time()
 	som := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
@@ -82,9 +89,14 @@ func (ts Timestamp) EndOfMonth() Timestamp {
 	return Timestamp(eom.UnixNano() / 1000000)
 }
 
-// Convert ISO6801 datetime format to Go RFC3339 format (used by Go)
-// @param format ISO 8601 format
-// @return RFC3339 format (using magic date sample: Jan 02 3:04:05 2006 -0700)
+// convertISO8601Format converts a custom date format string (e.g., "YYYY-MM-DD") to Go's reference time format.
+// This helper function allows using more familiar format strings instead of Go's specific reference date.
+//
+// Parameters:
+//   - format: The format string using ISO 8601 like placeholders (YYYY, MM, DD, etc.).
+//
+// Returns:
+//   - The Go reference time format string.
 func (ts Timestamp) convertISO8601Format(format string) string {
 
 	data := struct {
@@ -167,7 +179,9 @@ func (ts Timestamp) convertISO8601Format(format string) string {
 	}
 }
 
-// String convert Epoch milliseconds timestamp to readable string
+// String converts the Timestamp to a string using the specified format.
+// If format is empty, it uses RFC3339.
+// It supports custom format strings via convertISO8601Format.
 func (ts Timestamp) String(format string) string {
 	if len(format) == 0 {
 		return ts.Time().Format(time.RFC3339)
@@ -177,7 +191,14 @@ func (ts Timestamp) String(format string) string {
 	}
 }
 
-// LocalString convert Epoch milliseconds timestamp with timezone (IANA) to readable string
+// LocalString converts the Timestamp to a string in a specific timezone.
+//
+// Parameters:
+//   - format: The format string.
+//   - tz: The timezone identifier (e.g., "America/New_York").
+//
+// Returns:
+//   - The formatted time string in the specified timezone.
 func (ts Timestamp) LocalString(format string, tz string) string {
 
 	loc, err := time.LoadLocation(tz)
@@ -192,29 +213,29 @@ func (ts Timestamp) LocalString(format string, tz string) string {
 
 // region TimeFrame ----------------------------------------------------------------------------------------------------
 
-// TimeFrame represents a slot in time
+// TimeFrame represents a time interval with a start and end timestamp.
 type TimeFrame struct {
-	From Timestamp `json:"from"` // From Timestamp
-	To   Timestamp `json:"to"`   // To Timestamp
+	From Timestamp `json:"from"` // From is the start timestamp
+	To   Timestamp `json:"to"`   // To is the end timestamp
 }
 
-// NewTimeFrame return new time slot using start and end time
+// NewTimeFrame creates a new TimeFrame from start and end timestamps.
 func NewTimeFrame(from, to Timestamp) TimeFrame {
 	return TimeFrame{From: from, To: to}
 }
 
-// GetTimeFrame return new time slot using start and duration
+// GetTimeFrame creates a new TimeFrame from a start timestamp and a duration.
 func GetTimeFrame(from Timestamp, duration time.Duration) TimeFrame {
 	to := int64(from) + int64(duration/time.Millisecond)
 	return TimeFrame{From: from, To: Timestamp(to)}
 }
 
-// String convert Epoch milliseconds timestamp to readable string
+// String returns a string representation of the TimeFrame in the format "start - end".
 func (tf *TimeFrame) String(format string) string {
 	return fmt.Sprintf("%s - %s", tf.From.String(format), tf.To.String(format))
 }
 
-// Duration of the timeframe
+// Duration returns the duration of the TimeFrame.
 func (tf *TimeFrame) Duration() time.Duration {
 	millis := int64(tf.To) - int64(tf.From)
 	return time.Duration(millis) * time.Millisecond
@@ -224,18 +245,18 @@ func (tf *TimeFrame) Duration() time.Duration {
 
 // region TimeDataPoint ------------------------------------------------------------------------------------------------
 
-// TimeDataPoint model represents a generic datapoint in time
+// TimeDataPoint represents a generic data point associated with a timestamp.
 type TimeDataPoint[V any] struct {
-	Timestamp Timestamp `json:"timestamp"` // Timestamp
-	Value     V         `json:"value"`     // Generic value
+	Timestamp Timestamp `json:"timestamp"` // Timestamp of the data point
+	Value     V         `json:"value"`     // Value of the data point
 }
 
-// NewTimeDataPoint return new instance of the datapoint
+// NewTimeDataPoint creates a new TimeDataPoint instance.
 func NewTimeDataPoint[V any](ts Timestamp, value V) TimeDataPoint[V] {
 	return TimeDataPoint[V]{Timestamp: ts, Value: value}
 }
 
-// String convert Epoch milliseconds timestamp to readable string
+// String returns a string representation of the TimeDataPoint.
 func (tf *TimeDataPoint[V]) String(format string) string {
 	return fmt.Sprintf("%s - %v", tf.Timestamp.String(format), tf.Value)
 }
@@ -244,18 +265,27 @@ func (tf *TimeDataPoint[V]) String(format string) string {
 
 // region TimeSeries ---------------------------------------------------------------------------------------------------
 
-// TimeSeries is a set of data points over time
+// TimeSeries represents a named collection of data points over a specific time range.
 type TimeSeries[T any] struct {
 	Name   string             `json:"name"`   // Name of the time series
-	Range  TimeFrame          `json:"range"`  // Range of the series (from ... to)
-	Values []TimeDataPoint[T] `json:"values"` // Series data points
+	Range  TimeFrame          `json:"range"`  // Range covers the start and end time of the series
+	Values []TimeDataPoint[T] `json:"values"` // Values contains the data points
 }
 
-func (ts *TimeSeries[T]) ID() string    { return ts.Name }
-func (ts *TimeSeries[T]) TABLE() string { return "" }
-func (ts *TimeSeries[T]) NAME() string  { return ts.Name }
-func (ts *TimeSeries[T]) KEY() string   { return "" }
+// ID returns the time series name as its ID.
+func (ts *TimeSeries[T]) ID() string { return ts.Name }
 
+// TABLE returns an empty string as TimeSeries is typically not a database table itself.
+func (ts *TimeSeries[T]) TABLE() string { return "" }
+
+// NAME returns the time series name.
+func (ts *TimeSeries[T]) NAME() string { return ts.Name }
+
+// KEY returns an empty string.
+func (ts *TimeSeries[T]) KEY() string { return "" }
+
+// SetDataPoint updates the value of a data point at a specific timestamp.
+// It returns true if the data point was found and updated, false otherwise.
 func (ts *TimeSeries[T]) SetDataPoint(t Timestamp, val T) bool {
 	if len(ts.Values) == 0 {
 		return false

@@ -1,59 +1,75 @@
-// Thread-safe implementation of FIFO queue data structure
-//
-
+// Package collections provides a thread-safe implementation of a FIFO (First-In, First-Out) queue data structure.
 package collections
 
 import (
 	"sync"
 )
 
-// Queue functions for manager data items in a stack
-type Queue interface {
-	// Push item into a queue
-	Push(v any)
+// Queue defines the interface for a generic, thread-safe queue.
+//
+// Type Parameters:
+//
+//	T: The type of the items stored in the queue.
+type Queue[T any] interface {
+	// Push adds an item to the end of the queue.
+	Push(v T)
 
-	// Pop last item
-	Pop() (any, bool)
+	// Pop removes and returns the item from the front of the queue.
+	// It also returns a boolean indicating if an item was successfully popped.
+	Pop() (T, bool)
 
-	// Length get length of the queue
+	// Length returns the number of items in the queue.
 	Length() int
 }
 
-type defaultQueue struct {
+// defaultQueue is the default implementation of the Queue interface.
+// It uses a slice and a mutex to provide a thread-safe queue.
+type defaultQueue[T any] struct {
 	sync.Mutex
-	queue []any
+	queue []T
 }
 
-// NewQueue get queue functions manager
-func NewQueue() Queue {
-	return &defaultQueue{
-		queue: make([]any, 0),
+// NewQueue creates and returns a new instance of a generic, thread-safe queue.
+//
+// Type Parameters:
+//
+//	T: The type of the items to be stored in the queue.
+//
+// Returns:
+//
+//	A new Queue instance.
+func NewQueue[T any]() Queue[T] {
+	return &defaultQueue[T]{
+		queue: make([]T, 0),
 	}
 }
 
-// Push item to queue
-func (p *defaultQueue) Push(v any) {
-	p.Lock()
-	defer p.Unlock()
-	p.queue = append(p.queue, v)
+// Push adds an item to the end of the queue in a thread-safe manner.
+func (q *defaultQueue[T]) Push(v T) {
+	q.Lock()
+	defer q.Unlock()
+	q.queue = append(q.queue, v)
 }
 
-// Pop item from queue
-func (p *defaultQueue) Pop() (v any, exist bool) {
-	if p.Length() == 0 {
-		return
+// Pop removes and returns the item from the front of the queue in a thread-safe manner.
+// If the queue is empty, it returns the zero value for the type and false.
+func (q *defaultQueue[T]) Pop() (T, bool) {
+	q.Lock()
+	defer q.Unlock()
+
+	if len(q.queue) == 0 {
+		var zero T
+		return zero, false
 	}
 
-	p.Lock()
-	defer p.Unlock()
-
-	v, p.queue, exist = p.queue[0], p.queue[1:], true
-	return
+	v := q.queue[0]
+	q.queue = q.queue[1:]
+	return v, true
 }
 
-// Length get queue length (number of items)
-func (p *defaultQueue) Length() int {
-	p.Lock()
-	defer p.Unlock()
-	return len(p.queue)
+// Length returns the number of items in the queue in a thread-safe manner.
+func (q *defaultQueue[T]) Length() int {
+	q.Lock()
+	defer q.Unlock()
+	return len(q.queue)
 }

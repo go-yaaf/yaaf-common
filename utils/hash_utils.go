@@ -8,16 +8,22 @@ import (
 )
 
 // region Singleton pattern --------------------------------------------------------------------------------------------
-var doOnceForHashUtils sync.Once
 
-type hashUtils struct{}
+// HashUtilsStruct is a struct that provides hashing utility functions.
+// It is used as a singleton to offer a centralized and efficient way to perform hashing operations.
+type HashUtilsStruct struct{}
 
-var hashUtilsSingleton *hashUtils = nil
+var (
+	doOnceForHashUtils sync.Once
+	hashUtilsSingleton *HashUtilsStruct
+)
 
-// HashUtils is a factory method that acts as a static member
-func HashUtils() *hashUtils {
+// HashUtils returns a singleton instance of HashUtilsStruct.
+// This factory method ensures that the HashUtilsStruct is instantiated only once,
+// providing a single point of access to the hashing utilities.
+func HashUtils() *HashUtilsStruct {
 	doOnceForHashUtils.Do(func() {
-		hashUtilsSingleton = &hashUtils{}
+		hashUtilsSingleton = &HashUtilsStruct{}
 	})
 	return hashUtilsSingleton
 }
@@ -26,16 +32,34 @@ func HashUtils() *hashUtils {
 
 // region Hash functions -----------------------------------------------------------------------------------------------
 
-// Hash hashes a string using FNV hash
-func (t *hashUtils) Hash(s string) uint32 {
+// Hash computes a 32-bit FNV-1a hash of a given string.
+// FNV (Fowler-Noll-Vo) is a non-cryptographic hash function known for its speed and low collision rate.
+//
+// Parameters:
+//
+//	s: The input string to hash.
+//
+// Returns:
+//
+//	A uint32 representing the FNV-1a hash of the string.
+func (t *HashUtilsStruct) Hash(s string) uint32 {
 	h := fnv.New32a()
 	_, _ = h.Write([]byte(s))
 	return h.Sum32()
 }
 
-// HashStringToString returns a string containing the base64-encoded SHA-1 hash
-// of the input string.
-func (t *hashUtils) HashStringToString(s string) string {
+// HashStringToString computes the SHA-1 hash of a string and returns it as a base64-encoded string.
+// SHA-1 is a cryptographic hash function, though it is no longer considered secure for cryptographic purposes.
+// It is still suitable for non-security-related applications like generating unique identifiers.
+//
+// Parameters:
+//
+//	s: The input string to hash.
+//
+// Returns:
+//
+//	A string containing the raw, standard base64-encoded SHA-1 hash.
+func (t *HashUtilsStruct) HashStringToString(s string) string {
 	h := sha1.New()
 	_, _ = h.Write([]byte(s))
 	return base64.RawStdEncoding.EncodeToString(h.Sum(nil))

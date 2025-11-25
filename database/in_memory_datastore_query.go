@@ -1,6 +1,7 @@
 package database
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -71,7 +72,7 @@ func (s *inMemoryDatastoreQuery) MatchAll(filters ...QueryFilter) IQuery {
 func (s *inMemoryDatastoreQuery) MatchAny(filters ...QueryFilter) IQuery {
 	list := make([]QueryFilter, 0)
 	for _, filter := range filters {
-		if filter.IsActive() == true {
+		if filter.IsActive() {
 			list = append(list, filter)
 		}
 	}
@@ -137,9 +138,9 @@ func (s *inMemoryDatastoreQuery) Find(keys ...string) (out []Entity, total int64
 	ent := s.factory()
 	index := indexName(ent.TABLE(), keys...)
 
-	tbl, ok := s.db.db[index]
+	tbl, ok := s.db.Db[index]
 	if !ok {
-		return nil, 0, fmt.Errorf(INDEX_NOT_EXISTS)
+		return nil, 0, errors.New(INDEX_NOT_EXISTS)
 	}
 
 	// If range is defined, add it to the filters
@@ -167,7 +168,7 @@ func (s *inMemoryDatastoreQuery) Find(keys ...string) (out []Entity, total int64
 
 // Select is similar to find but with ability to retrieve specific fields
 func (s *inMemoryDatastoreQuery) Select(fields ...string) ([]Json, error) {
-	return nil, fmt.Errorf(NOT_IMPLEMENTED)
+	return nil, errors.New(NOT_IMPLEMENTED)
 }
 
 // Count executes a query based on the criteria, order and pagination
@@ -176,9 +177,9 @@ func (s *inMemoryDatastoreQuery) Count(keys ...string) (total int64, err error) 
 	ent := s.factory()
 	table := tableName(ent.TABLE(), keys...)
 
-	tbl, ok := s.db.db[table]
+	tbl, ok := s.db.Db[table]
 	if !ok {
-		return 0, fmt.Errorf(TABLE_NOT_EXISTS)
+		return 0, errors.New(TABLE_NOT_EXISTS)
 	}
 
 	// If range is defined, add it to the filters
@@ -352,7 +353,7 @@ func (s *inMemoryDatastoreQuery) filter(in Entity) (out Entity) {
 	// Apply All (AND) filters
 	for _, andList := range s.allFilters {
 		for _, fq := range andList {
-			if testField(raw, fq) == false {
+			if !testField(raw, fq) {
 				return nil
 			}
 		}
@@ -360,7 +361,7 @@ func (s *inMemoryDatastoreQuery) filter(in Entity) (out Entity) {
 
 	or := func(list []QueryFilter) bool {
 		for _, fq := range list {
-			if testField(raw, fq) == true {
+			if testField(raw, fq) {
 				return true
 			}
 		}
@@ -369,7 +370,7 @@ func (s *inMemoryDatastoreQuery) filter(in Entity) (out Entity) {
 
 	// Apply Any (OR) filters
 	for _, orList := range s.anyFilters {
-		if or(orList) == false {
+		if !or(orList) {
 			return nil
 		}
 	}

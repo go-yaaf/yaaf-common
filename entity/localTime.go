@@ -11,10 +11,13 @@ import (
 
 // region LocalTimes ----------------------------------------------------------------------------------------------------
 
-// LocalTime represents the time (year, month, day, hour, minute, second) as number in the following format: YYYYMMDDhhmmss
+// LocalTime represents the time (year, month, day, hour, minute, second) as number in the following format: YYYYMMDDhhmmss.
+// It is useful for storing time in a compact, human-readable integer format that preserves sorting order.
 type LocalTime int64
 
-// LocalTimestamp converts LocalTime to Timestamp
+// LocalTimestamp converts one or more LocalTime values to a Timestamp.
+// If arguments are provided, it converts the first LocalTime to Timestamp.
+// If no arguments are provided, it returns the current time as a Timestamp derived from LocalTime format.
 func LocalTimestamp(lt ...LocalTime) Timestamp {
 	if len(lt) > 0 {
 		return Timestamp(lt[0])
@@ -30,7 +33,8 @@ func LocalTimestamp(lt ...LocalTime) Timestamp {
 	return Timestamp(result)
 }
 
-// FromTime convert time to LocalTime
+// FromTime converts a standard Go time.Time object to LocalTime.
+// The time is converted to UTC before being formatted as YYYYMMDDhhmmss.
 func FromTime(t time.Time) LocalTime {
 	utc := t.UTC()
 	result := utc.Year() * 10000000000
@@ -43,12 +47,12 @@ func FromTime(t time.Time) LocalTime {
 	return LocalTime(result)
 }
 
-// FromTimestamp convert Timestamp to LocalTime
+// FromTimestamp converts a Timestamp to LocalTime.
 func FromTimestamp(ts Timestamp) LocalTime {
 	return FromTime(ts.Time())
 }
 
-// LocalNow return current time as YYYYMMDDhhmmss
+// LocalNow returns the current UTC time as a LocalTime (YYYYMMDDhhmmss).
 func LocalNow() LocalTime {
 	utc := time.Now().UTC()
 	result := utc.Year() * 10000000000
@@ -61,18 +65,20 @@ func LocalNow() LocalTime {
 	return LocalTime(result)
 }
 
-// Add time and return a new timestamp
+// Add adds a duration to the LocalTime and returns a new LocalTime.
+// Note: This implementation treats LocalTime as a simple integer for addition, which might not be correct for date arithmetic.
+// It is recommended to convert to time.Time, add duration, and convert back if date logic is needed.
 func (lt *LocalTime) Add(delta time.Duration) LocalTime {
 	return LocalTime(int64(*lt) + delta.Milliseconds())
 }
 
-// Time returns the Go primitive  time.Time object
+// Time converts LocalTime to a standard Go time.Time object in UTC.
 func (lt *LocalTime) Time() (result time.Time) {
 	year, month, day, hours, minutes, seconds := lt.Split()
 	return time.Date(year, time.Month(month), day, hours, minutes, seconds, 0, time.UTC)
 }
 
-// Split timestamp string in format of: hh:mm to hour and minute
+// Split parses the LocalTime integer into its components: year, month, day, hour, minute, second.
 func (lt *LocalTime) Split() (year, month, day, hours, minutes, seconds int) {
 
 	str := fmt.Sprintf("%d", *lt)
@@ -97,13 +103,15 @@ func (lt *LocalTime) Split() (year, month, day, hours, minutes, seconds int) {
 	return
 }
 
-// LocalString convert Epoch milliseconds timestamp with timezone (IANA) to readable string
+// String converts LocalTime to a formatted string.
+// It supports custom formatting patterns similar to other time libraries.
 func (lt *LocalTime) String(format string) string {
 	layout := ConvertISO8601Format(format)
 	return lt.Time().Format(layout)
 }
 
-// ConvertISO8601Format converts ISO6801 datetime format to Go RFC3339 format (used by Go)
+// ConvertISO8601Format converts a custom date format string (e.g., "YYYY-MM-DD") to Go's reference time format.
+// This helper function allows using more familiar format strings instead of Go's specific reference date (Mon Jan 2 15:04:05 MST 2006).
 func ConvertISO8601Format(format string) string {
 
 	if len(format) == 0 {
@@ -189,7 +197,7 @@ func ConvertISO8601Format(format string) string {
 	}
 }
 
-// Timestamp converts local time to Timestamp
+// Timestamp converts LocalTime to a Timestamp (Epoch milliseconds).
 func (lt *LocalTime) Timestamp() Timestamp {
 	return Timestamp(*lt)
 }

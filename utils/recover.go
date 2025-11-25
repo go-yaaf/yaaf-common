@@ -52,7 +52,7 @@ func RecoverAny(errors []error, cb func(v any)) {
 	panic(r)
 }
 
-// Check if the given error included in the error list
+// inErrors checks if the given error is included in the error list.
 func inErrors(e any, errors []error) bool {
 	for _, err := range errors {
 		if e == err {

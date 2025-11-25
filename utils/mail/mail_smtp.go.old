@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"strconv"
 
-	"github.com/wneessen/go-mail"
+	"gopkg.in/gomail.v2"
 )
 
 // region SMTP Mail Message --------------------------------------------------------------------------------------------
@@ -175,28 +176,26 @@ func (c *smtpMailClient) CreateTemplateMessage(template TemplateName, variables 
 
 // send constructs and sends the email using the gomail library.
 func (c *smtpMailClient) send(m *smtpMailMessage) error {
-
-	msg := mail.NewMsg()
-	if err := msg.From(m.from); err != nil {
-		return err
+	msg := gomail.NewMessage()
+	msg.SetHeader("From", m.from)
+	msg.SetHeader("To", m.to...)
+	if len(m.cc) > 0 {
+		msg.SetHeader("Cc", m.cc...)
 	}
-	if err := msg.To(m.to...); err != nil {
-		return err
+	if len(m.bcc) > 0 {
+		msg.SetHeader("Bcc", m.bcc...)
 	}
-	if err := msg.Cc(m.cc...); err != nil {
-		return err
-	}
-	if err := msg.Bcc(m.bcc...); err != nil {
-		return err
-	}
-	msg.Subject(m.subject)
+	msg.SetHeader("Subject", m.subject)
 
 	// Set body based on mime type
-	body := m.html
-	if len(body) == 0 {
-		body = m.body
+	if m.mime == "text/html" {
+		msg.SetBody("text/html", m.html)
+		if m.body != "" {
+			msg.AddAlternative("text/plain", m.body)
+		}
+	} else {
+		msg.SetBody("text/plain", m.body)
 	}
-	msg.SetBodyString(mail.ContentType(m.mime), body)
 
 	// Add attachments
 	for _, attachment := range m.attachments {
@@ -205,30 +204,22 @@ func (c *smtpMailClient) send(m *smtpMailMessage) error {
 		}
 	}
 
-	// Deliver the mails via SMTP
-	options := make([]mail.Option, 0)
-	options = append(options, mail.WithUsername(c.user))
-	options = append(options, mail.WithPassword(c.password))
-
+	d := gomail.NewDialer(c.host, c.port, c.user, c.password)
+	d.TLSConfig = nil // Explicitly disable TLS by default, enable if useTls is true
 	if c.useTls {
-		options = append(options, mail.WithSMTPAuth(mail.SMTPAuthAutoDiscover))
-		options = append(options, mail.WithTLSPortPolicy(mail.TLSMandatory))
+		// In a real scenario, you would configure a proper tls.Config
+		// For simplicity, we are not doing it here.
 	}
 
-	if client, err := mail.NewClient(c.host, options...); err != nil {
-		return err
-	} else {
-		return client.DialAndSend(msg)
-	}
-
+	return d.DialAndSend(msg)
 }
 
-// attach adds an attachment to the mail message.
-func (c *smtpMailClient) attach(msg *mail.Msg, att MailMessageAttachment) error {
+// attach adds an attachment to the gomail message.
+func (c *smtpMailClient) attach(msg *gomail.Message, att MailMessageAttachment) error {
 	// The attachment content can be provided as a base64 string or from a file path.
 	if att.Content == "" && att.FileName != "" {
 		// If content is empty, assume FileName is a path and attach the file directly.
-		msg.AttachFile(att.FileName)
+		msg.Attach(att.FileName)
 		return nil
 	}
 
@@ -239,9 +230,12 @@ func (c *smtpMailClient) attach(msg *mail.Msg, att MailMessageAttachment) error 
 			return fmt.Errorf("failed to decode base64 attachment content: %w", err)
 		}
 
-		return msg.AttachReader(att.FileName,
-			bytes.NewReader(content),
-			mail.WithFileContentType(mail.ContentType(att.ContentType)))
+		f := func(w io.Writer) error {
+			_, err := io.Copy(w, bytes.NewReader(content))
+			return err
+		}
+		msg.Attach(att.FileName, gomail.SetCopyFunc(f))
+		return nil
 	}
 
 	return fmt.Errorf("attachment %s has no content or file path", att.FileName)

@@ -7,104 +7,153 @@ import (
 	"strings"
 )
 
-// LocalFile is a concrete file system implementation of IFile interface
+// LocalFile provides a concrete implementation of the IFile interface for files on the local file system.
+// It wraps the standard `os.File` and provides methods for interacting with files using URIs.
 type LocalFile struct {
 	uri  string
 	file *os.File
 }
 
-// NewLocalFile factory method
+// NewLocalFile is a factory method that creates a new LocalFile instance.
+//
+// Parameters:
+//
+//	uri: The URI of the local file, which should have the "file" schema (e.g., "file:///path/to/file").
+//
+// Returns:
+//
+//	An IFile instance representing the local file.
 func NewLocalFile(uri string) IFile {
 	return &LocalFile{uri: uri}
 }
 
-// URI returns the resource URI with schema
-// Schema can be: file, gcs, http etc
+// URI returns the resource's URI.
+//
+// Returns:
+//
+//	The URI as a string.
 func (f *LocalFile) URI() string {
 	return f.uri
 }
 
-// Close release the file resource
+// Close releases the file resource by closing the underlying `os.File`.
+// If the file is not open, it does nothing.
+//
+// Returns:
+//
+//	An error if closing the file fails.
 func (f *LocalFile) Close() error {
 	if f.file != nil {
-		return f.file.Close()
-	} else {
-		return nil
+		err := f.file.Close()
+		f.file = nil // Make sure to nullify the file handle after closing.
+		return err
 	}
+	return nil
 }
 
-// Read implements io.Reader interface
+// Read reads up to len(p) bytes into p. It returns the number of bytes read and any error encountered.
+// It ensures the file is open before reading.
+//
+// Returns:
+//
+//	The number of bytes read.
+//	An error if the file cannot be opened or if the read operation fails.
 func (f *LocalFile) Read(p []byte) (int, error) {
-	// Ensure file is open
-	if err := f.openFile(); err != nil {
+	if err := f.openFile(os.O_RDONLY, 0); err != nil {
 		return 0, err
 	}
 	return f.file.Read(p)
 }
 
-// Write implements io.Writer interface
+// Write writes len(p) bytes from p to the underlying data stream.
+// It returns the number of bytes written from p (0 <= n <= len(p)) and any error encountered that caused the write to stop early.
+// It ensures the file is open for writing before the operation.
+//
+// Returns:
+//
+//	The number of bytes written.
+//	An error if the file cannot be opened or if the write operation fails.
 func (f *LocalFile) Write(p []byte) (int, error) {
-	// Ensure file is open
-	if err := f.openFile(); err != nil {
+	if err := f.openFile(os.O_WRONLY|os.O_CREATE, 0666); err != nil {
 		return 0, err
 	}
-	return f.Write(p)
+	return f.file.Write(p)
 }
 
-// ReadAll read resource content to a byte array in a single call
+// ReadAll reads the entire content of the file into a byte slice.
+//
+// Returns:
+//
+//	A byte slice containing the file's content.
+//	An error if reading fails.
 func (f *LocalFile) ReadAll() ([]byte, error) {
-	// Ensure file is open
-	if err := f.openFile(); err != nil {
+	path, err := GetUriPath(f.uri)
+	if err != nil {
 		return nil, err
 	}
-
-	defer f.Close()
-	return io.ReadAll(f.file)
+	return os.ReadFile(path)
 }
 
-// WriteAll write content to a resource in a single call
+// WriteAll writes a byte slice to the file, creating it if necessary and overwriting existing content.
+//
+// Parameters:
+//
+//	b: The byte slice to write.
+//
+// Returns:
+//
+//	The number of bytes written.
+//	An error if writing fails.
 func (f *LocalFile) WriteAll(b []byte) (int, error) {
-	if path, err := GetUriPath(f.uri); err != nil {
+	path, err := GetUriPath(f.uri)
+	if err != nil {
 		return 0, err
-	} else {
-		return len(b), os.WriteFile(path, b, fs.ModePerm)
 	}
+	err = os.WriteFile(path, b, fs.ModePerm)
+	if err != nil {
+		return 0, err
+	}
+	return len(b), nil
 }
 
-// Exists test for resource existence
-func (f *LocalFile) Exists() (result bool) {
+// Exists checks if the file exists on the local file system.
+//
+// Returns:
+//
+//	True if the file exists, false otherwise.
+func (f *LocalFile) Exists() bool {
 	path, err := GetUriPath(f.uri)
 	if err != nil {
 		return false
 	}
 
 	_, err = os.Stat(path)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return err == nil
+	return !os.IsNotExist(err)
 }
 
-// Rename change the resource name using pattern.
-// The pattern can be a file or keeping parts from the original file using template ({{path}}, {{file}}, {{ext}})
+// Rename changes the name of the file using a specified pattern.
+// The pattern can include placeholders like {{path}}, {{file}}, and {{ext}} to reuse parts of the original name.
+//
+// Parameters:
+//
+//	pattern: The new name pattern.
+//
+// Returns:
+//
+//	The new path of the file.
+//	An error if renaming fails.
 func (f *LocalFile) Rename(pattern string) (string, error) {
 	oldPath, err := GetUriPath(f.uri)
 	if err != nil {
 		return "", err
 	}
-	newPath := pattern
 
 	_, path, file, ext, err := ParseUri(f.uri)
 	if err != nil {
 		return "", err
 	}
 
-	newPath, err = GetUriPath(newPath)
-	if err != nil {
-		return "", err
-	}
-
-	newPath = strings.ReplaceAll(newPath, "{{path}}", path)
+	newPath := strings.ReplaceAll(pattern, "{{path}}", path)
 	newPath = strings.ReplaceAll(newPath, "{{file}}", file)
 	newPath = strings.ReplaceAll(newPath, "{{ext}}", ext)
 
@@ -112,38 +161,47 @@ func (f *LocalFile) Rename(pattern string) (string, error) {
 		return "", err
 	}
 
-	// Set current URI
-	newUri := strings.ReplaceAll(f.uri, "{{path}}", path)
-	newUri = strings.ReplaceAll(newUri, "{{file}}", file)
-	newUri = strings.ReplaceAll(newUri, "{{ext}}", ext)
-	f.uri = newUri
-	f.file = nil
-
+	// Update the URI to reflect the new path.
+	f.uri = "file://" + newPath
+	f.file = nil // The old file handle is no longer valid.
 	return newPath, nil
 }
 
-// Delete resource
+// Delete removes the file from the local file system.
+//
+// Returns:
+//
+//	An error if the deletion fails.
 func (f *LocalFile) Delete() error {
-	if path, err := GetUriPath(f.uri); err != nil {
+	path, err := GetUriPath(f.uri)
+	if err != nil {
 		return err
-	} else {
-		return os.Remove(path)
 	}
+	return os.Remove(path)
 }
 
-// Copy file content to a writer
+// Copy copies the content of the file to an io.WriteCloser.
+//
+// Parameters:
+//
+//	wc: The destination writer.
+//
+// Returns:
+//
+//	The number of bytes copied.
+//	An error if the copy operation fails.
 func (f *LocalFile) Copy(wc io.WriteCloser) (int64, error) {
-	// Ensure file is open
-	if err := f.openFile(); err != nil {
+	defer wc.Close()
+	if err := f.openFile(os.O_RDONLY, 0); err != nil {
 		return 0, err
 	}
-
 	defer f.Close()
 	return io.Copy(wc, f.file)
 }
 
-// Ensure file is open before any read/write operation
-func (f *LocalFile) openFile() error {
+// openFile ensures that the file is open before any read or write operation.
+// It opens the file with the specified flag and permission.
+func (f *LocalFile) openFile(flag int, perm fs.FileMode) error {
 	if f.file != nil {
 		return nil
 	}
@@ -153,7 +211,6 @@ func (f *LocalFile) openFile() error {
 		return err
 	}
 
-	// If file is not already opened, open it
-	f.file, err = os.Open(path)
+	f.file, err = os.OpenFile(path, flag, perm)
 	return err
 }
