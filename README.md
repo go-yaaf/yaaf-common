@@ -302,16 +302,17 @@ import (
 
 func main() {
 	// Initialize the logger for a development environment
-	if err := logger.Init(logger.Development); err != nil {
-		panic(err)
-	}
+	logger.SetLevel("DEBUG")
+	logger.EnableJsonFormat(true)
+	logger.EnableStacktrace(false)
+	logger.Init()
 
 	logger.Info("Server is starting...")
 
 	// Use structured logging with fields for context
-	logger.Warn("Configuration value is missing, using default.", logger.Fields{"key": "db_host", "default": "localhost"})
+	logger.Warn("Configuration value %s is missing, using default.", "DATABASE_URI")
 
-	logger.Error("Failed to connect to database", logger.Fields{"error": "connection refused"})
+	logger.Error("Failed to connect to database: %s", "postgres://user:pwd@localhost:5432/db")
 }
 ```
 
@@ -325,9 +326,6 @@ The `utils` package contains a collection of helpers for common tasks like:
 - **`binary`**: Helpers for working with binary data.
 - And more for hashing, HTTP, and time manipulation.
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit a pull request or open an issue.
 
 ## License
 
