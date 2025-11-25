@@ -184,7 +184,7 @@ func (t *TokenUtilsStruct) encrypt(value string) (string, error) {
 		return "", er
 	}
 
-	stream := cipher.NewCFBEncrypter(block, iv)
+	stream := cipher.NewCTR(block, iv)
 	stream.XORKeyStream(cipherText[aes.BlockSize:], []byte(value))
 
 	return hex.EncodeToString(cipherText), nil
@@ -213,7 +213,7 @@ func (t *TokenUtilsStruct) decrypt(value string) (string, error) {
 	iv := cipherText[:aes.BlockSize]
 	cipherText = cipherText[aes.BlockSize:]
 
-	stream := cipher.NewCFBDecrypter(block, iv)
+	stream := cipher.NewCTR(block, iv)
 	stream.XORKeyStream(cipherText, cipherText)
 
 	return string(cipherText), nil

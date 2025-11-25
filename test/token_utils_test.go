@@ -18,7 +18,7 @@ const (
 )
 
 func TestApiKey(t *testing.T) {
-	skipCI(t)
+	//skipCI(t)
 	appName := "my-application"
 
 	if err := utils.SetSecret([]byte(tokenApiSecret), []byte(tokenApiVector)); err != nil {
@@ -41,7 +41,7 @@ func TestApiKey(t *testing.T) {
 }
 
 func TestJwtToken(t *testing.T) {
-	skipCI(t)
+	//skipCI(t)
 	// Create the Registered Claims and map Token Data fields
 	rc := &jwt.RegisteredClaims{
 		ID:       "claimId",
