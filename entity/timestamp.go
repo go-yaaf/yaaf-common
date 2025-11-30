@@ -12,6 +12,7 @@ import (
 
 // Timestamp represents Epoch milliseconds timestamp.
 // It is the primary time representation in the system, allowing for easy serialization and arithmetic.
+// @Data
 type Timestamp int64
 
 // EpochNowMillis returns the current time as Epoch time in milliseconds, with an optional delta.
@@ -214,6 +215,7 @@ func (ts Timestamp) LocalString(format string, tz string) string {
 // region TimeFrame ----------------------------------------------------------------------------------------------------
 
 // TimeFrame represents a time interval with a start and end timestamp.
+// @Data
 type TimeFrame struct {
 	From Timestamp `json:"from"` // From is the start timestamp
 	To   Timestamp `json:"to"`   // To is the end timestamp
@@ -246,6 +248,7 @@ func (tf *TimeFrame) Duration() time.Duration {
 // region TimeDataPoint ------------------------------------------------------------------------------------------------
 
 // TimeDataPoint represents a generic data point associated with a timestamp.
+// @Data
 type TimeDataPoint[V any] struct {
 	Timestamp Timestamp `json:"timestamp"` // Timestamp of the data point
 	Value     V         `json:"value"`     // Value of the data point
@@ -266,6 +269,7 @@ func (tf *TimeDataPoint[V]) String(format string) string {
 // region TimeSeries ---------------------------------------------------------------------------------------------------
 
 // TimeSeries represents a named collection of data points over a specific time range.
+// @Data
 type TimeSeries[T any] struct {
 	Name   string             `json:"name"`   // Name of the time series
 	Range  TimeFrame          `json:"range"`  // Range covers the start and end time of the series

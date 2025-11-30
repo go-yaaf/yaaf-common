@@ -6,6 +6,8 @@ package entity
 // Type Parameters:
 //   - K: The type of the key.
 //   - V: The type of the value.
+//
+// @Data
 type Tuple[K, V any] struct {
 	Key   K `json:"key"`   // Key is the first element of the tuple
 	Value V `json:"value"` // Value is the second element of the tuple

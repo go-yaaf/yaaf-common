@@ -13,6 +13,7 @@ import (
 
 // LocalTime represents the time (year, month, day, hour, minute, second) as number in the following format: YYYYMMDDhhmmss.
 // It is useful for storing time in a compact, human-readable integer format that preserves sorting order.
+// @Data
 type LocalTime int64
 
 // LocalTimestamp converts one or more LocalTime values to a Timestamp.

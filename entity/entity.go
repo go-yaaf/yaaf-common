@@ -17,10 +17,12 @@ import (
 
 // Json Represent arbitrary JSON fields collection
 // It is a map of string to any, used for flexible data structures.
+// @Data
 type Json map[string]any
 
 // JsonDoc is a Json document to store in Document object store (Postgres, ElasticSearch, Couchbase ...)
 // It serves as a generic container for JSON data with a unique identifier.
+// @Data
 type JsonDoc struct {
 	Id   string // Id is the unique identifier of the document
 	Data string // Data is the raw JSON string content
@@ -62,6 +64,7 @@ type EntityFactory func() Entity
 // BaseEntity is a base structure for any concrete Entity.
 // It provides common fields like Id, CreatedOn, and UpdatedOn that are standard across most entities.
 // Embed this struct in your domain entities to inherit these standard fields and basic behavior.
+// @Data
 type BaseEntity struct {
 	Id        string    `json:"id"`        // Id is the unique object identifier
 	CreatedOn Timestamp `json:"createdOn"` // CreatedOn is the timestamp when the object was created [Epoch milliseconds Timestamp]
@@ -130,6 +133,7 @@ func EntityIndex(entity Entity, tenantId string) string {
 // BaseEntityEx is an extended base Entity with custom attributes.
 // It includes all fields from BaseEntity and adds support for a status Flag and a generic properties map (Props).
 // This is useful for entities that need soft-delete capabilities (via Flag) or extensible fields (via Props).
+// @Data
 type BaseEntityEx struct {
 	Id        string    `json:"id"`        // Id is the unique object identifier
 	CreatedOn Timestamp `json:"createdOn"` // CreatedOn is the timestamp when the object was created [Epoch milliseconds Timestamp]
@@ -158,6 +162,7 @@ func NewBaseEntityEx() Entity {
 // SimpleEntity is a generic wrapper to express a primitive type as an Entity.
 // It is useful when you need to treat a simple value (like a string or int) as a full-fledged Entity
 // in the system, for example when passing it to functions that expect an Entity interface.
+// @Data
 type SimpleEntity[T any] struct {
 	Value T `json:"value"` // Value is the wrapped entity value
 }
@@ -181,6 +186,7 @@ func NewSimpleEntity[T any]() Entity {
 
 // Entities is a generic wrapper to express a list of primitive or complex types as an Entity.
 // It allows a collection of items to be treated as a single Entity unit.
+// @Data
 type Entities[T any] struct {
 	Values []T `json:"values"` // Values is the list of wrapped entities or values
 }
@@ -265,6 +271,7 @@ func GUID() string {
 // region Entity Actions -----------------------------------------------------------------------------------------------
 
 // EntityAction represents the type of action performed on an entity.
+// @Data
 type EntityAction int
 
 const (
