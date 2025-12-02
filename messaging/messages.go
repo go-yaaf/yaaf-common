@@ -32,6 +32,7 @@ type IMessage interface {
 
 // BaseMessage provides a basic implementation of the IMessage interface.
 // It can be embedded in other message structs to provide default behavior for the common message attributes.
+// @Data
 type BaseMessage struct {
 	MsgTopic     string `json:"topic"`     // The topic (channel or queue) of the message.
 	MsgOpCode    int    `json:"opCode"`    // An operational code for the message.
@@ -74,6 +75,8 @@ type SubscriptionCallback func(msg IMessage) bool
 // Type Parameters:
 //
 //	T: The type of the payload.
+//
+// @Data
 type Message[T any] struct {
 	BaseMessage
 	MsgPayload T `json:"payload"` // The typed data payload of the message.
@@ -120,6 +123,7 @@ func GetMessage[T any](topic string, payload T) IMessage {
 
 // EntityMessage is a message structure for carrying generic entity data.
 // It embeds BaseMessage and uses an `any` type for the payload.
+// @Data
 type EntityMessage struct {
 	BaseMessage
 	MsgPayload any `json:"payload"` // The payload of the message, typically an entity.
