@@ -174,8 +174,8 @@ func (cache *Cache[K, T]) Set(key K, data T) {
 	cache.SetWithTTL(key, data, ItemExpireWithGlobalTTL)
 }
 
-// SetWithTTL adds or updates an item in the cache with a specific TTL.
-func (cache *Cache[K, T]) SetWithTTL(key K, data T, ttl time.Duration) {
+// SetWithTTLOld adds or updates an item in the cache with a specific TTL.
+func (cache *Cache[K, T]) SetWithTTLOld(key K, data T, ttl time.Duration) {
 	cache.mutex.Lock()
 	defer cache.mutex.Unlock()
 
@@ -206,6 +206,59 @@ func (cache *Cache[K, T]) SetWithTTL(key K, data T, ttl time.Duration) {
 		go cache.newItemCallback(key, data)
 	}
 	cache.expirationNotification <- true
+}
+
+// SetWithTTL adds or updates an item in the cache with a specific TTL.
+func (cache *Cache[K, T]) SetWithTTL(key K, data T, ttl time.Duration) {
+	var (
+		exists bool
+		item   *cachedItem[K, T] // <-- use your actual item type name here (same type returned by getItem/newItem)
+	)
+
+	cache.mutex.Lock()
+
+	// Get existing item (ignore the 3rd return value as your original code did)
+	var ok bool
+	item, ok, _ = cache.getItem(key)
+	exists = ok
+
+	if exists {
+		item.data = data
+		item.ttl = ttl
+	} else {
+		item = newItem(key, data, ttl)
+		cache.items[key] = item
+	}
+
+	if item.ttl >= 0 && (item.ttl > 0 || cache.ttl > 0) {
+		if cache.ttl > 0 && item.ttl == 0 {
+			item.ttl = cache.ttl
+		}
+		item.touch()
+	}
+
+	if exists {
+		cache.priorityQueue.update(item)
+	} else {
+		cache.priorityQueue.push(item)
+	}
+
+	// Capture callback info while holding the lock, then invoke after unlocking
+	cb := cache.newItemCallback
+	shouldCall := !exists && cb != nil
+
+	cache.mutex.Unlock()
+
+	// Invoke callback outside the lock
+	if shouldCall {
+		go cb(key, data)
+	}
+
+	// Non-blocking "poke" to wake expiration processing (collapse multiple updates)
+	select {
+	case cache.expirationNotification <- true:
+	default:
+	}
 }
 
 // Get retrieves an item from the cache. It also extends the item's TTL unless disabled.
