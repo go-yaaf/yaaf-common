@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-yaaf/yaaf-common/utils/nanoid"
 	"github.com/google/uuid"
-	"github.com/jaevor/go-nanoid"
 )
 
 // region Json Document ------------------------------------------------------------------------------------------------
