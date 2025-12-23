@@ -243,6 +243,31 @@ func (tf *TimeFrame) Duration() time.Duration {
 	return time.Duration(millis) * time.Millisecond
 }
 
+// Overlaps returns true if the provided TimeFrame overlaps with the current TimeFrame.
+func (tf *TimeFrame) Overlaps(with TimeFrame, gap time.Duration) bool {
+	overlapStart := tf.Max(tf.From, with.From)
+	overlapEnd := tf.Min(tf.To, with.To)
+
+	overlapMs := int64(overlapEnd) - int64(overlapStart)
+	return overlapMs > gap.Milliseconds()
+}
+
+// Max find max value between two timestamps
+func (tf *TimeFrame) Max(a, b Timestamp) Timestamp {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+// Min find min value between two timestamps
+func (tf *TimeFrame) Min(a, b Timestamp) Timestamp {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 // endregion
 
 // region TimeDataPoint ------------------------------------------------------------------------------------------------
