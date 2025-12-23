@@ -1,24 +1,31 @@
-// Package logger Logger implementation based on zap log package (https://github.com/uber-go/zap)
+// Package logger Logger implementation based on slog
 package logger
 
 import (
 	"fmt"
-	"go.uber.org/zap/zapcore"
+	"io"
+	"log/slog"
+	"os"
 	"strings"
 	"sync"
 	"time"
-
-	"go.uber.org/zap"
 )
 
-var loggerConfig zap.Config
 var loggerOnce sync.Once
-var loggerSingleton *zap.Logger = nil
+var loggerSingleton *slog.Logger
 
-func getLogger() (result *zap.Logger) {
+var handlerOptions = &slog.HandlerOptions{
+	AddSource: false, // Disabled by default to match original zap config
+	Level:     slog.LevelInfo,
+}
+var output io.Writer = os.Stderr
+var isJson = true
+var timeLayout = "2006-01-02 15:04:05" // Default time layout from original
+
+func getLogger() *slog.Logger {
 	loggerOnce.Do(func() {
 		if loggerSingleton == nil {
-			loggerSingleton, _ = zap.NewProduction()
+			Init()
 		}
 	})
 	return loggerSingleton
@@ -26,123 +33,101 @@ func getLogger() (result *zap.Logger) {
 
 // init set default logging configuration
 func init() {
-
-	// The default ZAP logger keys
-	//encoderConfig := zapcore.EncoderConfig{
-	//	TimeKey:        "T",
-	//	LevelKey:       "L",
-	//	NameKey:        "N",
-	//	CallerKey:      "C",
-	//	FunctionKey:    zapcore.OmitKey,
-	//	MessageKey:     "M",
-	//	StacktraceKey:  "S",
-	//	LineEnding:     zapcore.DefaultLineEnding,
-	//	EncodeLevel:    zapcore.CapitalLevelEncoder,
-	//	EncodeTime:     customEncodeTime,
-	//	EncodeDuration: zapcore.StringDurationEncoder,
-	//}
-
-	// The GCP format logger keys
-	var encoderConfig = zapcore.EncoderConfig{
-		TimeKey:        "time",
-		LevelKey:       "severity",
-		NameKey:        "logger",
-		CallerKey:      "caller",
-		MessageKey:     "message",
-		StacktraceKey:  "stacktrace",
-		LineEnding:     zapcore.DefaultLineEnding,
-		EncodeLevel:    gcpEncodeLevel(),
-		EncodeTime:     zapcore.RFC3339TimeEncoder,
-		EncodeDuration: zapcore.MillisDurationEncoder,
-		EncodeCaller:   zapcore.ShortCallerEncoder,
-	}
-
-	loggerConfig = zap.Config{
-		Level:            zap.NewAtomicLevelAt(zap.InfoLevel),
-		Development:      false,
-		Encoding:         "json",
-		EncoderConfig:    encoderConfig,
-		OutputPaths:      []string{"stderr"},
-		ErrorOutputPaths: []string{"stderr"},
-	}
-
-	loggerConfig.DisableCaller = true
-	loggerConfig.DisableStacktrace = true
-}
-
-func gcpEncodeLevel() zapcore.LevelEncoder {
-	return func(l zapcore.Level, enc zapcore.PrimitiveArrayEncoder) {
-		switch l {
-		case zapcore.DebugLevel:
-			enc.AppendString("DEBUG")
-		case zapcore.InfoLevel:
-			enc.AppendString("INFO")
-		case zapcore.WarnLevel:
-			enc.AppendString("WARNING")
-		case zapcore.ErrorLevel:
-			enc.AppendString("ERROR")
-		case zapcore.DPanicLevel:
-			enc.AppendString("CRITICAL")
-		case zapcore.PanicLevel:
-			enc.AppendString("ALERT")
-		case zapcore.FatalLevel:
-			enc.AppendString("EMERGENCY")
-		}
-	}
+	Init()
 }
 
 // region Logger configuration -----------------------------------------------------------------------------------------
 
 // SetLevel log level DEBUG | INFO | WARN | ERROR
 func SetLevel(level string) {
-	switch strings.ToLower(level) {
+	level = strings.ToLower(level)
+	lvl := slog.LevelInfo
+	switch level {
 	case "debug":
-		loggerConfig.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
+		lvl = slog.LevelDebug
 	case "info":
-		loggerConfig.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
-	case "warn":
-		loggerConfig.Level = zap.NewAtomicLevelAt(zap.WarnLevel)
-	case "warning":
-		loggerConfig.Level = zap.NewAtomicLevelAt(zap.WarnLevel)
+		lvl = slog.LevelInfo
+	case "warn", "warning":
+		lvl = slog.LevelWarn
 	case "error":
-		loggerConfig.Level = zap.NewAtomicLevelAt(zap.ErrorLevel)
+		lvl = slog.LevelError
 	}
+	handlerOptions.Level = lvl
+	Init()
 }
 
 // EnableJsonFormat configure log output as json (true) or text line (false)
 func EnableJsonFormat(value bool) {
-	if value {
-		loggerConfig.Encoding = "json"
-	} else {
-		loggerConfig.Encoding = "console"
-	}
+	isJson = value
+	Init()
 }
 
-// EnableStacktrace configure log output to include or exclude stack trace
+// EnableStacktrace is not supported by slog and is a no-op.
 func EnableStacktrace(value bool) {
-	loggerConfig.DisableStacktrace = !value
+	// slog does not have built-in stacktrace support like zap.
+	// For error stack traces, consider wrapping errors and logging them.
 }
 
-// SetTimeLayout define the log entry time layout
+// EnableCaller enables/disables logging the caller source file and line number.
+func EnableCaller(value bool) {
+	handlerOptions.AddSource = value
+	Init()
+}
+
+// SetTimeLayout define the log entry time layout.
 func SetTimeLayout(layout string) {
 	if len(layout) == 0 {
 		layout = "2006-01-02 15:04:05"
 	}
-	loggerConfig.EncoderConfig.EncodeTime = func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
-		enc.AppendString(t.Format(layout))
-	}
-}
-
-func customEncodeTime(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
-	enc.AppendString(t.Format("2006-01-02 15:04:05"))
+	timeLayout = layout
+	Init()
 }
 
 // Init initialize logger
 func Init() {
-	var err error
-	if loggerSingleton, err = loggerConfig.Build(); err != nil {
-		loggerSingleton, _ = zap.NewProduction()
+	replaceAttr := func(groups []string, a slog.Attr) slog.Attr {
+		// Customize time format
+		if a.Key == slog.TimeKey && timeLayout != "" {
+			if t, ok := a.Value.Any().(time.Time); ok {
+				a.Value = slog.StringValue(t.Format(timeLayout))
+			}
+		}
+
+		// Rename level to severity for GCP compatibility
+		if a.Key == slog.LevelKey {
+			a.Key = "severity"
+			level := a.Value.Any().(slog.Level)
+			switch level {
+			case slog.LevelDebug:
+				a.Value = slog.StringValue("DEBUG")
+			case slog.LevelInfo:
+				a.Value = slog.StringValue("INFO")
+			case slog.LevelWarn:
+				a.Value = slog.StringValue("WARNING")
+			case slog.LevelError:
+				a.Value = slog.StringValue("ERROR")
+			default:
+				a.Value = slog.StringValue(level.String())
+			}
+		}
+
+		// Rename msg to message for GCP compatibility
+		if a.Key == slog.MessageKey {
+			a.Key = "message"
+		}
+		return a
 	}
+
+	handlerOptions.ReplaceAttr = replaceAttr
+
+	var handler slog.Handler
+	if isJson {
+		handler = slog.NewJSONHandler(output, handlerOptions)
+	} else {
+		handler = slog.NewTextHandler(output, handlerOptions)
+	}
+	loggerSingleton = slog.New(handler)
+	slog.SetDefault(loggerSingleton)
 }
 
 // endregion
@@ -151,37 +136,28 @@ func Init() {
 
 // Debug log level
 func Debug(format string, params ...any) {
-	l := getLogger()
-	defer l.Sync()
-	l.Debug(fmt.Sprintf(format, params...))
+	getLogger().Debug(fmt.Sprintf(format, params...))
 }
 
 // Info log level
 func Info(format string, params ...any) {
-	l := getLogger()
-	defer l.Sync()
-	l.Info(fmt.Sprintf(format, params...))
+	getLogger().Info(fmt.Sprintf(format, params...))
 }
 
 // Warn log level
 func Warn(format string, params ...any) {
-	l := getLogger()
-	defer l.Sync()
-	l.Warn(fmt.Sprintf(format, params...))
+	getLogger().Warn(fmt.Sprintf(format, params...))
 }
 
 // Error log level
 func Error(format string, params ...any) {
-	l := getLogger()
-	defer l.Sync()
-	l.Error(fmt.Sprintf(format, params...))
+	getLogger().Error(fmt.Sprintf(format, params...))
 }
 
-// Fatal log level
+// Fatal log level, followed by os.Exit(1)
 func Fatal(format string, params ...any) {
-	l := getLogger()
-	defer l.Sync()
-	l.Fatal(fmt.Sprintf(format, params...))
+	getLogger().Error(fmt.Sprintf(format, params...))
+	os.Exit(1)
 }
 
 // endregion
