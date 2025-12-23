@@ -5,10 +5,11 @@ package test
 /*
 import (
 	"fmt"
-	"github.com/go-yaaf/yaaf-common/entity"
-	"github.com/go-yaaf/yaaf-common/utils"
 	"testing"
 	"time"
+
+	"github.com/go-yaaf/yaaf-common/entity"
+	"github.com/go-yaaf/yaaf-common/utils"
 )
 
 func TestBounds(t *testing.T) {

@@ -1,6 +1,5 @@
 package test
 
-/*
 import (
 	"os"
 	"testing"
@@ -11,4 +10,3 @@ func skipCI(t *testing.T) {
 		t.Skip("Skipping testing in CI environment")
 	}
 }
-*/
