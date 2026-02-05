@@ -1,0 +1,141 @@
+# YAAF-Common
+
+> YAAF (Yet Another Application Framework) - Common library for building microservices in Go
+
+## Overview
+
+YAAF-Common is a foundational Go library that provides standard interfaces and utilities for building modern microservices. It promotes clean architecture and loose coupling by abstracting common infrastructure components like databases, caches, and message brokers.
+
+## Key Features
+
+- **Interface-Driven Design**: Code against interfaces, not implementations
+- **In-Memory Implementations**: Built-in in-memory versions for testing without external dependencies
+- **Zero-Configuration Testing**: Fast, dependency-free unit and integration tests
+- **Minimal Dependencies**: Only requires google/uuid and go-mail
+- **Clean Architecture**: Decouples business logic from infrastructure
+
+## Core Components
+
+### 1. Configuration (`config/`)
+- Environment-variable-driven configuration
+- `BaseConfig` for container-friendly app config
+- Automatic mapping of `SERVICE_NAME_VARIABLE_NAME` format
+
+### 2. Database Interfaces (`database/`)
+- `IDatabase`: RDBMS interface for SQL-like databases
+- `IDatastore`: NoSQL document-oriented database interface
+- `IDataCache`: Key-value cache interface (Redis-like)
+- In-memory implementations for all interfaces
+
+### 3. Entity System (`entity/`)
+- `Entity` interface: Base for all domain models
+- `BaseEntity`: Standard entity with ID and timestamps
+- `BaseEntityEx`: Extended entity with status flags and custom properties
+- ID generators: `ID()`, `NanoID()`, `GUID()`, `ShortID()`
+
+### 4. Messaging (`messaging/`)
+- `IMessageBus`: Unified interface for pub/sub and queueing
+- `InMemoryMessageBus`: In-memory implementation for testing
+- Support for both publish-subscribe and queue patterns
+
+### 5. Logging (`logger/`)
+- Structured logging based on native Go log/slog
+- JSON format support
+- Configurable log levels and stack traces
+
+### 6. Utilities (`utils/`)
+- `collections`: Thread-safe maps, sets, queues
+- `pool`: Worker pools for concurrent tasks
+- `binary`: Binary data helpers
+- `hash`: Hashing utilities
+- `http`: HTTP helpers
+- `mail`: Email utilities
+- `nanoid`: Compact ID generation
+
+### 7. REST Utilities (`rest/`)
+- REST API helpers and utilities
+
+### 8. Metrics (`metrics/`)
+- Application metrics utilities
+
+### 9. File Operations (`files/`)
+- File handling utilities
+
+## Project Structure
+
+```
+.
+├── config/          # Configuration management
+├── database/        # Database and cache interfaces + in-memory implementations
+├── entity/          # Entity interfaces and base types
+├── messaging/       # Message bus interfaces
+├── logger/          # Logging utilities
+├── utils/           # Common utilities
+│   ├── Aggregator/  # Data aggregation
+│   ├── binary/      # Binary operations
+│   ├── cache/       # Caching utilities
+│   ├── collections/ # Thread-safe collections
+│   ├── mail/        # Email utilities
+│   ├── nanoid/      # NanoID generation
+│   └── pool/        # Worker pools
+├── rest/            # REST utilities
+├── metrics/         # Metrics utilities
+├── files/           # File utilities
+└── test/            # Test files
+```
+
+## Common Patterns
+
+### Entity Definition
+```go
+type User struct {
+    entity.BaseEntity
+    Name string `json:"name"`
+    Age  int    `json:"age"`
+}
+
+func (u *User) TABLE() string { return "user" }
+```
+
+### Query Building
+```go
+query := database.NewQuery("users")
+    .WithFilter("age", database.Gte, 30)
+    .WithFilter("status", database.Eq, "active")
+    .WithSort("name", true)
+    .WithLimit(10)
+```
+
+### In-Memory Testing
+```go
+db, _ := database.NewInMemoryDatabase()
+cache := database.NewInMemoryDataCache(5*time.Minute, 10*time.Minute)
+bus, _ := messaging.NewInMemoryMessageBus()
+```
+
+## Testing
+
+Run all tests:
+```bash
+go test ./...
+```
+
+The library includes comprehensive tests in the `test/` directory covering all major functionality.
+
+## Dependencies
+
+- Go 1.24.0+
+- github.com/google/uuid v1.6.0
+- github.com/wneessen/go-mail v0.7.2
+
+## Architecture Philosophy
+
+1. **Program to Interfaces**: All infrastructure components are defined as interfaces
+2. **Dependency Injection**: Pass dependencies rather than creating them
+3. **Testability First**: Every interface has an in-memory implementation
+4. **Convention over Configuration**: Sensible defaults, minimal setup
+5. **Separation of Concerns**: Business logic independent of infrastructure
+
+## For More Details
+
+See `/llms-full.txt` for comprehensive interface documentation and implementation details.

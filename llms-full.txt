@@ -1,0 +1,946 @@
+# YAAF-Common - Complete Reference
+
+> Comprehensive documentation for AI coding assistants
+
+## Table of Contents
+
+1. [Project Overview](#project-overview)
+2. [Architecture & Design Principles](#architecture--design-principles)
+3. [Database Interfaces](#database-interfaces)
+4. [Entity System](#entity-system)
+5. [Messaging System](#messaging-system)
+6. [Configuration](#configuration)
+7. [Logging](#logging)
+8. [Utilities](#utilities)
+9. [Testing Patterns](#testing-patterns)
+10. [Common Use Cases](#common-use-cases)
+
+---
+
+## Project Overview
+
+**Repository**: github.com/go-yaaf/yaaf-common
+**Language**: Go 1.24.0+
+**License**: Apache 2.0
+
+YAAF-Common is the foundational library for the YAAF (Yet Another Application Framework) ecosystem. It provides:
+
+- Standard interfaces for infrastructure components
+- In-memory implementations for testing
+- Utility packages for common operations
+- Clean architecture patterns
+
+### Key Files
+
+- `database/database.go` - IDatabase interface (RDBMS)
+- `database/datastore.go` - IDatastore interface (NoSQL)
+- `database/datacache.go` - IDataCache interface (Cache)
+- `entity/entity.go` - Entity interface and base types
+- `messaging/message_bus.go` - IMessageBus interface
+- `logger/logger.go` - Logging implementation
+
+---
+
+## Architecture & Design Principles
+
+### 1. Interface-Driven Design
+
+All infrastructure components are defined as Go interfaces:
+- `IDatabase` for relational databases
+- `IDatastore` for document stores
+- `IDataCache` for key-value caches
+- `IMessageBus` for messaging
+
+Benefits:
+- Easy to mock for testing
+- Swap implementations without code changes
+- Clear contracts between layers
+
+### 2. In-Memory Implementations
+
+Every interface has a fully functional in-memory implementation:
+- `InMemoryDatabase` - database/in_memory_database.go
+- `InMemoryDatastore` - database/in_memory_datastore.go
+- `InMemoryDataCache` - database/in_memory_datacache.go
+- `InMemoryMessageBus` - messaging/in_memory_message_bus.go
+
+Use cases:
+- Unit testing without external dependencies
+- Integration testing
+- Development without infrastructure setup
+- Performance benchmarking
+
+### 3. Entity-Centric Design
+
+All domain models implement the `Entity` interface:
+
+```go
+type Entity interface {
+    ID() string      // Unique identifier
+    TABLE() string   // Table/collection name
+    NAME() string    // Display name
+    KEY() string     // Sharding key
+}
+```
+
+Base implementations:
+- `BaseEntity` - Standard entity with ID and timestamps
+- `BaseEntityEx` - Extended with status flag and custom properties
+- `BaseAnalyticEntity` - For analytical/event data
+- `SimpleEntity[T]` - Generic wrapper for primitives
+- `Entities[T]` - Generic wrapper for collections
+
+---
+
+## Database Interfaces
+
+### IDatabase (database/database.go)
+
+Interface for RDBMS operations. Key methods:
+
+#### Single Entity Operations
+```go
+Get(factory EntityFactory, entityID string, keys ...string) (Entity, error)
+List(factory EntityFactory, entityIDs []string, keys ...string) ([]Entity, error)
+Exists(factory EntityFactory, entityID string, keys ...string) (bool, error)
+Insert(entity Entity) (Entity, error)
+Update(entity Entity) (Entity, error)
+Upsert(entity Entity) (Entity, error)
+Delete(factory EntityFactory, entityID string, keys ...string) error
+```
+
+#### Bulk Operations
+```go
+BulkInsert(entities []Entity) (int64, error)
+BulkUpdate(entities []Entity) (int64, error)
+BulkUpsert(entities []Entity) (int64, error)
+BulkDelete(factory EntityFactory, entityIDs []string, keys ...string) (int64, error)
+```
+
+#### Field-Level Updates
+```go
+SetField(factory EntityFactory, entityID string, field string, value any, keys ...string) error
+SetFields(factory EntityFactory, entityID string, fields map[string]any, keys ...string) error
+BulkSetFields(factory EntityFactory, field string, values map[string]any, keys ...string) (int64, error)
+```
+
+#### Querying
+```go
+Query(factory EntityFactory) IQuery
+Execute(query IQuery, factories ...EntityFactory) ([]Entity, error)
+```
+
+#### Schema Management
+```go
+DropTable(factory EntityFactory) error
+Rebuild(factory EntityFactory) error
+```
+
+### IQuery (database/query.go)
+
+Query builder interface for constructing complex queries:
+
+```go
+type IQuery interface {
+    Table(name string) IQuery
+    Filter(filter QueryFilter) IQuery
+    MatchAll() IQuery
+    Sort(sorts ...Sort) IQuery
+    Limit(limit int) IQuery
+    Page(page int, size int) IQuery
+    Apply(options ...QueryOption) IQuery
+}
+```
+
+Query operators (database/query_operator.go):
+- `Eq` - Equal
+- `Ne` - Not equal
+- `Gt` - Greater than
+- `Gte` - Greater than or equal
+- `Lt` - Less than
+- `Lte` - Less than or equal
+- `In` - In list
+- `NotIn` - Not in list
+- `Between` - Between two values
+- `Like` - Pattern matching
+- `NotLike` - Negative pattern matching
+
+Example:
+```go
+query := database.NewQuery("users").
+    WithFilter("age", database.Gte, 30).
+    WithFilter("status", database.Eq, "active").
+    WithSort("createdOn", false).
+    WithLimit(10).
+    WithPage(1, 10)
+```
+
+### IDatastore (database/datastore.go)
+
+Interface for NoSQL document stores. Similar to IDatabase but optimized for document operations.
+
+Key differences:
+- Collections instead of tables
+- JSON document storage
+- Flexible schema
+
+### IDataCache (database/datacache.go)
+
+Interface for key-value cache operations:
+
+```go
+type IDataCache interface {
+    io.Closer
+
+    Ping(retries uint, intervalInSeconds uint) error
+
+    // Basic operations
+    Get(key string) ([]byte, error)
+    Set(key string, value []byte, expiration ...time.Duration) error
+    SetMany(items map[string][]byte, expiration ...time.Duration) error
+    Delete(keys ...string) error
+
+    // Advanced operations
+    Exists(keys ...string) (bool, error)
+    Keys(pattern string) ([]string, error)
+    SetNX(key string, value []byte, expiration ...time.Duration) (bool, error)
+    GetSet(key string, value []byte) ([]byte, error)
+    Increment(key string, value int64) (int64, error)
+    Decrement(key string, value int64) (int64, error)
+    SetExpire(key string, expiration time.Duration) error
+}
+```
+
+---
+
+## Entity System
+
+### Entity Interface (entity/entity.go)
+
+The base interface for all domain models:
+
+```go
+type Entity interface {
+    ID() string      // Unique identifier
+    TABLE() string   // Table/collection name (can include template variables)
+    NAME() string    // Display name for logging
+    KEY() string     // Sharding key (tenant/account ID)
+}
+```
+
+### BaseEntity
+
+Standard entity with common fields:
+
+```go
+type BaseEntity struct {
+    Id        string    `json:"id"`
+    CreatedOn Timestamp `json:"createdOn"`
+    UpdatedOn Timestamp `json:"updatedOn"`
+}
+```
+
+Usage:
+```go
+type User struct {
+    entity.BaseEntity
+    Name  string `json:"name"`
+    Email string `json:"email"`
+}
+
+func (u *User) TABLE() string { return "users" }
+```
+
+### BaseEntityEx
+
+Extended entity with status and custom properties:
+
+```go
+type BaseEntityEx struct {
+    Id        string    `json:"id"`
+    CreatedOn Timestamp `json:"createdOn"`
+    UpdatedOn Timestamp `json:"updatedOn"`
+    Flag      int64     `json:"flag"`  // -1 = deleted, 0 = active, etc.
+    Props     Json      `json:"props"` // Custom properties map
+}
+```
+
+Use for soft-delete and extensible entities.
+
+### ID Generators (entity/entity.go:219-267)
+
+Multiple ID generation strategies:
+
+1. **ID()** - Time-based alphanumeric (base 36 of epoch microseconds)
+   - Format: alphanumeric string
+   - Sortable by time
+
+2. **IDN()** - Time-based numeric (epoch microseconds)
+   - Format: numeric string
+   - Sortable by time
+
+3. **ShortID(delta...)** - Short alphanumeric (base 36 of epoch seconds)
+   - Format: 6-character alphanumeric
+   - Accepts delta for offset
+
+4. **ShortIDN(delta...)** - Short numeric (epoch seconds)
+   - Format: numeric string
+   - Accepts delta for offset
+
+5. **NanoID()** - 21-character URL-friendly ID
+   - Fast and collision-resistant
+   - Smaller than UUID
+
+6. **GUID()** - Standard UUID v4
+   - RFC 4122 compliant
+   - Maximum compatibility
+
+### EntityFactory
+
+Function type for creating entity instances:
+
+```go
+type EntityFactory func() Entity
+```
+
+Example:
+```go
+func NewUser() entity.Entity {
+    return &User{}
+}
+
+// Usage with database
+var user User
+db.Get(NewUser, userID)
+```
+
+### Template Support (entity/entity.go:112-127)
+
+The `TABLE()` method supports template variables for dynamic table naming:
+
+- `{{tenantId}}` / `{{accountId}}` - Tenant-based sharding
+- `{{year}}` - Current year (2006)
+- `{{month}}` - Current month (01-12)
+
+Example:
+```go
+func (e *Event) TABLE() string {
+    return "events_{{tenantId}}_{{year}}_{{month}}"
+}
+// Resolves to: events_tenant123_2026_02
+```
+
+---
+
+## Messaging System
+
+### IMessageBus (messaging/message_bus.go)
+
+Unified interface for both pub/sub and queue patterns:
+
+```go
+type IMessageBus interface {
+    io.Closer
+
+    Ping(retries uint, intervalInSeconds uint) error
+
+    // Publish-Subscribe
+    Subscribe(topic string, handler MessageHandler) (string, error)
+    Unsubscribe(subscription string) error
+    Publish(message IMessage) error
+
+    // Queue
+    Push(queue string, message IMessage) error
+    Pop(queue string, timeout time.Duration) (IMessage, error)
+}
+```
+
+### IMessage Interface
+
+```go
+type IMessage interface {
+    Topic() string                     // Topic/queue name
+    Payload() []byte                   // Message body
+    TenantId() string                  // Multi-tenancy support
+    Context() map[string]string        // Message metadata
+    Timestamp() int64                  // Creation timestamp
+}
+```
+
+### Message Creation
+
+```go
+msg := messaging.NewMessage("user.created", []byte(`{"id":"123"}`))
+```
+
+### Usage Patterns
+
+**Publish-Subscribe**:
+```go
+// Subscribe
+handler := func(msg messaging.IMessage) error {
+    fmt.Printf("Received: %s\n", string(msg.Payload()))
+    return nil
+}
+subscription, _ := bus.Subscribe("events", handler)
+
+// Publish
+msg := messaging.NewMessage("events", []byte("data"))
+bus.Publish(msg)
+
+// Cleanup
+bus.Unsubscribe(subscription)
+```
+
+**Queue**:
+```go
+// Push to queue
+msg := messaging.NewMessage("tasks", []byte("work"))
+bus.Push("tasks", msg)
+
+// Pop from queue
+msg, err := bus.Pop("tasks", 5*time.Second)
+if err != nil {
+    // Handle timeout or error
+}
+```
+
+---
+
+## Configuration
+
+### BaseConfig (config/)
+
+Environment-variable-driven configuration with automatic prefixing:
+
+```go
+type MyConfig struct {
+    *config.BaseConfig
+    DatabaseURL string `json:"database_url"`
+}
+
+func NewMyConfig() *MyConfig {
+    return &MyConfig{
+        BaseConfig: config.NewConfig("myapp"),
+    }
+}
+```
+
+Environment variable mapping:
+- Service name: `myapp`
+- Variable: `database_url`
+- Env var: `MYAPP_DATABASE_URL`
+
+### Built-in Configuration Methods
+
+```go
+conf.Service()    // Service name
+conf.Port()       // HTTP port
+conf.Host()       // Host address
+conf.Get(key, defaultValue) // Get config value
+```
+
+---
+
+## Logging
+
+### Logger (logger/logger.go)
+
+Structured logging based on native Go log/slog:
+
+```go
+import "github.com/go-yaaf/yaaf-common/logger"
+
+// Configuration
+logger.SetLevel("DEBUG")        // DEBUG, INFO, WARN, ERROR
+logger.EnableJsonFormat(true)   // JSON output
+logger.EnableStacktrace(false)  // Stack traces on error
+logger.Init()
+
+// Usage
+logger.Debug("Debug message: %s", value)
+logger.Info("Info message: %s", value)
+logger.Warn("Warning: %s", issue)
+logger.Error("Error occurred: %s", err)
+```
+
+Log levels:
+- DEBUG - Detailed diagnostic information
+- INFO - General informational messages
+- WARN - Warning messages for potential issues
+- ERROR - Error messages for failures
+
+---
+
+## Utilities
+
+### Collections (utils/collections/)
+
+Thread-safe data structures:
+
+- **SafeMap**: Concurrent map implementation
+- **Set**: Unique value collection
+- **Queue**: FIFO queue
+- **Stack**: LIFO stack
+- **RingBuffer**: Fixed-size circular buffer
+
+### Worker Pool (utils/pool/)
+
+Manage concurrent task execution:
+
+```go
+pool := pool.NewWorkerPool(maxWorkers)
+pool.Submit(func() {
+    // Task logic
+})
+pool.Wait()
+```
+
+### Binary Utilities (utils/binary/)
+
+Operations on binary data:
+- Byte array manipulation
+- Encoding/decoding
+- Bit operations
+
+### Hash Utilities (utils/hash_utils.go)
+
+Hashing functions for data integrity and identification.
+
+### HTTP Utilities (utils/http_utils.go)
+
+HTTP request/response helpers.
+
+### String Utilities (utils/string_utils.go)
+
+String manipulation and formatting utilities.
+
+### Time Utilities (utils/time_utils.go)
+
+Time parsing, formatting, and manipulation.
+
+### Mail Utilities (utils/mail/)
+
+Email sending functionality using github.com/wneessen/go-mail.
+
+### NanoID (utils/nanoid/)
+
+Compact, URL-friendly unique ID generation.
+
+### Cache Utilities (utils/cache/ and utils/cache2/)
+
+Additional caching implementations and helpers.
+
+---
+
+## Testing Patterns
+
+### Using In-Memory Implementations
+
+All infrastructure interfaces have in-memory implementations for testing:
+
+```go
+package myapp_test
+
+import (
+    "testing"
+    "github.com/go-yaaf/yaaf-common/database"
+    "github.com/go-yaaf/yaaf-common/messaging"
+)
+
+func TestUserService(t *testing.T) {
+    // Setup
+    db, _ := database.NewInMemoryDatabase()
+    cache := database.NewInMemoryDataCache(5*time.Minute, 10*time.Minute)
+    bus, _ := messaging.NewInMemoryMessageBus()
+
+    service := NewUserService(db, cache, bus)
+
+    // Test logic
+    user := &User{Name: "Test"}
+    id, err := service.CreateUser(user)
+
+    if err != nil {
+        t.Fatalf("CreateUser failed: %v", err)
+    }
+
+    // Verify
+    retrieved, _ := service.GetUser(id)
+    if retrieved.Name != "Test" {
+        t.Errorf("Expected name 'Test', got '%s'", retrieved.Name)
+    }
+}
+```
+
+### Test Data (test/data_for_test.go)
+
+The test package includes sample entities and data for testing.
+
+### Running Tests
+
+```bash
+# All tests
+go test ./...
+
+# Specific package
+go test ./database
+
+# With coverage
+go test -cover ./...
+
+# Verbose
+go test -v ./...
+```
+
+---
+
+## Common Use Cases
+
+### 1. CRUD Operations with Database
+
+```go
+// Setup
+db, _ := database.NewInMemoryDatabase()
+
+// Define entity
+type Product struct {
+    entity.BaseEntity
+    Name  string  `json:"name"`
+    Price float64 `json:"price"`
+}
+
+func (p *Product) TABLE() string { return "products" }
+
+// Create
+product := &Product{Name: "Laptop", Price: 999.99}
+added, _ := db.Insert(product)
+
+// Read
+var retrieved Product
+db.Get(func() entity.Entity { return &Product{} }, added.ID())
+
+// Update
+retrieved.Price = 899.99
+updated, _ := db.Update(&retrieved)
+
+// Delete
+db.Delete(func() entity.Entity { return &Product{} }, updated.ID())
+```
+
+### 2. Complex Queries
+
+```go
+// Find all active users over 30, sorted by name
+query := database.NewQuery("users").
+    WithFilter("status", database.Eq, "active").
+    WithFilter("age", database.Gt, 30).
+    WithSort("name", true).
+    WithLimit(10)
+
+users := make([]*User, 0)
+db.Execute(query, func() entity.Entity { return &User{} })
+```
+
+### 3. Caching Pattern
+
+```go
+cache := database.NewInMemoryDataCache(5*time.Minute, 10*time.Minute)
+
+// Check cache first
+data, err := cache.Get("user:123")
+if err != nil {
+    // Cache miss - fetch from database
+    user, _ := db.Get(NewUser, "123")
+    data, _ := json.Marshal(user)
+    cache.Set("user:123", data)
+}
+```
+
+### 4. Event-Driven Architecture
+
+```go
+bus, _ := messaging.NewInMemoryMessageBus()
+
+// Subscribe to events
+bus.Subscribe("user.created", func(msg messaging.IMessage) error {
+    var user User
+    json.Unmarshal(msg.Payload(), &user)
+    // Handle user creation
+    return nil
+})
+
+// Publish event
+data, _ := json.Marshal(newUser)
+msg := messaging.NewMessage("user.created", data)
+bus.Publish(msg)
+```
+
+### 5. Bulk Operations
+
+```go
+// Insert many entities
+users := []entity.Entity{
+    &User{Name: "Alice"},
+    &User{Name: "Bob"},
+    &User{Name: "Charlie"},
+}
+affected, _ := db.BulkInsert(users)
+
+// Update specific field for multiple entities
+updates := map[string]any{
+    "user1": "active",
+    "user2": "active",
+    "user3": "inactive",
+}
+db.BulkSetFields(NewUser, "status", updates)
+```
+
+### 6. Multi-Tenancy with Sharding
+
+```go
+type TenantEntity struct {
+    entity.BaseEntity
+    TenantID string `json:"tenantId"`
+}
+
+func (t *TenantEntity) TABLE() string {
+    return "data_{{tenantId}}"
+}
+
+func (t *TenantEntity) KEY() string {
+    return t.TenantID
+}
+
+// The KEY() method is used by the database layer for sharding
+```
+
+### 7. Soft Delete Pattern
+
+```go
+type SoftDeleteEntity struct {
+    entity.BaseEntityEx
+    Name string `json:"name"`
+}
+
+// Mark as deleted
+entity.Flag = -1
+db.Update(entity)
+
+// Query only active entities
+query := database.NewQuery("items").
+    WithFilter("flag", database.Gte, 0)
+```
+
+---
+
+## Code Organization
+
+### Typical Microservice Structure
+
+```
+myservice/
+├── cmd/
+│   └── main.go           # Entry point
+├── internal/
+│   ├── config/
+│   │   └── config.go     # Service config (embeds BaseConfig)
+│   ├── domain/
+│   │   └── entities.go   # Domain entities (embed BaseEntity)
+│   ├── repository/
+│   │   └── user_repo.go  # Data access (uses IDatabase)
+│   ├── service/
+│   │   └── user_svc.go   # Business logic
+│   └── handler/
+│       └── user_hdl.go   # HTTP handlers
+├── go.mod
+└── go.sum
+```
+
+### Dependency Injection Pattern
+
+```go
+type UserService struct {
+    db    database.IDatabase
+    cache database.IDataCache
+    bus   messaging.IMessageBus
+}
+
+func NewUserService(db database.IDatabase, cache database.IDataCache, bus messaging.IMessageBus) *UserService {
+    return &UserService{
+        db:    db,
+        cache: cache,
+        bus:   bus,
+    }
+}
+```
+
+This allows easy swapping of implementations (production vs testing).
+
+---
+
+## Performance Considerations
+
+### In-Memory Implementations
+
+The in-memory implementations are optimized for testing, not production scale:
+- Thread-safe but use basic locking
+- No persistence
+- Limited to single-process
+- Good for: unit tests, integration tests, development
+- Not for: production, distributed systems, large datasets
+
+### Query Performance
+
+- Use `SetField`/`SetFields` for partial updates instead of full entity updates
+- Use `BulkInsert`/`BulkUpdate` for batch operations
+- Add indexes on frequently queried fields (implementation-dependent)
+- Use pagination with `WithPage()` for large result sets
+
+### Caching Strategy
+
+- Set appropriate expiration times
+- Use `SetNX` for distributed locks
+- Invalidate cache on updates
+- Consider cache-aside pattern for reads
+
+---
+
+## Migration from Other Frameworks
+
+### From GORM
+
+| GORM | YAAF-Common |
+|------|-------------|
+| `db.Create(&user)` | `db.Insert(user)` |
+| `db.First(&user, id)` | `db.Get(NewUser, id)` |
+| `db.Save(&user)` | `db.Update(user)` |
+| `db.Delete(&user)` | `db.Delete(NewUser, user.ID())` |
+| `db.Where("age > ?", 30)` | `query.WithFilter("age", Gt, 30)` |
+
+### From Redis Client
+
+| Redis | YAAF-Common |
+|-------|-------------|
+| `client.Get(key)` | `cache.Get(key)` |
+| `client.Set(key, val, exp)` | `cache.Set(key, val, exp)` |
+| `client.Del(key)` | `cache.Delete(key)` |
+| `client.Incr(key)` | `cache.Increment(key, 1)` |
+| `client.Keys(pattern)` | `cache.Keys(pattern)` |
+
+---
+
+## Best Practices
+
+### 1. Always Use Interfaces
+
+```go
+// Good
+func NewService(db database.IDatabase) *Service {
+    return &Service{db: db}
+}
+
+// Bad
+func NewService(db *database.InMemoryDatabase) *Service {
+    return &Service{db: db}
+}
+```
+
+### 2. Implement TABLE() Correctly
+
+```go
+// Good - static table name
+func (u *User) TABLE() string { return "users" }
+
+// Good - sharded by tenant
+func (u *TenantData) TABLE() string { return "data_{{tenantId}}" }
+
+// Bad - dynamic instance data in table name
+func (u *User) TABLE() string { return fmt.Sprintf("user_%s", u.Status) }
+```
+
+### 3. Use EntityFactory Functions
+
+```go
+// Good
+func NewUser() entity.Entity {
+    return &User{}
+}
+
+db.Get(NewUser, id)
+
+// Also good - inline
+db.Get(func() entity.Entity { return &User{} }, id)
+```
+
+### 4. Handle Errors Properly
+
+```go
+// Good
+user, err := db.Get(NewUser, id)
+if err != nil {
+    logger.Error("Failed to get user: %v", err)
+    return err
+}
+
+// Bad
+user, _ := db.Get(NewUser, id)
+```
+
+### 5. Use Bulk Operations When Possible
+
+```go
+// Good
+db.BulkInsert(users)
+
+// Less efficient
+for _, user := range users {
+    db.Insert(user)
+}
+```
+
+### 6. Close Resources
+
+```go
+defer db.Close()
+defer cache.Close()
+defer bus.Close()
+```
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+1. **"Table not found" errors**
+   - Ensure `TABLE()` method returns correct value
+   - Check entity is registered/created
+   - For in-memory: data is cleared on restart
+
+2. **JSON marshaling errors**
+   - Ensure struct fields are exported (capitalized)
+   - Use proper json tags
+   - Check for circular references
+
+3. **Cache misses**
+   - Verify expiration times
+   - Check key naming consistency
+   - Ensure serialization/deserialization is correct
+
+4. **Query returns no results**
+   - Verify filter operators (Eq, Gt, etc.)
+   - Check data types match
+   - Use query.MatchAll() to test if data exists
+
+---
+
+## Additional Resources
+
+- **Repository**: https://github.com/go-yaaf/yaaf-common
+- **License**: Apache 2.0
+- **Go Version**: 1.24.0+
+- **Main Dependencies**:
+  - github.com/google/uuid v1.6.0
+  - github.com/wneessen/go-mail v0.7.2
+
+For implementation-specific adapters (PostgreSQL, MongoDB, Redis, etc.), see the YAAF ecosystem packages.
