@@ -8,6 +8,8 @@ import (
 	. "github.com/go-yaaf/yaaf-common/entity"
 )
 
+type skv Tuple[string, string]
+
 // TimeUtilsStruct provides a fluent interface for time-related operations.
 // It encapsulates a base time and offers methods for formatting, manipulation, and time series generation.
 type TimeUtilsStruct struct {
@@ -16,6 +18,7 @@ type TimeUtilsStruct struct {
 	MINUTE   uint64
 	HOUR     uint64
 	DAY      uint64
+	conv     []skv
 }
 
 // TimeUtils is a factory function that creates a new TimeUtilsStruct with a given base time.
@@ -34,7 +37,57 @@ func TimeUtils(ts Timestamp) *TimeUtilsStruct {
 		MINUTE:   60 * 1000,
 		HOUR:     60 * 60 * 1000,
 		DAY:      24 * 60 * 60 * 1000,
+		conv:     initFormatConverters(),
 	}
+}
+
+// Initialize ordered list of format converters
+func initFormatConverters() []skv {
+	c := make([]skv, 0)
+	c = append(c, skv{"YYYY", "2006"})
+	c = append(c, skv{"yyyy", "2006"})
+	c = append(c, skv{"YY", "06"})
+	c = append(c, skv{"yy", "06"})
+
+	c = append(c, skv{"MMMM", "January"})
+	c = append(c, skv{"MMM", "Jan"})
+	c = append(c, skv{"MM", "01"})
+	c = append(c, skv{"M", "1"})
+
+	c = append(c, skv{"DDDD", "Monday"})
+	c = append(c, skv{"dddd", "Monday"})
+	c = append(c, skv{"DDD", "Mon"})
+	c = append(c, skv{"ddd", "Mon"})
+	c = append(c, skv{"DD", "02"})
+	c = append(c, skv{"dd", "02"})
+	c = append(c, skv{"D", "2"})
+	c = append(c, skv{"d", "2"})
+
+	c = append(c, skv{"HH", "15"})
+	c = append(c, skv{"hh", "03"})
+	c = append(c, skv{"H", "15"})
+	c = append(c, skv{"h", "3"})
+
+	c = append(c, skv{"mm", "04"})
+	c = append(c, skv{"m", "4"})
+	c = append(c, skv{"ss", "05"})
+	c = append(c, skv{"s", "5"})
+
+	c = append(c, skv{"TZD", "MST"})
+	c = append(c, skv{"z", "MST"})
+	c = append(c, skv{"Z", "-0700"})
+	//c = append(c, skv{"A", "PM"})
+	//c = append(c, skv{"a", "pm"})
+
+	/*
+
+		"mm": "04", "m": "4",
+		"ss": "05", "s": "5",
+		"TZD": "MST", "z": "MST", "Z": "-0700",
+		"a": "pm", "A": "PM",
+	*/
+
+	return c
 }
 
 // Get returns the current base timestamp of the TimeUtilsStruct.
@@ -53,20 +106,27 @@ func (t *TimeUtilsStruct) Get() Timestamp {
 //
 //	The equivalent Go reference time format string.
 func (t *TimeUtilsStruct) ConvertISO8601Format(format string) string {
-	replacements := map[string]string{
-		"YYYY": "2006", "yyyy": "2006", "YY": "06", "yy": "06",
-		"MMMM": "January", "MMM": "Jan", "MM": "01", "M": "1",
-		"dddd": "Monday", "DDDD": "Monday", "ddd": "Mon", "DDD": "Mon",
-		"dd": "02", "DD": "02", "d": "2", "D": "2",
-		"HH": "15", "hh": "03", "H": "15", "h": "3",
-		"mm": "04", "m": "4",
-		"ss": "05", "s": "5",
-		"TZD": "MST", "z": "MST", "Z": "-0700",
-		"a": "pm", "A": "PM",
-	}
 
-	for k, v := range replacements {
-		format = strings.ReplaceAll(format, k, v)
+	/*
+		replacements := map[string]string{
+			"YYYY": "2006", "yyyy": "2006", "YY": "06", "yy": "06",
+			"MMMM": "January", "MMM": "Jan", "MM": "01", "M": "1",
+			"dddd": "Monday", "DDDD": "Monday", "ddd": "Mon", "DDD": "Mon",
+			"dd": "02", "DD": "02", "d": "2", "D": "2",
+			"HH": "15", "hh": "03", "H": "15", "h": "3",
+			"mm": "04", "m": "4",
+			"ss": "05", "s": "5",
+			"TZD": "MST", "z": "MST", "Z": "-0700",
+			"a": "pm", "A": "PM",
+		}
+
+		for k, v := range replacements {
+			format = strings.ReplaceAll(format, k, v)
+		}
+	*/
+
+	for _, cn := range t.conv {
+		format = strings.ReplaceAll(format, cn.Key, cn.Value)
 	}
 	return format
 }

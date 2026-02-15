@@ -2,7 +2,6 @@
 
 package test
 
-/*
 import (
 	"fmt"
 	"testing"
@@ -12,6 +11,7 @@ import (
 	"github.com/go-yaaf/yaaf-common/utils"
 )
 
+/*
 func TestBounds(t *testing.T) {
 	skipCI(t)
 	format := "YYYY-MMM-DD HH:mm:ss.sss"
@@ -101,3 +101,20 @@ func TestFluentTimestamp(t *testing.T) {
 	}
 }
 */
+
+func TestFormat(t *testing.T) {
+	skipCI(t)
+	format := "YYYY-MMM-DD HH:mm:ss.000"
+	now := entity.Now()
+	tu := utils.TimeUtils(now.Add(time.Hour))
+	fmt.Println(format, tu.Format(format))
+
+	format = "YYYY.MM"
+	fmt.Println(format, tu.Format(format))
+
+	format = "yyyy-MM"
+	fmt.Println(format, tu.Format(format))
+
+	format = "yy-MM"
+	fmt.Println(format, tu.Format(format))
+}
