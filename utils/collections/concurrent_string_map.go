@@ -47,6 +47,17 @@ func (c *ConcurrentStringMap[T]) Get(key string) (T, bool) {
 	return val, found
 }
 
+// GetOrDefault retrieves a value from the map by its key. If key not found, return the default value
+func (c *ConcurrentStringMap[T]) GetOrDefault(key string, def T) T {
+	c.RLock()
+	defer c.RUnlock()
+	if val, found := c.m[key]; found {
+		return val
+	} else {
+		return def
+	}
+}
+
 // Put adds or updates a value in the map.
 // It is safe for concurrent use.
 //
