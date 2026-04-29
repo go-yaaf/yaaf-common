@@ -286,6 +286,11 @@ func (cache *Cache[K, T]) GetOrDefault(key K, def T) T {
 	}
 }
 
+// Val is same as GetOrDefault: retrieves an item from the cache or default value. It also extends the item's TTL unless disabled.
+func (cache *Cache[K, T]) Val(key K, def T) T {
+	return cache.GetOrDefault(key, def)
+}
+
 // Remove deletes an item from the cache.
 func (cache *Cache[K, T]) Remove(key K) bool {
 	cache.mutex.Lock()

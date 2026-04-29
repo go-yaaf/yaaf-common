@@ -58,6 +58,11 @@ func (c *ConcurrentStringMap[T]) GetOrDefault(key string, def T) T {
 	}
 }
 
+// Val is same as GetOrDefault: retrieves an item from the cache or default value. It also extends the item's TTL unless disabled.
+func (c *ConcurrentStringMap[T]) Val(key string, def T) T {
+	return c.GetOrDefault(key, def)
+}
+
 // Put adds or updates a value in the map.
 // It is safe for concurrent use.
 //
