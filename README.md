@@ -47,22 +47,23 @@ type MyConfig struct {
 
 // NewMyConfig creates a new application configuration
 func NewMyConfig() *MyConfig {
-	// The service name ("my-app") will be used as a prefix for environment variables
+	// config.Get() returns the process-wide singleton (there is no NewConfig()).
+	// It scans environment variables on first access.
 	return &MyConfig{
-		BaseConfig: config.NewConfig("my-app"),
+		BaseConfig: config.Get(),
 	}
 }
 
 func main() {
 	conf := NewMyConfig()
 
-	// To set this value, run: export MY_APP_MY_PARAM="hello from env"
-	// It will use "default-value" if the environment variable is not set.
-	conf.MyParam = conf.Get("my_param", "default-value").(string)
+	// To set this value, run: export MY_PARAM="hello from env"
+	// It falls back to "default-value" if the environment variable is not set.
+	conf.MyParam = conf.GetStringParamValueOrDefault("MY_PARAM", "default-value")
 
-	fmt.Println("Service Name:", conf.Service())
 	fmt.Println("My Custom Param:", conf.MyParam)
-	fmt.Println("HTTP Port:", conf.Port()) // Accessing a built-in variable
+	fmt.Println("Database URI:", conf.DatabaseUri()) // a built-in named accessor
+	fmt.Println("Log Level:", conf.LogLevel())
 }
 ```
 
@@ -96,6 +97,9 @@ type User struct {
 // TABLE returns the database table name for the entity
 func (u *User) TABLE() string { return "user" }
 
+// NewUser is the entity factory used by the database layer to allocate typed instances
+func NewUser() entity.Entity { return &User{} }
+
 func main() {
 	// Use the in-memory database for demonstration
 	db, err := database.NewInMemoryDatabase()
@@ -103,28 +107,34 @@ func main() {
 		panic(err)
 	}
 
-	// Create a new user
-	user := &User{Name: "John Doe", Age: 30}
-	id, err := db.Insert(user)
+	// Create a new user (Insert returns the stored entity)
+	added, err := db.Insert(&User{Name: "John Doe", Age: 30})
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Inserted user with ID: %s\n", id)
+	fmt.Printf("Inserted user with ID: %s\n", added.ID())
 
-	// Get the user back
-	var retrievedUser User
-	if err := db.Get(id, &retrievedUser); err != nil {
+	// Get the user back — reads return an entity.Entity; type-assert to the concrete type
+	e, err := db.Get(NewUser, added.ID())
+	if err != nil {
 		panic(err)
 	}
+	retrievedUser := e.(*User)
 	fmt.Printf("Retrieved user: %+v\n", retrievedUser)
 
-	// Query for users with age >= 30
-	users := make([]*User, 0)
-	q := database.NewQuery("user").WithFilter("age", database.Gte, 30)
-	if err := db.Find(q, &users); err != nil {
+	// Query for users with age >= 30. Build the query from db.Query(factory),
+	// then execute it with Find(), which returns (list, total, error).
+	list, total, err := db.Query(NewUser).
+		Filter(database.F("age").Gte(30)).
+		Sort("name"). // ascending; use "name-" for descending
+		Find()
+	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Found %d users aged 30 or more.\n", len(users))
+	fmt.Printf("Found %d users aged 30 or more.\n", total)
+	for _, item := range list {
+		fmt.Printf("  - %s\n", item.(*User).Name)
+	}
 }
 ```
 
@@ -149,8 +159,11 @@ type Product struct {
 	Price float64 `json:"price"`
 }
 
-// COLLECTION returns the collection name for the document
-func (p *Product) COLLECTION() string { return "products" }
+// TABLE returns the collection name for the document (IDatastore reuses the Entity contract)
+func (p *Product) TABLE() string { return "products" }
+
+// NewProduct is the entity factory
+func NewProduct() entity.Entity { return &Product{} }
 
 func main() {
 	// Use the in-memory datastore for demonstration
@@ -159,19 +172,19 @@ func main() {
 		panic(err)
 	}
 
-	// Insert a new product
-	product := &Product{Name: "Laptop", Price: 1200.50}
-	id, err := ds.Insert(product)
+	// Insert a new product (returns the stored entity)
+	added, err := ds.Insert(&Product{Name: "Laptop", Price: 1200.50})
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Inserted product with ID: %s\n", id)
+	fmt.Printf("Inserted product with ID: %s\n", added.ID())
 
-	// Get the product
-	var retrievedProduct Product
-	if err := ds.Get(id, &retrievedProduct); err != nil {
+	// Get the product back and type-assert to the concrete type
+	e, err := ds.Get(NewProduct, added.ID())
+	if err != nil {
 		panic(err)
 	}
+	retrievedProduct := e.(*Product)
 	fmt.Printf("Retrieved product: %+v\n", retrievedProduct)
 }
 ```
@@ -191,37 +204,44 @@ import (
 )
 
 func main() {
-	// Use the in-memory cache with a 5-minute default expiration
-	cache := database.NewInMemoryDataCache(5*time.Minute, 10*time.Minute)
+	// Use the in-memory cache (the constructor takes no arguments)
+	cache, err := database.NewInMemoryDataCache()
+	if err != nil {
+		panic(err)
+	}
 
 	key := "my-special-key"
 	value := "hello world"
 
-	// Set a value in the cache
-	if err := cache.Set(key, []byte(value)); err != nil {
+	// IDataCache is entity-oriented; use the *Raw methods to store raw bytes.
+	// The optional trailing argument sets a per-key expiration.
+	if err := cache.SetRaw(key, []byte(value), 5*time.Minute); err != nil {
 		panic(err)
 	}
 	fmt.Printf("Set key '%s'\n", key)
 
-	// Get a value from the cache
-	data, err := cache.Get(key)
+	// Get the raw value back
+	data, err := cache.GetRaw(key)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Printf("Retrieved value: %s\n", string(data))
 
-	// Delete the value
-	if err := cache.Delete(key); err != nil {
+	// Delete the value (note: the method is Del, not Delete)
+	if err := cache.Del(key); err != nil {
 		panic(err)
 	}
 	fmt.Printf("Deleted key '%s'\n", key)
 
-	// Trying to get the key again will result in an error
-	_, err = cache.Get(key)
-	if err != nil {
-		fmt.Printf("Could not get key '%s': %s\n", key, err)
+	// Check existence
+	if exists, _ := cache.Exists(key); !exists {
+		fmt.Printf("Key '%s' no longer exists\n", key)
 	}
 }
+
+// To cache full entities instead of raw bytes, use the entity-oriented methods:
+//   cache.Set("user:"+u.ID(), u, 5*time.Minute)
+//   e, err := cache.Get(NewUser, "user:"+u.ID()) // returns entity.Entity
 ```
 
 ---
@@ -240,10 +260,14 @@ import (
 	"github.com/go-yaaf/yaaf-common/messaging"
 )
 
-// A simple message handler for pub/sub
-func handleMessage(msg messaging.IMessage) error {
-	fmt.Printf("Handler received message on topic '%s': %s\n", msg.Topic(), string(msg.Payload()))
-	return nil
+// messageFactory tells the bus how to allocate an incoming message for deserialization.
+// Here messages carry a string payload.
+func messageFactory() messaging.IMessage { return messaging.NewMessage[string]() }
+
+// A subscription callback returns true to acknowledge the message.
+func handleMessage(msg messaging.IMessage) bool {
+	fmt.Printf("Handler received message on topic '%s': %v\n", msg.Topic(), msg.Payload())
+	return true
 }
 
 func main() {
@@ -254,35 +278,36 @@ func main() {
 	}
 
 	// 1. Publish-Subscribe Example
+	// Subscribe(subscriptionName, messageFactory, callback, topics...)
 	topic := "my-topic"
-	if _, err := bus.Subscribe(topic, handleMessage); err != nil {
+	sub, err := bus.Subscribe("demo-subscription", messageFactory, handleMessage, topic)
+	if err != nil {
 		panic(err)
 	}
 	fmt.Println("Subscribed to topic:", topic)
 
-	msg := messaging.NewMessage(topic, []byte("Hello Pub/Sub!"))
-	if err := bus.Publish(msg); err != nil {
+	// Build a typed message with GetMessage[T](topic, payload) and publish it (variadic).
+	if err := bus.Publish(messaging.GetMessage[string](topic, "Hello Pub/Sub!")); err != nil {
 		panic(err)
 	}
 	fmt.Println("Published message to topic:", topic)
 
 	time.Sleep(100 * time.Millisecond) // Wait for async handler
+	bus.Unsubscribe(sub)
 
 	// 2. Queueing Example
 	queue := "my-queue"
-	queueMsg := messaging.NewMessage(queue, []byte("Hello Queue!"))
-
-	if err := bus.Push(queue, queueMsg); err != nil {
+	if err := bus.Push(messaging.GetMessage[string](queue, "Hello Queue!")); err != nil {
 		panic(err)
 	}
 	fmt.Println("Pushed message to queue:", queue)
 
-	// Pop message from queue (with a 1-second timeout)
-	poppedMsg, err := bus.Pop(queue, 1*time.Second)
+	// Pop a message from the queue: Pop(messageFactory, timeout, queue...)
+	poppedMsg, err := bus.Pop(messageFactory, 1*time.Second, queue)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Popped message from queue '%s': %s\n", poppedMsg.Topic(), string(poppedMsg.Payload()))
+	fmt.Printf("Popped message from queue '%s': %v\n", poppedMsg.Topic(), poppedMsg.Payload())
 }
 ```
 
@@ -290,7 +315,7 @@ func main() {
 
 ### 4. Logging (`Logger`)
 
-`yaaf-common` includes a lightweight, structured logging wrapper around `zap`.
+`yaaf-common` includes a lightweight, structured logging wrapper around the standard library's `log/slog`.
 
 **Example:**
 ```go

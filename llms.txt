@@ -1,141 +1,143 @@
 # YAAF-Common
 
-> YAAF (Yet Another Application Framework) - Common library for building microservices in Go
+> YAAF (Yet Another Application Framework) — a foundational Go library of interfaces and utilities for building microservices with clean architecture and loose coupling.
+
+All signatures below reflect the actual code in this repository. When in doubt, read the interface files listed under "Key files" rather than guessing — the public API is interface-driven and deliberately explicit.
 
 ## Overview
 
-YAAF-Common is a foundational Go library that provides standard interfaces and utilities for building modern microservices. It promotes clean architecture and loose coupling by abstracting common infrastructure components like databases, caches, and message brokers.
+YAAF-Common defines standard interfaces for infrastructure components (relational DB, document store, cache, message bus) plus in-memory implementations of each for fast, dependency-free testing. Business logic depends on the interfaces; concrete adapters (PostgreSQL, MongoDB, Redis, Kafka, etc.) live in separate `go-yaaf/*` packages.
 
-## Key Features
+## Key features
 
-- **Interface-Driven Design**: Code against interfaces, not implementations
-- **In-Memory Implementations**: Built-in in-memory versions for testing without external dependencies
-- **Zero-Configuration Testing**: Fast, dependency-free unit and integration tests
-- **Minimal Dependencies**: Only requires google/uuid and go-mail
-- **Clean Architecture**: Decouples business logic from infrastructure
+- **Interface-driven**: code against `IDatabase`, `IDatastore`, `IDataCache`, `IMessageBus` — never concrete types.
+- **In-memory implementations**: every interface has one, for unit/integration tests without external services.
+- **Entity model**: all domain objects implement the `Entity` interface (`ID/TABLE/NAME/KEY`) and usually embed `BaseEntity`.
+- **Fluent query builder**: `db.Query(factory).Filter(F("field").Gte(x)).Sort("name").Find()`.
+- **Minimal dependencies**: `google/uuid` and `wneessen/go-mail` only (plus `golang.org/x/text` indirect).
 
-## Core Components
+## Key files (read these for exact contracts)
 
-### 1. Configuration (`config/`)
-- Environment-variable-driven configuration
-- `BaseConfig` for container-friendly app config
-- Automatic mapping of `SERVICE_NAME_VARIABLE_NAME` format
+- `database/database.go` — `IDatabase` (RDBMS CRUD, bulk, field updates, query)
+- `database/datastore.go` — `IDatastore` (NoSQL document store)
+- `database/datacache.go` — `IDataCache` (entity-oriented key/hash/list cache + distributed lock)
+- `database/query.go` — `IQuery` (fluent query/aggregation builder)
+- `database/query_filter.go` — `QueryFilter` builder (`F(field).Eq(...)`, etc.)
+- `database/query_operator.go` — `QueryOperator` constants
+- `entity/entity.go` — `Entity`, `BaseEntity`, `BaseEntityEx`, ID generators, factories
+- `messaging/message_bus.go` — `IMessageBus`, producer/consumer
+- `messaging/messages.go` — `IMessage`, `BaseMessage`, `Message[T]`, constructors
+- `config/base_config.go` — `BaseConfig` singleton (`config.Get()`)
+- `logger/logger.go` — slog-based structured logging
 
-### 2. Database Interfaces (`database/`)
-- `IDatabase`: RDBMS interface for SQL-like databases
-- `IDatastore`: NoSQL document-oriented database interface
-- `IDataCache`: Key-value cache interface (Redis-like)
-- In-memory implementations for all interfaces
+## Core components
 
-### 3. Entity System (`entity/`)
-- `Entity` interface: Base for all domain models
-- `BaseEntity`: Standard entity with ID and timestamps
-- `BaseEntityEx`: Extended entity with status flags and custom properties
-- ID generators: `ID()`, `NanoID()`, `GUID()`, `ShortID()`
+### Entity (`entity/`)
+`Entity` interface: `ID() string`, `TABLE() string`, `NAME() string`, `KEY() string`.
+Embed `BaseEntity` (fields `Id`, `CreatedOn`, `UpdatedOn` — `CreatedOn/UpdatedOn` are `Timestamp` = `int64` epoch **milliseconds**). `BaseEntityEx` adds `Flag int64` (soft-delete/status) and `Props Json` (`map[string]any`).
+`EntityFactory` is `func() Entity` — passed to database/cache calls so the library can build typed instances.
+Package-level ID generators: `ID()`, `IDN()`, `ShortID(delta...)`, `ShortIDN(delta...)`, `NanoID()`, `GUID()`.
 
-### 4. Messaging (`messaging/`)
-- `IMessageBus`: Unified interface for pub/sub and queueing
-- `InMemoryMessageBus`: In-memory implementation for testing
-- Support for both publish-subscribe and queue patterns
+### Database (`database/`)
+- `IDatabase` — RDBMS: `Get/List/Exists/Insert/Update/Upsert/Delete`, `Bulk*`, `SetField(s)`, `Query(factory) IQuery`.
+- `IDatastore` — NoSQL document store, same shape as `IDatabase`.
+- `IDataCache` — entity-oriented cache: `Get(factory,key)/Set(key,entity,exp...)`, raw variants (`GetRaw/SetRaw`), `SetNX`, `Del`, `Exists`, `Scan`, hash ops (`HGet/HSet/...`), list ops (`RPush/LPop/...`), and `ObtainLocker` for distributed locks.
+- In-memory constructors take **no arguments**: `NewInMemoryDatabase()`, `NewInMemoryDatastore()`, `NewInMemoryDataCache()` — each returns `(iface, error)`.
 
-### 5. Logging (`logger/`)
-- Structured logging based on native Go log/slog
-- JSON format support
-- Configurable log levels and stack traces
+### Messaging (`messaging/`)
+- `IMessageBus`: pub/sub (`Subscribe/Unsubscribe/Publish`), queue (`Push/Pop`), and producer/consumer factories. `NewInMemoryMessageBus()` for tests.
+- Messages implement `IMessage` (`Topic/OpCode/Addressee/SessionId/Version/Payload`). Use generic `Message[T]`; build with `GetMessage[T](topic, payload)`; supply a `MessageFactory` (`func() IMessage`) to subscribers.
 
-### 6. Utilities (`utils/`)
-- `collections`: Thread-safe maps, sets, queues
-- `pool`: Worker pools for concurrent tasks
-- `binary`: Binary data helpers
-- `hash`: Hashing utilities
-- `http`: HTTP helpers
-- `mail`: Email utilities
-- `nanoid`: Compact ID generation
+### Config (`config/`)
+Singleton: `cfg := config.Get()`. Values come from environment variables. Typed getters: `GetStringParamValueOrDefault`, `GetIntParamValueOrDefault`, `GetBoolParamValueOrDefault`, plus named accessors (`DatabaseUri()`, `DataCacheUri()`, `MessagingUri()`, `LogLevel()`, ...). There is **no** `NewConfig()` constructor.
 
-### 7. REST Utilities (`rest/`)
-- REST API helpers and utilities
+### Logging (`logger/`)
+Built on Go `log/slog`. Configure with `SetLevel`, `EnableJsonFormat`, `EnableCaller`, then `Init()`. Log with printf-style `logger.Debug/Info/Warn/Error/Fatal(format, args...)`.
 
-### 8. Metrics (`metrics/`)
-- Application metrics utilities
+### Utilities (`utils/`)
+`collections` (thread-safe map/set/queue), `pool` (worker pool), `cache`/`cache2` (in-process generic caches with `GetOrDefault`/`Val`), `nanoid`, `binary`, `mail`, `Aggregator`, plus `hash_utils.go`, `http_utils.go`, `json_utils.go`, `string_utils.go`, `time_utils.go`. Also top-level `rest/`, `metrics/`, `files/`.
 
-### 9. File Operations (`files/`)
-- File handling utilities
+## Canonical patterns
 
-## Project Structure
-
-```
-.
-├── config/          # Configuration management
-├── database/        # Database and cache interfaces + in-memory implementations
-├── entity/          # Entity interfaces and base types
-├── messaging/       # Message bus interfaces
-├── logger/          # Logging utilities
-├── utils/           # Common utilities
-│   ├── Aggregator/  # Data aggregation
-│   ├── binary/      # Binary operations
-│   ├── cache/       # Caching utilities
-│   ├── collections/ # Thread-safe collections
-│   ├── mail/        # Email utilities
-│   ├── nanoid/      # NanoID generation
-│   └── pool/        # Worker pools
-├── rest/            # REST utilities
-├── metrics/         # Metrics utilities
-├── files/           # File utilities
-└── test/            # Test files
-```
-
-## Common Patterns
-
-### Entity Definition
+### Define an entity + factory
 ```go
 type User struct {
     entity.BaseEntity
-    Name string `json:"name"`
-    Age  int    `json:"age"`
+    Name   string `json:"name"`
+    Age    int    `json:"age"`
+    Status string `json:"status"`
 }
 
 func (u *User) TABLE() string { return "user" }
+
+// Factory used by db/cache calls
+func NewUser() entity.Entity { return &User{} }
 ```
 
-### Query Building
-```go
-query := database.NewQuery("users")
-    .WithFilter("age", database.Gte, 30)
-    .WithFilter("status", database.Eq, "active")
-    .WithSort("name", true)
-    .WithLimit(10)
-```
-
-### In-Memory Testing
+### In-memory infrastructure (tests)
 ```go
 db, _ := database.NewInMemoryDatabase()
-cache := database.NewInMemoryDataCache(5*time.Minute, 10*time.Minute)
+cache, _ := database.NewInMemoryDataCache()   // no args
 bus, _ := messaging.NewInMemoryMessageBus()
 ```
 
-## Testing
-
-Run all tests:
-```bash
-go test ./...
+### CRUD
+```go
+added, _ := db.Insert(&User{Name: "John", Age: 30})   // added Entity
+e, _ := db.Get(NewUser, added.ID())                    // e is entity.Entity
+user := e.(*User)                                      // type-assert to concrete
+user.Age = 31
+_, _ = db.Update(user)
+_ = db.Delete(NewUser, user.ID())
 ```
 
-The library includes comprehensive tests in the `test/` directory covering all major functionality.
+### Query (fluent; execute with Find/List/Count/...)
+```go
+list, total, err := db.Query(NewUser).
+    Filter(database.F("age").Gte(30)).
+    Filter(database.F("status").Eq("active")).
+    Sort("name").   // ascending; "name-" (trailing dash) for descending
+    Page(0).        // 0-based
+    Limit(10).
+    Find()          // returns (out []Entity, total int64, err error)
+```
+
+### Cache (entity-oriented)
+```go
+_ = cache.Set("user:"+user.ID(), user, 5*time.Minute)
+e, err := cache.Get(NewUser, "user:"+user.ID())        // returns entity.Entity
+// raw bytes: cache.SetRaw(key, bytes, exp...) / cache.GetRaw(key)
+```
+
+### Messaging
+```go
+type UserEvent = messaging.Message[*User]              // generic message
+factory := func() messaging.IMessage { return messaging.NewMessage[*User]() }
+
+sub, _ := bus.Subscribe("user-svc", factory, func(m messaging.IMessage) bool {
+    u := m.Payload().(*User)
+    _ = u
+    return true // ack
+}, "user.created")
+
+msg := messaging.GetMessage[*User]("user.created", user)
+_ = bus.Publish(msg)
+_ = bus.Unsubscribe(sub)
+```
+
+## Testing
+```bash
+go test ./...            # all packages
+go test ./database       # one package
+go test -cover ./...     # with coverage
+```
+The `test/` directory holds sample entities and integration tests.
 
 ## Dependencies
-
 - Go 1.24.0+
 - github.com/google/uuid v1.6.0
 - github.com/wneessen/go-mail v0.7.2
 
-## Architecture Philosophy
-
-1. **Program to Interfaces**: All infrastructure components are defined as interfaces
-2. **Dependency Injection**: Pass dependencies rather than creating them
-3. **Testability First**: Every interface has an in-memory implementation
-4. **Convention over Configuration**: Sensible defaults, minimal setup
-5. **Separation of Concerns**: Business logic independent of infrastructure
-
-## For More Details
-
-See `/llms-full.txt` for comprehensive interface documentation and implementation details.
+## More detail
+See `llms-full.txt` for the complete interface reference, gotchas, and worked examples.
+Repository: https://github.com/go-yaaf/yaaf-common — License: Apache 2.0.
