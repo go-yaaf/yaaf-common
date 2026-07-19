@@ -2,7 +2,6 @@ package entity
 
 import (
 	"bytes"
-	"fmt"
 	"strings"
 	"text/template"
 	"time"
@@ -34,6 +33,12 @@ func Now() Timestamp {
 // NewTimestamp creates a Timestamp from a standard Go time.Time object.
 func NewTimestamp(t time.Time) Timestamp {
 	return Timestamp(t.UnixNano() / 1000000)
+}
+
+// GetTimestamp creates a Timestamp from the provided date values
+func GetTimestamp(year, month, day, hour, minute, second int) Timestamp {
+	tm := time.Date(year, time.Month(month), day, hour, minute, second, 0, time.UTC)
+	return Timestamp(tm.UnixNano() / 1000000)
 }
 
 // Add adds a duration to the Timestamp and returns a new Timestamp.
@@ -208,124 +213,6 @@ func (ts Timestamp) LocalString(format string, tz string) string {
 	}
 	layout := ts.convertISO8601Format(format)
 	return ts.Time().In(loc).Format(layout)
-}
-
-// endregion
-
-// region TimeFrame ----------------------------------------------------------------------------------------------------
-
-// TimeFrame represents a time interval with a start and end timestamp.
-// @Data
-type TimeFrame struct {
-	From Timestamp `json:"from"` // From is the start timestamp
-	To   Timestamp `json:"to"`   // To is the end timestamp
-}
-
-// NewTimeFrame creates a new TimeFrame from start and end timestamps.
-func NewTimeFrame(from, to Timestamp) TimeFrame {
-	return TimeFrame{From: from, To: to}
-}
-
-// GetTimeFrame creates a new TimeFrame from a start timestamp and a duration.
-func GetTimeFrame(from Timestamp, duration time.Duration) TimeFrame {
-	to := int64(from) + int64(duration/time.Millisecond)
-	return TimeFrame{From: from, To: Timestamp(to)}
-}
-
-// String returns a string representation of the TimeFrame in the format "start - end".
-func (tf *TimeFrame) String(format string) string {
-	return fmt.Sprintf("%s - %s", tf.From.String(format), tf.To.String(format))
-}
-
-// Duration returns the duration of the TimeFrame.
-func (tf *TimeFrame) Duration() time.Duration {
-	millis := int64(tf.To) - int64(tf.From)
-	return time.Duration(millis) * time.Millisecond
-}
-
-// Overlaps returns true if the provided TimeFrame overlaps with the current TimeFrame.
-func (tf *TimeFrame) Overlaps(with TimeFrame, gap time.Duration) bool {
-	overlapStart := tf.Max(tf.From, with.From)
-	overlapEnd := tf.Min(tf.To, with.To)
-
-	overlapMs := int64(overlapEnd) - int64(overlapStart)
-	return overlapMs > gap.Milliseconds()
-}
-
-// Max find max value between two timestamps
-func (tf *TimeFrame) Max(a, b Timestamp) Timestamp {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-// Min find min value between two timestamps
-func (tf *TimeFrame) Min(a, b Timestamp) Timestamp {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-// endregion
-
-// region TimeDataPoint ------------------------------------------------------------------------------------------------
-
-// TimeDataPoint represents a generic data point associated with a timestamp.
-// @Data
-type TimeDataPoint[V any] struct {
-	Timestamp Timestamp `json:"timestamp"` // Timestamp of the data point
-	Value     V         `json:"value"`     // Value of the data point
-}
-
-// NewTimeDataPoint creates a new TimeDataPoint instance.
-func NewTimeDataPoint[V any](ts Timestamp, value V) TimeDataPoint[V] {
-	return TimeDataPoint[V]{Timestamp: ts, Value: value}
-}
-
-// String returns a string representation of the TimeDataPoint.
-func (tf *TimeDataPoint[V]) String(format string) string {
-	return fmt.Sprintf("%s - %v", tf.Timestamp.String(format), tf.Value)
-}
-
-// endregion
-
-// region TimeSeries ---------------------------------------------------------------------------------------------------
-
-// TimeSeries represents a named collection of data points over a specific time range.
-// @Data
-type TimeSeries[T any] struct {
-	Name   string             `json:"name"`   // Name of the time series
-	Range  TimeFrame          `json:"range"`  // Range covers the start and end time of the series
-	Values []TimeDataPoint[T] `json:"values"` // Values contains the data points
-}
-
-// ID returns the time series name as its ID.
-func (ts *TimeSeries[T]) ID() string { return ts.Name }
-
-// TABLE returns an empty string as TimeSeries is typically not a database table itself.
-func (ts *TimeSeries[T]) TABLE() string { return "" }
-
-// NAME returns the time series name.
-func (ts *TimeSeries[T]) NAME() string { return ts.Name }
-
-// KEY returns an empty string.
-func (ts *TimeSeries[T]) KEY() string { return "" }
-
-// SetDataPoint updates the value of a data point at a specific timestamp.
-// It returns true if the data point was found and updated, false otherwise.
-func (ts *TimeSeries[T]) SetDataPoint(t Timestamp, val T) bool {
-	if len(ts.Values) == 0 {
-		return false
-	}
-	for i := range ts.Values {
-		if ts.Values[i].Timestamp == t {
-			ts.Values[i].Value = val
-			return true
-		}
-	}
-	return false
 }
 
 // endregion
