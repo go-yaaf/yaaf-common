@@ -9,6 +9,7 @@ type Error interface {
 
 // errorStruct is the default implementation of the Error interface.
 // @Data
+// @ResourceGroup: Base
 type errorStruct struct {
 	code int    // code is the numeric error code
 	text string // text is the error message

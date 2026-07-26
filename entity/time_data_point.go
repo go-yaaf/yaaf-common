@@ -8,6 +8,7 @@ import (
 
 // TimeDataPoint represents a generic data point associated with a timestamp.
 // @Data
+// @ResourceGroup: Base
 type TimeDataPoint[V any] struct {
 	Timestamp Timestamp `json:"timestamp"` // Timestamp of the data point
 	Value     V         `json:"value"`     // Value of the data point

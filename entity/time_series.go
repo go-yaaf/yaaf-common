@@ -4,6 +4,7 @@ package entity
 
 // TimeSeries represents a named collection of data points over a specific time range.
 // @Data
+// @ResourceGroup: Base
 type TimeSeries[T any] struct {
 	Name   string             `json:"name"`   // Name of the time series
 	Range  TimeFrame          `json:"range"`  // Range covers the start and end time of the series

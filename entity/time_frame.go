@@ -9,6 +9,7 @@ import (
 
 // TimeFrame represents a time interval with a start and end timestamp.
 // @Data
+// @ResourceGroup: Base
 type TimeFrame struct {
 	From Timestamp `json:"from"` // From is the start timestamp
 	To   Timestamp `json:"to"`   // To is the end timestamp

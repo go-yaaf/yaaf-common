@@ -12,6 +12,7 @@ import (
 // Timestamp represents Epoch milliseconds timestamp.
 // It is the primary time representation in the system, allowing for easy serialization and arithmetic.
 // @Data
+// @ResourceGroup: Base
 type Timestamp int64
 
 // EpochNowMillis returns the current time as Epoch time in milliseconds, with an optional delta.

@@ -9,6 +9,7 @@ import . "github.com/go-yaaf/yaaf-common/entity"
 
 // BaseRestResponse is a common structure for all response types
 // @Data
+// @ResourceGroup: Base Response
 type BaseRestResponse struct {
 	Code  int    `json:"code"`            // Error code (0 for success)
 	Error string `json:"error,omitempty"` // Error message
@@ -50,6 +51,7 @@ func NewErrorResponseWithCode(code int, err error) (res *BaseRestResponse) {
 
 // ActionResponse message is returned for any action on entity with no return data (e.d. delete)
 // @Data
+// @ResourceGroup: Base Response
 type ActionResponse struct {
 	BaseRestResponse
 	Key  string `json:"key,omitempty"`  // The entity key (Id)
@@ -67,6 +69,7 @@ func NewActionResponse(key, data string) (er *ActionResponse) {
 
 // EntityResponse message is returned for any create/update action on entity
 // @Data
+// @ResourceGroup: Base Response
 type EntityResponse[T Entity] struct {
 	BaseRestResponse
 	Entity T `json:"entity"` // The entity
@@ -83,6 +86,7 @@ func NewEntityResponse[T Entity](entity T) (er *EntityResponse[T]) {
 
 // EntitiesResponse message is returned for any action returning multiple entities
 // @Data
+// @ResourceGroup: Base Response
 type EntitiesResponse[T Entity] struct {
 	BaseRestResponse
 	Page  int `json:"page"`  // Current page (Bulk) number
@@ -117,6 +121,7 @@ func NewEntitiesResponse[T Entity](entities []T, page, size, total int) *Entitie
 
 // EntityRequest message is returned for any create/update action on entity
 // @Data
+// @ResourceGroup: Base Response
 type EntityRequest[T Entity] struct {
 	Entity T `json:"entity"` // The entity
 }
@@ -132,6 +137,7 @@ func NewEntityRequest[T Entity](entity T) (er *EntityRequest[T]) {
 
 // EntitiesRequest message is returned for any action returning multiple entities
 // @Data
+// @ResourceGroup: Base Response
 type EntitiesRequest[T Entity] struct {
 	List []T `json:"list"` // List of objects in the current result set
 }

@@ -2,6 +2,7 @@ package entity
 
 // TimePeriodCode represents a code for a time period (e.g., Minute, Hour, Day).
 // @Enum
+// @ResourceGroup: Base
 type TimePeriodCode int
 
 // timePeriodCode defines the available time period codes.

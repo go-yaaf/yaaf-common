@@ -8,6 +8,7 @@ package entity
 //   - V: The type of the value.
 //
 // @Data
+// @ResourceGroup: Base
 type Tuple[K, V any] struct {
 	Key   K `json:"key"`   // Key is the first element of the tuple
 	Value V `json:"value"` // Value is the second element of the tuple
