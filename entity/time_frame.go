@@ -75,13 +75,13 @@ func GetTimeFrameOf(year, month, day int) TimeFrame {
 
 	if month == 0 {
 		from := time.Date(year, time.Month(1), 1, 0, 0, 0, 0, time.UTC)
-		to := from.Add(time.Hour * 24 * 365)
+		to := time.Date(year, time.Month(12), 31, 23, 59, 59, 0, time.UTC)
 		return TimeFrame{From: NewTimestamp(from), To: NewTimestamp(to)}
 	}
 
 	if day == 0 {
 		from := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
-		to := time.Date(year, time.Month(month+1), 0, 0, 0, 0, 0, time.UTC)
+		to := time.Date(year, time.Month(month+1), 0, 23, 59, 59, 0, time.UTC)
 		return TimeFrame{From: NewTimestamp(from), To: NewTimestamp(to)}
 	}
 
