@@ -83,14 +83,14 @@ func (ts Timestamp) EndOfDay() Timestamp {
 // StartOfMonth returns a new Timestamp representing the start of the month for the current timestamp.
 func (ts Timestamp) StartOfMonth() Timestamp {
 	t := ts.Time()
-	som := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+	som := time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())
 	return Timestamp(som.UnixNano() / 1000000)
 }
 
 // EndOfMonth returns a new Timestamp representing the end of the month for the current timestamp.
 func (ts Timestamp) EndOfMonth() Timestamp {
 	t := ts.Time()
-	som := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+	som := time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())
 	firstDayOfNextMonth := som.AddDate(0, 1, 0)
 	eom := firstDayOfNextMonth.Add(-time.Second)
 	return Timestamp(eom.UnixNano() / 1000000)
